@@ -1,56 +1,62 @@
-# رابط کاربری چت هوش مصنوعی (Front-end Only)
+# چت سازمانی هوش مصنوعی (Front-End Only)
 
-این پروژه با **Next.js App Router + TypeScript + TailwindCSS + Zustand** پیاده‌سازی شده و فقط لایه فرانت‌اند را شامل می‌شود.
+پروژه با Next.js App Router + TypeScript ساخته شده و کاملاً فرانت‌اند است. تمام نقاط وابسته به بک‌اند پشت اینترفیس‌ها و آداپترها ایزوله شده‌اند.
 
-## اجرای پروژه
+## اجرا
 
 ```bash
 npm install
 npm run dev
 ```
 
-اپ روی `http://localhost:3000/chat` اجرا می‌شود.
-
-## حالت دمو (MSW)
-
-در محیط توسعه و با متغیر `NEXT_PUBLIC_DEMO_MODE=true`، درخواست‌ها با MSW شبیه‌سازی می‌شوند.
-
-نمونه تنظیم:
+برای بیلد:
 
 ```bash
-NEXT_PUBLIC_DEMO_MODE=true
-NEXT_PUBLIC_STREAM_PARSER=text
+npm run build
+npm start
 ```
 
-## چک‌لیست TODO(BE)
+## Demo Mode با MSW
 
-- مقدار `API_BASE_URL` در `data/http/endpoints.ts`.
-- تایید مسیر endpoint ها:
-  - `GET /threads` (با pagination)
-  - `POST /threads`
-  - `PATCH /threads/:id`
-  - `DELETE /threads/:id`
-  - `GET /threads/:id/messages` (با pagination)
-  - `POST /chat` یا `POST /threads/:id/chat`
-- روش احراز هویت:
-  - Bearer token یا Cookie-based session
-  - منطق refresh token یا redirect ورود
-- فرمت استریم پاسخ:
-  - text chunks (پیش‌فرض)
-  - JSONL
-  - SSE-like frame over POST
-- منطق صحیح payload برای `regenerate`.
-- مدیریت `Retry-After` روی خطای 429.
+```bash
+NEXT_PUBLIC_DEMO_MODE=true npm run dev
+```
 
-## معماری SOLID / DIP
+در Demo Mode این مسیرها mock می‌شوند:
+- `GET /threads`
+- `POST /threads`
+- `PATCH /threads/:id`
+- `DELETE /threads/:id`
+- `GET /threads/:id/messages`
+- `POST /chat` (استریم شبیه‌سازی شده)
 
-- **domain/**: تایپ‌ها و اینترفیس‌ها (Ports)
-- **data/**: پیاده‌سازی‌های HTTP و Mock
-- **store/**: state management که به abstraction ها متکی است
-- **lib/di/container.ts**: wiring و انتخاب adapter
+## معماری
 
-برای تعویض پروتکل استریم:
-1. parser را در `data/http/streamParsers.ts` اضافه/ویرایش کنید.
-2. انتخاب parser را در `lib/di/container.ts` تغییر دهید.
-3. در صورت نیاز transport جدید با `StreamTransport` بسازید.
+- `domain/`: انواع و پورت‌ها (بدون وابستگی به فریم‌ورک)
+- `application/`: یوزکیس‌ها
+- `infrastructure/`: آداپتر HTTP/Stream/Storage/Telemetry/MSW
+- `presentation/`: کامپوننت‌ها و ViewModel Hook
+- `store/`: Zustand برای UI و streaming/drafts
 
+## چک‌لیست TODO بک‌اند
+
+- [ ] تنظیم `API_BASE_URL` در `infrastructure/http/endpoints.ts`
+- [ ] تکمیل مسیر endpointها
+- [ ] قرارداد احراز هویت (Bearer یا Cookie، refresh، expiry)
+- [ ] نگاشت دقیق پروتکل استریم به `StreamEvent`
+- [ ] نگاشت فیلد reasoning (`delta.reasoning_content`) و ابزار
+- [ ] تعیین استراتژی pagination (cursor/page)
+- [ ] مسیرهای feedback/report/share
+- [ ] آپلود فایل و اتصال attachment idها
+
+## افزودن مدل/حالت جدید (Open/Closed)
+
+1. گزینه مدل را در `ModelSelector` اضافه کنید.
+2. mode جدید را در `domain/types/chat.ts` تعریف کنید.
+3. بدون تغییر use-caseها، صرفاً نگاشت payload را در adapter بک‌اند انجام دهید.
+
+## تعویض parser/transport استریم (DIP)
+
+- transport فعلی: `FetchChatStreamer`
+- parserها: `PlainTextChunkParser`، `JsonLinesParser`، `SSEFrameParserOverPOST`
+- برای تعویض فقط در DI (`infrastructure/di/container.ts`) parserFactory را عوض کنید.
