@@ -72,6 +72,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
               ) : (
                 <div className="flex h-full items-center justify-center px-4">
                   <div className="w-full max-w-[800px] space-y-4 text-center">
+                    <h1 className="text-sm text-muted-foreground md:text-base">{t('emptyTitle')}</h1>
                     <p className="text-sm text-muted-foreground md:text-base">{t('emptyDescription')}</p>
                     <Composer
                       value={value}

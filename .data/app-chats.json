@@ -1,0 +1,66 @@
+{
+  "chats": [
+    {
+      "id": "b5d0eeed-4a2f-423b-952a-6ca79cd45d7a",
+      "title": "گفت‌وگوی جدید",
+      "createdAt": "2026-02-14T20:14:21.863Z",
+      "updatedAt": "2026-02-14T20:14:47.346Z"
+    },
+    {
+      "id": "5f3985e7-acdd-43b4-83bf-7e3723f1081f",
+      "title": "گفت‌وگوی جدید",
+      "createdAt": "2026-02-14T19:52:23.725Z",
+      "updatedAt": "2026-02-14T19:52:23.725Z"
+    },
+    {
+      "id": "917b9466-3f26-4c9d-b3cd-f3778bd96f5c",
+      "title": "گفت‌وگوی جدید",
+      "createdAt": "2026-02-14T19:51:01.205Z",
+      "updatedAt": "2026-02-14T19:51:28.410Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "bda4e89e-7c4a-4a60-babd-f5a6a263490a",
+      "chatId": "917b9466-3f26-4c9d-b3cd-f3778bd96f5c",
+      "role": "user",
+      "content": "سلام",
+      "createdAt": "2026-02-14T19:51:07.192Z"
+    },
+    {
+      "id": "e5e91f9f-0efa-40ba-891f-76c69bee8905",
+      "chatId": "917b9466-3f26-4c9d-b3cd-f3778bd96f5c",
+      "role": "user",
+      "content": "سلام",
+      "createdAt": "2026-02-14T19:51:28.410Z"
+    },
+    {
+      "id": "a8072b67-7a1c-48fb-8b37-39b766c9e4ae",
+      "chatId": "b5d0eeed-4a2f-423b-952a-6ca79cd45d7a",
+      "role": "user",
+      "content": "salam",
+      "createdAt": "2026-02-14T20:14:34.634Z"
+    },
+    {
+      "id": "5fd8929f-26a0-425c-866b-c5f11666db0b",
+      "chatId": "b5d0eeed-4a2f-423b-952a-6ca79cd45d7a",
+      "role": "user",
+      "content": "salam",
+      "createdAt": "2026-02-14T20:14:44.192Z"
+    },
+    {
+      "id": "3a895660-8057-47c2-9ad0-8c3c3a702d03",
+      "chatId": "b5d0eeed-4a2f-423b-952a-6ca79cd45d7a",
+      "role": "user",
+      "content": "salam",
+      "createdAt": "2026-02-14T20:14:45.733Z"
+    },
+    {
+      "id": "7621cf06-17c7-4953-b043-2bdf25a75c40",
+      "chatId": "b5d0eeed-4a2f-423b-952a-6ca79cd45d7a",
+      "role": "user",
+      "content": "salam",
+      "createdAt": "2026-02-14T20:14:47.346Z"
+    }
+  ]
+}
