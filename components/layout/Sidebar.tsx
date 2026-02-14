@@ -2,10 +2,12 @@
 
 import { groupThreadsByUpdatedAt } from '@/domain/services/groupThreads';
 import { useThreadsStore } from '@/store/useThreadsStore';
+import { useUiStore } from '@/store/useUiStore';
 import { useEffect, useMemo, useState } from 'react';
 
 export function Sidebar() {
   const { threads, activeThreadId, fetchThreads, setActiveThread, createThread, loading } = useThreadsStore();
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function Sidebar() {
   const groupedThreads = useMemo(() => groupThreadsByUpdatedAt(threads), [threads]);
 
   return (
-    <aside className="col-span-12 flex h-full min-h-0 flex-col rounded-2xl border border-slate-800 bg-gradient-to-b from-[#111827] via-[#0e1525] to-[#0a0f1a] p-3 lg:col-span-3 lg:w-[300px]">
+    <aside className="flex h-full min-h-0 w-[300px] flex-col rounded-2xl border border-slate-800 bg-gradient-to-b from-[#111827] via-[#0e1525] to-[#0a0f1a] p-3 transition-[width] duration-200 ease-out">
       <header className="mb-3 flex h-12 items-center gap-2 px-1">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
@@ -23,10 +25,16 @@ export function Sidebar() {
           </svg>
         </span>
         <p className="text-sm font-semibold tracking-wide text-slate-100">deepseek</p>
-        <button className="ms-auto rounded-md p-1.5 text-slate-400 transition hover:bg-slate-700/50 hover:text-slate-200" type="button" aria-label="duplicate">
+        <button
+          className="ms-auto rounded-md p-1.5 text-slate-400 transition hover:bg-slate-700/50 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          type="button"
+          aria-label="بستن نوار کناری"
+          title="بستن نوار کناری"
+          onClick={toggleSidebar}
+        >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <rect x="9" y="9" width="11" height="11" rx="2" />
-            <rect x="4" y="4" width="11" height="11" rx="2" />
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M9 4v16" />
           </svg>
         </button>
       </header>
