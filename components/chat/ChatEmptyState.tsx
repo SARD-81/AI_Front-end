@@ -1,6 +1,7 @@
 'use client';
 
 import {Button} from '@/components/ui/button';
+import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
 import {Composer} from './Composer';
 
@@ -21,9 +22,9 @@ type ChatEmptyStateProps = {
   onSubmit: () => void;
   disabled?: boolean;
   search: boolean;
-  deepThink: boolean;
+  thinkingLevel: ThinkingLevel;
   onToggleSearch: () => void;
-  onToggleDeepThink: () => void;
+  onThinkingLevelChange: (value: ThinkingLevel) => void;
   autoFocus?: boolean;
   focusTrigger?: number;
   onPromptSelect: (prompt: string) => void;
@@ -35,9 +36,9 @@ export function ChatEmptyState({
   onSubmit,
   disabled,
   search,
-  deepThink,
+  thinkingLevel,
   onToggleSearch,
-  onToggleDeepThink,
+  onThinkingLevelChange,
   autoFocus,
   focusTrigger,
   onPromptSelect
@@ -70,9 +71,9 @@ export function ChatEmptyState({
             onSubmit={onSubmit}
             disabled={disabled}
             search={search}
-            deepThink={deepThink}
+            thinkingLevel={thinkingLevel}
             onToggleSearch={onToggleSearch}
-            onToggleDeepThink={onToggleDeepThink}
+            onThinkingLevelChange={onThinkingLevelChange}
             autoFocus={autoFocus}
             focusTrigger={focusTrigger}
           />

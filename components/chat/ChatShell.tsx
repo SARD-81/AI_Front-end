@@ -7,6 +7,7 @@ import {useSearchParams} from 'next/navigation';
 import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
+import {useThinkingLevel} from '@/hooks/use-thinking-level';
 import {Composer} from './Composer';
 import {MessageList} from './MessageList';
 import {ChatEmptyState} from './ChatEmptyState';
@@ -17,7 +18,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [value, setValue] = useState('');
   const [search, setSearch] = useState(false);
-  const [deepThink, setDeepThink] = useState(false);
+  const {thinkingLevel, setThinkingLevel} = useThinkingLevel('standard');
   const [streamContent, setStreamContent] = useState('');
   const [focusTrigger, setFocusTrigger] = useState(0);
 
@@ -35,7 +36,13 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
   const submit = async () => {
     if (!chatId || !value.trim() || sendMutation.isPending) return;
-    const payload = {content: value, search, deepThink};
+    const payload = {
+      content: value,
+      search,
+      thinkingLevel,
+      deepThink: thinkingLevel !== 'standard'
+      // TODO(BACKEND): confirm mapping for deepThink compatibility.
+    };
     setValue('');
     setStreamContent('');
     await sendMutation.mutateAsync({
@@ -76,9 +83,9 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   onSubmit={submit}
                   disabled={sendMutation.isPending || !chatId}
                   search={search}
-                  deepThink={deepThink}
+                  thinkingLevel={thinkingLevel}
                   onToggleSearch={() => setSearch((prev) => !prev)}
-                  onToggleDeepThink={() => setDeepThink((prev) => !prev)}
+                  onThinkingLevelChange={setThinkingLevel}
                   autoFocus={shouldAutoFocus}
                   focusTrigger={focusTrigger}
                   onPromptSelect={(prompt) => {
@@ -97,9 +104,9 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   onSubmit={submit}
                   disabled={sendMutation.isPending || !chatId}
                   search={search}
-                  deepThink={deepThink}
+                  thinkingLevel={thinkingLevel}
                   onToggleSearch={() => setSearch((prev) => !prev)}
-                  onToggleDeepThink={() => setDeepThink((prev) => !prev)}
+                  onThinkingLevelChange={setThinkingLevel}
                 />
               </div>
             ) : null}

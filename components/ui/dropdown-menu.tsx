@@ -2,10 +2,12 @@
 
 import * as React from 'react';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
+import {Circle} from 'lucide-react';
 import {cn} from '@/lib/utils';
 
 export const DropdownMenu = Dropdown.Root;
 export const DropdownMenuTrigger = Dropdown.Trigger;
+export const DropdownMenuRadioGroup = Dropdown.RadioGroup;
 
 export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenuContentProps) {
   return (
@@ -33,5 +35,22 @@ export function DropdownMenuItem({className, ...props}: Dropdown.DropdownMenuIte
       )}
       {...props}
     />
+  );
+}
+
+export function DropdownMenuRadioItem({className, children, ...props}: Dropdown.DropdownMenuRadioItemProps) {
+  return (
+    <Dropdown.RadioItem
+      className={cn(
+        'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
+        className
+      )}
+      {...props}
+    >
+      <Dropdown.ItemIndicator className="absolute left-2 inline-flex h-3.5 w-3.5 items-center justify-center">
+        <Circle className="h-2 w-2 fill-current" />
+      </Dropdown.ItemIndicator>
+      {children}
+    </Dropdown.RadioItem>
   );
 }
