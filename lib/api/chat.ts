@@ -4,7 +4,7 @@ export type ChatSummary = {
   updatedAt: string;
 };
 
-export type MessageRole = 'user' | 'assistant';
+export type MessageRole = 'system' | 'user' | 'assistant';
 
 export type ChatMessage = {
   id: string;
@@ -12,6 +12,7 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
   isStreaming?: boolean;
+  avalaiRequestId?: string;
 };
 
 export type ChatDetail = {
@@ -24,5 +25,4 @@ export type SendMessagePayload = {
   content: string;
   deepThink: boolean;
   search: boolean;
-  // TODO: include attachment metadata once backend upload contract is finalized.
 };

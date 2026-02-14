@@ -4,7 +4,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold">تنظیمات</h1>
       <section className="rounded-xl border border-border bg-card p-4">
         <p className="text-sm text-muted-foreground">این صفحه به‌صورت نمایشی اضافه شده است.</p>
-        {/* TODO(BACKEND): load and save user settings via settings API. */}
+        
       </section>
     </main>
   );

@@ -57,8 +57,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
 
   const createNewChat = async () => {
     const created = await actions.create.mutateAsync({title: t('newChat')});
-    // TODO(BACKEND): replace local UUID fallback with backend created chat id from POST /chats.
-    router.push(`/${locale}/chat/${created.id}?focus=1`);
+        router.push(`/${locale}/chat/${created.id}?focus=1`);
     onNavigate?.();
   };
 
@@ -268,7 +267,6 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => {
-                    // TODO(BACKEND): logout
                     localStorage.removeItem('sidebar-collapsed');
                     router.push('/fa');
                     onNavigate?.();
