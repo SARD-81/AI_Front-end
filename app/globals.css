@@ -7,9 +7,9 @@
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100;
+  @apply bg-slate-950 text-slate-100;
 }
 
 * {
-  scrollbar-color: #3f3f46 #18181b;
+  scrollbar-width: thin;
 }
