@@ -1,45 +1,28 @@
-export type MessageRole = "user" | "assistant" | "tool";
-export type ChatMode = "chat" | "reasoning" | "coding";
+export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
-export interface ChatThread {
+export interface ToolCall {
+  name: string;
+  payload: Record<string, unknown>;
+}
+
+export interface Message {
+  id: string;
+  threadId: string;
+  role: Role;
+  content: string;
+  createdAt: string;
+  toolCall?: ToolCall;
+  error?: string;
+}
+
+export interface Thread {
   id: string;
   title: string;
   updatedAt: string;
-  pinned?: boolean;
+  preview?: string;
 }
 
-export interface ToolCall {
-  id: string;
-  name: string;
-  payload: unknown;
-}
-
-export interface ChatMessage {
-  id: string;
+export interface SendMessageInput {
   threadId: string;
-  role: MessageRole;
   content: string;
-  reasoning?: string;
-  toolCalls?: ToolCall[];
-  createdAt: string;
 }
-
-export interface ChatSettings {
-  model: string;
-  mode: ChatMode;
-  temperature: number;
-  topP: number;
-  maxTokens: number;
-  systemPrompt: string;
-  showReasoning: boolean;
-  streaming: boolean;
-  autoSave: boolean;
-  multiSend: boolean;
-  theme: "dark" | "light";
-}
-
-export type StreamEvent =
-  | { type: "delta"; content?: string; reasoning?: string }
-  | { type: "tool"; payload: unknown }
-  | { type: "done"; usage?: unknown }
-  | { type: "error"; error: import("./api").ApiError };
