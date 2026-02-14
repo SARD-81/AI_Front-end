@@ -1,125 +1,287 @@
 'use client';
 
+import {AnimatePresence, LayoutGroup, motion} from 'motion/react';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
-import {EllipsisVertical, MessageSquarePlus, Moon, Sun, Monitor} from 'lucide-react';
-import {useTheme} from 'next-themes';
+import {usePathname, useRouter} from 'next/navigation';
+import {useEffect, useMemo, useState} from 'react';
+import {
+  ChevronsLeft,
+  EllipsisVertical,
+  LogOut,
+  MessageCircle,
+  MessageSquarePlus,
+  Settings,
+  UserCircle2
+} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import {Skeleton} from '@/components/ui/skeleton';
+import {Sidebar as SidebarRoot, SidebarContent, SidebarFooter, SidebarHeader} from '@/components/ui/sidebar';
 import {useChatActions, useChats, useGroupedChats} from '@/hooks/use-chat-data';
 import {cn} from '@/lib/utils';
 
-function ThemeSwitch() {
-  const t = useTranslations('app');
-  const {setTheme, theme} = useTheme();
-
-  const options = [
-    {id: 'light', label: t('light'), icon: Sun},
-    {id: 'dark', label: t('dark'), icon: Moon},
-    {id: 'system', label: t('system'), icon: Monitor}
-  ] as const;
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border p-2">
-      <span className="text-xs text-muted-foreground">{t('theme')}</span>
-      <div className="flex items-center gap-1">
-        {options.map((option) => (
-          <Button
-            key={option.id}
-            variant={theme === option.id ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setTheme(option.id)}
-            aria-label={option.label}
-          >
-            <option.icon className="h-4 w-4" />
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-}
+const COLLAPSED_WIDTH = 76;
+const EXPANDED_WIDTH = 304;
 
 export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () => void}) {
   const t = useTranslations('app');
   const pathname = usePathname();
+  const router = useRouter();
   const chatsQuery = useChats();
   const groups = useGroupedChats(chatsQuery.data);
   const actions = useChatActions();
 
-  const renderGroup = (title: string, ids: string[]) => {
-    if (!ids.length) return null;
-    return (
-      <section className="space-y-1">
-        <h3 className="px-2 text-xs text-muted-foreground">{title}</h3>
-        {ids.map((id) => {
-          const chat = chatsQuery.data?.find((item) => item.id === id);
-          if (!chat) return null;
-          const href = `/${locale}/chat/${chat.id}`;
-          return (
-            <div
-              key={chat.id}
-              className={cn(
-                'group flex items-center rounded-lg px-2 py-2 text-sm hover:bg-accent',
-                pathname === href && 'bg-accent'
-              )}
-            >
-              <Link href={href} className="min-w-0 flex-1 truncate" onClick={onNavigate}>
-                {chat.title}
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
-                    <EllipsisVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const title = window.prompt(t('rename'), chat.title);
-                      if (title?.trim()) actions.rename.mutate({chatId: chat.id, title});
-                    }}
-                  >
-                    {t('rename')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={() => actions.remove.mutate(chat.id)}>
-                    {t('delete')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        })}
-      </section>
-    );
+  const [collapsed, setCollapsed] = useState(false);
+  const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // keep row selected while menu stays open
+  const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
+  const [editingTitle, setEditingTitle] = useState('');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-collapsed');
+    if (stored) setCollapsed(stored === 'true'); // localStorage persistence for collapse state
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
   };
 
+  const createNewChat = async () => {
+    const created = await actions.create.mutateAsync({title: t('newChat')});
+    // TODO(BACKEND): replace local UUID fallback with backend created chat id from POST /chats.
+    router.push(`/${locale}/chat/${created.id}?focus=1`);
+    onNavigate?.();
+  };
+
+  const chatGroups = useMemo(
+    () => [
+      {title: t('today'), ids: groups.today.map((item) => item.id)},
+      {title: t('month'), ids: groups.month.map((item) => item.id)},
+      {title: t('older'), ids: groups.older.map((item) => item.id)}
+    ],
+    [groups.month, groups.older, groups.today, t]
+  );
+
   return (
-    <aside className="flex h-full w-full flex-col gap-3 border-l border-border bg-card p-3">
-      <Button className="justify-start gap-2" onClick={() => actions.create.mutate()}>
-        <MessageSquarePlus className="h-4 w-4" />
-        {t('newChat')}
-      </Button>
-      <Input placeholder="جستجو..." className="h-9" aria-label="جستجو" />
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
-        {chatsQuery.isLoading ? (
-          <div className="space-y-2 p-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-5/6" />
-            <Skeleton className="h-8 w-4/6" />
-          </div>
-        ) : (
-          <>
-            {renderGroup(t('today'), groups.today.map((item) => item.id))}
-            {renderGroup(t('month'), groups.month.map((item) => item.id))}
-            {renderGroup(t('older'), groups.older.map((item) => item.id))}
-          </>
-        )}
-      </div>
-      <ThemeSwitch />
-    </aside>
+    <LayoutGroup>
+      <motion.div
+        layout
+        transition={{duration: 0.2, ease: 'easeOut'}}
+        className="h-full"
+        style={{width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}}
+      >
+        <SidebarRoot className="h-full w-full">
+          <SidebarHeader className={cn('space-y-2', collapsed && 'flex flex-col items-center space-y-2')}>
+            <Link
+              href={`/${locale}`}
+              aria-label="خانه"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
+              onClick={onNavigate}
+            >
+              <MessageCircle className="h-5 w-5" />
+            </Link>
+
+            <motion.div layout className={cn('flex items-center gap-2', collapsed && 'flex-col')}>
+              <Button
+                type="button"
+                onClick={createNewChat}
+                variant="secondary"
+                className={cn(
+                  'transition-all duration-200 active:scale-[0.98]',
+                  collapsed ? 'h-10 w-10 p-0' : 'h-10 flex-1 justify-start gap-2'
+                )}
+                aria-label={t('newChat')}
+                title={collapsed ? t('newChat') : undefined}
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                <AnimatePresence initial={false}>
+                  {!collapsed ? (
+                    <motion.span
+                      initial={{opacity: 0, x: -8}}
+                      animate={{opacity: 1, x: 0}}
+                      exit={{opacity: 0, x: -8}}
+                      transition={{duration: 0.18, ease: 'easeOut'}}
+                    >
+                      {t('newChat')}
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleCollapsed}
+                aria-label={collapsed ? 'باز کردن نوار کناری' : 'بستن نوار کناری'}
+                className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
+                title={collapsed ? 'باز کردن' : 'بستن'}
+              >
+                <ChevronsLeft className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
+              </Button>
+            </motion.div>
+          </SidebarHeader>
+
+          <SidebarContent className={cn('space-y-3', collapsed && 'px-1')}>
+            {chatsQuery.isLoading ? (
+              <div className="space-y-2 px-1">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : (
+              chatGroups.map((group) => {
+                if (!group.ids.length) return null;
+                return (
+                  <section key={group.title} className="space-y-1">
+                    {!collapsed ? <p className="px-2 text-xs text-muted-foreground">{group.title}</p> : null}
+                    {group.ids.map((id) => {
+                      const chat = chatsQuery.data?.find((item) => item.id === id);
+                      if (!chat) return null;
+
+                      const href = `/${locale}/chat/${chat.id}`;
+                      const isActive = pathname === href || openMenuChatId === chat.id;
+
+                      return (
+                        <motion.div layout key={chat.id} className="group">
+                          <div
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-200 hover:bg-accent/80 active:scale-[0.99]',
+                              isActive && 'bg-accent'
+                            )}
+                          >
+                            <Link
+                              href={href}
+                              className={cn('flex min-w-0 flex-1 items-center gap-2', collapsed && 'justify-center')}
+                              onClick={onNavigate}
+                              title={collapsed ? chat.title : undefined}
+                            >
+                              <MessageCircle className="h-4 w-4 shrink-0" />
+                              {!collapsed ? (
+                                editingChatId === chat.id ? (
+                                  <input
+                                    autoFocus
+                                    value={editingTitle}
+                                    onChange={(event) => setEditingTitle(event.target.value)}
+                                    onBlur={() => {
+                                      const title = editingTitle.trim() || chat.title;
+                                      actions.rename.mutate({chatId: chat.id, title});
+                                      setEditingChatId(null);
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (event.key === 'Enter') {
+                                        const title = editingTitle.trim() || chat.title;
+                                        actions.rename.mutate({chatId: chat.id, title});
+                                        setEditingChatId(null);
+                                      }
+                                      if (event.key === 'Escape') {
+                                        setEditingTitle(chat.title);
+                                        setEditingChatId(null);
+                                      }
+                                    }}
+                                    className="h-7 w-full rounded-md border border-border bg-background px-2 text-sm outline-none ring-ring focus-visible:ring-2"
+                                    dir="rtl"
+                                    aria-label="تغییر نام گفتگو"
+                                  />
+                                ) : (
+                                  <span className="truncate text-sm">{chat.title}</span>
+                                )
+                              ) : null}
+                            </Link>
+
+                            <DropdownMenu onOpenChange={(open) => setOpenMenuChatId(open ? chat.id : null)}>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    'h-7 w-7 transition-opacity duration-150 active:scale-[0.98]',
+                                    collapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                                    isActive && 'opacity-100'
+                                  )}
+                                  aria-label="گزینه‌های گفتگو"
+                                >
+                                  <EllipsisVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" side="left">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingChatId(chat.id);
+                                    setEditingTitle(chat.title);
+                                  }}
+                                >
+                                  {t('rename')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => actions.remove.mutate(chat.id)}>
+                                  {t('delete')}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </section>
+                );
+              })
+            )}
+          </SidebarContent>
+
+          <SidebarFooter>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn('h-11 w-full justify-start gap-2 active:scale-[0.99]', collapsed && 'h-10 w-10 justify-center p-0')}
+                  aria-label="پروفایل"
+                  title={collapsed ? 'پروفایل' : undefined}
+                >
+                  <UserCircle2 className="h-5 w-5" />
+                  {!collapsed ? (
+                    <div className="flex min-w-0 flex-col items-start">
+                      <span className="truncate text-sm">کاربر مهمان</span>
+                      <span className="text-xs text-muted-foreground">نسخهٔ نمایشی</span>
+                    </div>
+                  ) : null}
+                  {!collapsed ? <EllipsisVertical className="ms-auto h-4 w-4" /> : null}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="left">
+                <DropdownMenuItem
+                  onClick={() => {
+                    router.push('/fa/settings');
+                    onNavigate?.();
+                  }}
+                >
+                  <Settings className="ms-2 h-4 w-4" />
+                  تنظیمات
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => {
+                    // TODO(BACKEND): logout
+                    localStorage.removeItem('sidebar-collapsed');
+                    router.push('/fa');
+                    onNavigate?.();
+                  }}
+                >
+                  <LogOut className="ms-2 h-4 w-4" />
+                  خروج از حساب
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarFooter>
+        </SidebarRoot>
+      </motion.div>
+    </LayoutGroup>
   );
 }

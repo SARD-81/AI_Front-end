@@ -89,6 +89,12 @@ export function useSendMessage(chatId: string) {
           await new Promise((resolve) => setTimeout(resolve, 25));
           onToken(char);
         }
+        const currentMessages = mockMessages[chatId] ?? [];
+        mockMessages[chatId] = [
+          ...currentMessages,
+          {id: crypto.randomUUID(), role: 'user', content: payload.content, createdAt: new Date().toISOString()},
+          {id: crypto.randomUUID(), role: 'assistant', content: phrase, createdAt: new Date().toISOString()}
+        ];
         return;
       }
       return sendMessageStreaming(chatId, payload, onToken, () => undefined);
@@ -102,18 +108,59 @@ export function useSendMessage(chatId: string) {
 
 export function useChatActions() {
   const queryClient = useQueryClient();
+
   return {
     create: useMutation({
-      mutationFn: async () => (USE_LOCAL_MOCKS ? mockChats[0] : createChat()),
-      onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
+      mutationFn: async ({title}: {title?: string} = {}) => {
+        if (USE_LOCAL_MOCKS) {
+          const id = crypto.randomUUID();
+          const item: ChatSummary = {id, title: title ?? 'گفت‌وگوی جدید', updatedAt: new Date().toISOString()};
+          mockChats.unshift(item);
+          mockMessages[id] = [];
+          return item;
+        }
+        // TODO(BACKEND): replace with POST /chats and return created chat payload.
+        return createChat();
+      },
+      onSuccess: (chat) => {
+        queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => {
+          const next = previous ?? [];
+          if (next.some((item) => item.id === chat.id)) return next;
+          return [chat, ...next];
+        });
+        queryClient.setQueryData<ChatDetail>(['chat', chat.id], {
+          id: chat.id,
+          title: chat.title,
+          messages: []
+        });
+      }
     }),
     rename: useMutation({
-      mutationFn: ({chatId, title}: {chatId: string; title: string}) =>
-        USE_LOCAL_MOCKS ? Promise.resolve(undefined) : renameChat(chatId, title).then(() => undefined),
+      mutationFn: ({chatId, title}: {chatId: string; title: string}) => {
+        if (USE_LOCAL_MOCKS) {
+          const chat = mockChats.find((item) => item.id === chatId);
+          if (chat) {
+            chat.title = title;
+            chat.updatedAt = new Date().toISOString();
+          }
+          return Promise.resolve(undefined);
+        }
+        // TODO(BACKEND): PATCH /chats/:id for title updates.
+        return renameChat(chatId, title).then(() => undefined);
+      },
       onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
     }),
     remove: useMutation({
-      mutationFn: (chatId: string) => (USE_LOCAL_MOCKS ? Promise.resolve(undefined) : deleteChat(chatId)),
+      mutationFn: (chatId: string) => {
+        if (USE_LOCAL_MOCKS) {
+          const index = mockChats.findIndex((item) => item.id === chatId);
+          if (index >= 0) mockChats.splice(index, 1);
+          delete mockMessages[chatId];
+          return Promise.resolve(undefined);
+        }
+        // TODO(BACKEND): DELETE /chats/:id endpoint integration.
+        return deleteChat(chatId);
+      },
       onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
     })
   };
