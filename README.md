@@ -1,6 +1,6 @@
-# رابط کاربری چت هوش مصنوعی (Front-end Only)
+# رابط کاربری چت هوش مصنوعی (Front-end Only, Enterprise Demo)
 
-این پروژه با **Next.js App Router + TypeScript + TailwindCSS + Zustand** پیاده‌سازی شده و فقط لایه فرانت‌اند را شامل می‌شود.
+این پروژه با **Next.js App Router + TypeScript + TailwindCSS + Zustand + MSW** ساخته شده و فقط لایه فرانت‌اند را شامل می‌شود.
 
 ## اجرای پروژه
 
@@ -11,46 +11,61 @@ npm run dev
 
 اپ روی `http://localhost:3000/chat` اجرا می‌شود.
 
-## حالت دمو (MSW)
+## قابلیت‌های Enterprise (نسخه ارتقاءیافته)
 
-در محیط توسعه و با متغیر `NEXT_PUBLIC_DEMO_MODE=true`، درخواست‌ها با MSW شبیه‌سازی می‌شوند.
+- ناوبری چندبخشی: گفتگوها، مدل‌ها، قالب‌ها، تنظیمات.
+- نوار وضعیت بالای چت: مدل فعال، context window، وضعیت اتصال، latency.
+- Command Palette فارسی با `Ctrl/⌘ + K`.
+- امکانات حرفه‌ای گفتگو:
+  - عملیات هر پیام (کپی، بازتولید، ویرایش آخرین پیام کاربر، سنجاق)
+  - پنل متادیتای پیام
+  - پیام‌های سنجاق‌شده
+  - یادداشت/برچسب thread
+- ورودی غنی:
+  - پیوست فایل + drag & drop + پیش‌نمایش تصویر (سمت کلاینت)
+- استریم مقاوم:
+  - StreamSession state machine (`idle | connecting | streaming | stopping | error | done`)
+  - retry نمایی برای خطاهای transient
+  - حالت توقف جزئی پیام
+  - حفظ استریم در thread غیر فعال و نمایش «در حال پاسخ…» در سایدبار
+- عملکرد و مقیاس:
+  - مجازی‌سازی لیست پیام با `react-virtuoso`
+  - pagination نمایشی (cursor-based) برای پیام‌ها
+  - optimistic update برای threadها
+- Design System سبک:
+  - `components/ui`: Button, IconButton, Input, Textarea, Badge, Tabs, DropdownMenu, Modal, Tooltip, Skeleton, Toast
+- شخصی‌سازی:
+  - تم روشن/تیره + accent color با ذخیره localStorage
+- مشاهده‌پذیری:
+  - Telemetry client-side + correlationId
+  - نمایشگر لاگ در Settings
+  - Error Boundary فارسی با دکمه «بارگذاری مجدد»
 
-نمونه تنظیم:
+## کلیدهای میانبر
 
-```bash
-NEXT_PUBLIC_DEMO_MODE=true
-NEXT_PUBLIC_STREAM_PARSER=text
-```
+- `Ctrl/⌘ + K`: باز کردن Command Palette
+- `Enter`: ارسال پیام
+- `Shift + Enter`: خط جدید
 
-## چک‌لیست TODO(BE)
+## Demo Scenarios (در تنظیمات)
 
-- مقدار `API_BASE_URL` در `data/http/endpoints.ts`.
-- تایید مسیر endpoint ها:
-  - `GET /threads` (با pagination)
-  - `POST /threads`
-  - `PATCH /threads/:id`
-  - `DELETE /threads/:id`
-  - `GET /threads/:id/messages` (با pagination)
-  - `POST /chat` یا `POST /threads/:id/chat`
-- روش احراز هویت:
-  - Bearer token یا Cookie-based session
-  - منطق refresh token یا redirect ورود
-- فرمت استریم پاسخ:
-  - text chunks (پیش‌فرض)
-  - JSONL
-  - SSE-like frame over POST
-- منطق صحیح payload برای `regenerate`.
-- مدیریت `Retry-After` روی خطای 429.
+- Normal
+- Rate-limited
+- Auth expired
+- Intermittent network
+- Heavy thread list
 
-## معماری SOLID / DIP
+## وابستگی جدید
 
-- **domain/**: تایپ‌ها و اینترفیس‌ها (Ports)
-- **data/**: پیاده‌سازی‌های HTTP و Mock
-- **store/**: state management که به abstraction ها متکی است
-- **lib/di/container.ts**: wiring و انتخاب adapter
+- `react-virtuoso`: مجازی‌سازی لیست پیام برای کارایی بهتر در دیتای حجیم.
 
-برای تعویض پروتکل استریم:
-1. parser را در `data/http/streamParsers.ts` اضافه/ویرایش کنید.
-2. انتخاب parser را در `lib/di/container.ts` تغییر دهید.
-3. در صورت نیاز transport جدید با `StreamTransport` بسازید.
+## TODO(BE) checklist
 
+- // TODO(BE): API_BASE_URL در محیط‌های مختلف.
+- // TODO(BE): endpointهای دقیق و query params برای threads/messages/models/prompts.
+- // TODO(BE): auth header vs cookie + refresh flow.
+- // TODO(BE): pagination cursor fields و `nextCursor`.
+- // TODO(BE): streaming protocol framing + done/error markers (text/jsonl/sse).
+- // TODO(BE): models list endpoint و fields مربوط به token usage/context.
+- // TODO(BE): upload endpoint و signed URL process.
+- // TODO(BE): settings sync endpoint برای همگام‌سازی بین دستگاه‌ها.

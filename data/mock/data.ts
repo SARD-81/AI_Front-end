@@ -1,62 +1,58 @@
-import type { Message, Thread } from '@/domain/types/chat';
+import type { Message, ModelInfo, PromptTemplate, Thread } from '@/domain/types/chat';
 
 const now = Date.now();
+const tagsPool = ['کار', 'شخصی', 'باگ', 'تحقیق'];
 
-export const mockThreads: Thread[] = [
-  {
-    id: 't-1',
-    title: 'برنامه‌ریزی یادگیری هوش مصنوعی',
-    updatedAt: new Date(now - 1000 * 60 * 8).toISOString(),
-    preview: 'یک نقشه راه ۳ ماهه می‌خواهم.',
-  },
-  {
-    id: 't-2',
-    title: 'نمونه کد TypeScript',
-    updatedAt: new Date(now - 1000 * 60 * 60).toISOString(),
-    preview: 'یک نمونه کد با توضیح کامل',
-  },
+export const mockModels: ModelInfo[] = [
+  { id: 'deepseek-lite-demo', name: 'DeepSeek Lite (Demo)', contextWindow: 32000, provider: 'DemoLab' },
+  { id: 'reasoner-pro-demo', name: 'Reasoner Pro (Demo)', contextWindow: 128000, provider: 'DemoLab' },
 ];
 
-export const mockMessages: Record<string, Message[]> = {
-  't-1': [
-    {
-      id: 'm-1',
-      threadId: 't-1',
-      role: 'user',
-      content: 'یک برنامه ۳ ماهه برای شروع هوش مصنوعی می‌خواهم.',
-      createdAt: new Date(now - 1000 * 60 * 10).toISOString(),
-    },
-    {
-      id: 'm-2',
-      threadId: 't-1',
-      role: 'assistant',
-      content:
-        'حتماً!\n\n1. **ماه اول**: مبانی پایتون و ریاضی.\n2. **ماه دوم**: یادگیری ماشین کلاسیک.\n3. **ماه سوم**: پروژه عملی و استقرار.',
-      createdAt: new Date(now - 1000 * 60 * 9).toISOString(),
-    },
-  ],
-  't-2': [
-    {
-      id: 'm-3',
-      threadId: 't-2',
-      role: 'assistant',
-      content:
-        'در ادامه یک قطعه کد TypeScript می‌بینی:\n\n```ts\nfunction sum(a: number, b: number): number {\n  return a + b;\n}\n```',
-      createdAt: new Date(now - 1000 * 60 * 61).toISOString(),
-    },
-    {
-      id: 'm-4',
-      threadId: 't-2',
+export const mockPrompts: PromptTemplate[] = [
+  { id: 'p1', title: 'تحلیل باگ', content: 'این خطا را تحلیل کن و راه‌حل مرحله‌ای بده:', category: 'باگ' },
+  { id: 'p2', title: 'برنامه پروژه', content: 'برای پروژه زیر یک برنامه اجرایی ۲ هفته‌ای بنویس:', category: 'کار' },
+  { id: 'p3', title: 'یادگیری شخصی', content: 'برای من برنامه یادگیری شخصی‌سازی‌شده ایجاد کن:', category: 'شخصی' },
+];
+
+export const mockThreads: Thread[] = Array.from({ length: 24 }).map((_, index) => ({
+  id: `t-${index + 1}`,
+  title: `گفتگو ${index + 1} - ${index % 2 === 0 ? 'تحلیل محصول' : 'برنامه‌ریزی'}`,
+  updatedAt: new Date(now - 1000 * 60 * (index + 1)).toISOString(),
+  preview: 'خلاصه‌ای از گفتگو برای نمایش در لیست...',
+  tags: [tagsPool[index % tagsPool.length]],
+  note: 'یادداشت زمینه‌ای این گفتگو.',
+  pinnedMessageIds: index % 4 === 0 ? [`m-${index + 1}-2`] : [],
+  model: index % 3 === 0 ? 'reasoner-pro-demo' : 'deepseek-lite-demo',
+}));
+
+export const mockMessages: Record<string, Message[]> = Object.fromEntries(
+  mockThreads.map((thread, threadIndex) => {
+    const messages = Array.from({ length: 35 }).map((_, messageIndex) => {
+      const isUser = messageIndex % 2 === 0;
+      return {
+        id: `m-${threadIndex + 1}-${messageIndex + 1}`,
+        threadId: thread.id,
+        role: isUser ? 'user' : 'assistant',
+        content: isUser
+          ? `پیام کاربر شماره ${messageIndex + 1} برای ${thread.title}`
+          : `پاسخ دستیار شماره ${messageIndex + 1} با جزئیات فنی و ساختارمند.`,
+        createdAt: new Date(now - 1000 * 30 * (messageIndex + 1)).toISOString(),
+        model: thread.model,
+        metrics: { latencyMs: 300 + messageIndex * 3, tokensIn: 120, tokensOut: 260 },
+        pinned: thread.pinnedMessageIds?.includes(`m-${threadIndex + 1}-${messageIndex + 1}`),
+      } as Message;
+    });
+
+    messages.splice(3, 0, {
+      id: `tool-${thread.id}`,
+      threadId: thread.id,
       role: 'tool',
       content: 'Tool execution result',
-      createdAt: new Date(now - 1000 * 60 * 60).toISOString(),
-      toolCall: {
-        name: 'analyze_code',
-        payload: {
-          complexity: 'O(1)',
-          notes: ['کد کوتاه و خوانا است', 'نیاز به تست واحد دارد'],
-        },
-      },
-    },
-  ],
-};
+      createdAt: new Date(now - 1000 * 60).toISOString(),
+      toolCall: { name: 'search', payload: { query: 'enterprise ui', hits: 5 } },
+      rawToolCalls: { callId: 'tc-1', status: 'success' },
+    });
+
+    return [thread.id, messages];
+  }),
+);
