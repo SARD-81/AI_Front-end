@@ -12,7 +12,9 @@ export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenu
     <Dropdown.Portal>
       <Dropdown.Content
         className={cn(
-          'z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-card',
+          'z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-card outline-none',
+          'origin-top-right transition duration-200 ease-out data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
+          'data-[state=closed]:-translate-y-1 data-[state=closed]:opacity-0',
           className
         )}
         sideOffset={8}
@@ -26,7 +28,7 @@ export function DropdownMenuItem({className, ...props}: Dropdown.DropdownMenuIte
   return (
     <Dropdown.Item
       className={cn(
-        'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground',
+        'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
         className
       )}
       {...props}
