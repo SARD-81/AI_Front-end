@@ -1,6 +1,8 @@
-import {createChat, listChats} from '@/src/server/app-chat-store';
-import {toErrorResponse} from '@/src/server/route-utils';
-import {validateTitle} from '@/src/server/validation';
+import {createChat, listChats} from '../../_lib/app-chat-store';
+import {toErrorResponse} from '../../_lib/route-utils';
+import {validateTitle} from '../../_lib/validation';
+
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
@@ -13,8 +15,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = validateTitle(await request.json().catch(() => ({})));
-    const chat = await createChat(body.title ?? 'گفت‌وگوی جدید');
+    const payload = validateTitle(await request.json().catch(() => ({})));
+    const chat = await createChat(payload.title ?? 'گفت‌وگوی جدید');
     return Response.json(chat, {status: 201});
   } catch (error) {
     return toErrorResponse(error);
