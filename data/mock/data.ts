@@ -1,7 +1,6 @@
 import type { Message, ModelInfo, PromptTemplate, Thread } from '@/domain/types/chat';
 
 const now = Date.now();
-const tagsPool = ['کار', 'شخصی', 'باگ', 'تحقیق'];
 
 export const mockModels: ModelInfo[] = [
   { id: 'deepseek-lite-demo', name: 'DeepSeek Lite (Demo)', contextWindow: 32000, provider: 'DemoLab' },
@@ -14,20 +13,100 @@ export const mockPrompts: PromptTemplate[] = [
   { id: 'p3', title: 'یادگیری شخصی', content: 'برای من برنامه یادگیری شخصی‌سازی‌شده ایجاد کن:', category: 'شخصی' },
 ];
 
-export const mockThreads: Thread[] = Array.from({ length: 24 }).map((_, index) => ({
-  id: `t-${index + 1}`,
-  title: `گفتگو ${index + 1} - ${index % 2 === 0 ? 'تحلیل محصول' : 'برنامه‌ریزی'}`,
-  updatedAt: new Date(now - 1000 * 60 * (index + 1)).toISOString(),
-  preview: 'خلاصه‌ای از گفتگو برای نمایش در لیست...',
-  tags: [tagsPool[index % tagsPool.length]],
-  note: 'یادداشت زمینه‌ای این گفتگو.',
-  pinnedMessageIds: index % 4 === 0 ? [`m-${index + 1}-2`] : [],
-  model: index % 3 === 0 ? 'reasoner-pro-demo' : 'deepseek-lite-demo',
-}));
+export const mockThreads: Thread[] = [
+  {
+    id: 't-1',
+    title: 'درخواست پاسخ تست‌های چندرسانه‌ای برای نسخه جدید پروژه',
+    updatedAt: new Date(now - 1000 * 60 * 60 * 5).toISOString(),
+    preview: 'بررسی سناریوهای اجرای تست و گزارش خطا',
+    tags: ['کار'],
+    model: 'deepseek-lite-demo',
+  },
+  {
+    id: 't-2',
+    title: 'اخلاق جنسی در اسلام و جهان غرب',
+    updatedAt: new Date(now - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    preview: 'جمع‌بندی دیدگاه‌ها با منابع معتبر',
+    tags: ['تحقیق'],
+    model: 'reasoner-pro-demo',
+  },
+  {
+    id: 't-3',
+    title: 'سوالات درباره امام خمینی و سیاست',
+    updatedAt: new Date(now - 1000 * 60 * 60 * 24 * 9).toISOString(),
+    preview: 'پاسخ‌گویی مرحله‌ای با ارجاع تاریخی',
+    tags: ['تحقیق'],
+    model: 'deepseek-lite-demo',
+  },
+  {
+    id: 't-4',
+    title: 'کمک در اصلاح استایل و زبان Angular',
+    updatedAt: new Date(now - 1000 * 60 * 60 * 24 * 16).toISOString(),
+    preview: 'بهبود RTL و کدنویسی تمیز',
+    tags: ['باگ'],
+    model: 'deepseek-lite-demo',
+  },
+  {
+    id: 't-5',
+    title: 'تغییرات ظاهری برای بهبود کامپوننت ناوبری در نسخه موبایل',
+    updatedAt: new Date(now - 1000 * 60 * 60 * 24 * 22).toISOString(),
+    preview: 'اصلاح فاصله‌ها و تایپوگرافی',
+    tags: ['کار'],
+    model: 'reasoner-pro-demo',
+  },
+  {
+    id: 't-6',
+    title: 'Vite React Project Navigation Slow Render Investigation',
+    updatedAt: '2026-01-18T09:20:00.000Z',
+    preview: 'trace for slow mount and router transitions',
+    tags: ['باگ'],
+    model: 'reasoner-pro-demo',
+  },
+  {
+    id: 't-7',
+    title: 'شناسایی و متوقف کردن برنامه با یوزر ناشناس در سرور لینوکسی',
+    updatedAt: '2026-01-07T12:30:00.000Z',
+    preview: 'دستورات مانیتورینگ و امن‌سازی',
+    tags: ['کار'],
+    model: 'deepseek-lite-demo',
+  },
+  {
+    id: 't-8',
+    title: 'نمایش داده‌های JSON با جدول گسترش‌پذیر در React',
+    updatedAt: '2025-12-19T16:00:00.000Z',
+    preview: 'طراحی ستون‌ها و تعاملات کاربر',
+    tags: ['کار'],
+    model: 'deepseek-lite-demo',
+  },
+  {
+    id: 't-9',
+    title: 'طراحی مسیر مهاجرت از REST به GraphQL در اپلیکیشن سازمانی',
+    updatedAt: '2025-12-05T11:10:00.000Z',
+    preview: 'مقایسه هزینه و ریسک',
+    tags: ['تحقیق'],
+    model: 'reasoner-pro-demo',
+  },
+  {
+    id: 't-10',
+    title: 'بازنویسی ماژول احراز هویت با الگوی Adapter و DIP',
+    updatedAt: '2025-11-25T08:00:00.000Z',
+    preview: 'تفکیک مسئولیت‌ها و پورت‌ها',
+    tags: ['کار'],
+    model: 'reasoner-pro-demo',
+  },
+  {
+    id: 't-11',
+    title: 'راهنمای ساخت داشبورد لاگینگ برای تیم پشتیبانی',
+    updatedAt: '2025-11-12T09:45:00.000Z',
+    preview: 'تعیین شاخص‌ها و اولویت هشدارها',
+    tags: ['شخصی'],
+    model: 'deepseek-lite-demo',
+  },
+];
 
 export const mockMessages: Record<string, Message[]> = Object.fromEntries(
   mockThreads.map((thread, threadIndex) => {
-    const messages = Array.from({ length: 35 }).map((_, messageIndex) => {
+    const messages = Array.from({ length: 18 }).map((_, messageIndex) => {
       const isUser = messageIndex % 2 === 0;
       return {
         id: `m-${threadIndex + 1}-${messageIndex + 1}`,
