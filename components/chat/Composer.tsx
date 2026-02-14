@@ -89,7 +89,7 @@ export function Composer({
             aria-label="ضمیمه فایل"
             className="transition-all duration-200 active:scale-[0.98]"
           >
-            {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}
+            
             <Paperclip className="h-4 w-4" />
           </Button>
         </div>

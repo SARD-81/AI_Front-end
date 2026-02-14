@@ -15,20 +15,21 @@ export class ApiError extends Error {
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => undefined);
   if (!response.ok) {
-    throw new ApiError('API request failed', response.status, data);
+    const message =
+      typeof data === 'object' && data !== null && 'error' in data
+        ? ((data as {error?: {message?: string}}).error?.message ?? 'API request failed')
+        : 'API request failed';
+    throw new ApiError(message, response.status, data);
   }
   return data as T;
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  // TODO: Set BASE_URL from environment (e.g., process.env.NEXT_PUBLIC_API_BASE_URL) once backend URL is available.
-  const baseUrl = '';
-  const response = await fetch(`${baseUrl}${path}`, {
+  const response = await fetch(path, {
     ...init,
     headers: {
       ...DEFAULT_HEADERS,
       ...init?.headers
-      // TODO: Add auth token/cookie strategy (Bearer, httpOnly cookie, refresh flow) when backend auth is defined.
     }
   });
 

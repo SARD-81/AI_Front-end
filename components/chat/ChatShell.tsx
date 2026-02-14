@@ -12,6 +12,8 @@ import {Composer} from './Composer';
 import {MessageList} from './MessageList';
 import {useChat, useSendMessage} from '@/hooks/use-chat-data';
 
+const RATE_LIMIT_STATUS = 429;
+
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const t = useTranslations('app');
   const searchParams = useSearchParams();
@@ -20,6 +22,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [search, setSearch] = useState(false);
   const [deepThink, setDeepThink] = useState(false);
   const [streamContent, setStreamContent] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {data: chat} = useChat(chatId);
   const sendMutation = useSendMessage(chatId ?? '');
@@ -35,14 +38,35 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
   const submit = async () => {
     if (!chatId || !value.trim() || sendMutation.isPending) return;
-    const payload = {content: value, search, deepThink};
-    setValue('');
+    const draft = value;
+    setErrorMessage(null);
     setStreamContent('');
-    await sendMutation.mutateAsync({
-      payload,
-      onToken: (chunk) => setStreamContent((prev) => prev + chunk)
-    });
-    setStreamContent('');
+
+    try {
+      await sendMutation.mutateAsync({
+        payload: {content: draft, search, deepThink},
+        messages: [
+          ...(chat?.messages ?? []).map((message) => ({role: message.role, content: message.content})),
+          {role: 'user', content: draft}
+        ],
+        onToken: (chunk) => setStreamContent((prev) => prev + chunk)
+      });
+
+      setValue('');
+      setStreamContent('');
+    } catch (error) {
+      setStreamContent('');
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number'
+          ? error.status
+          : undefined;
+      if (status === RATE_LIMIT_STATUS) {
+        setErrorMessage('درخواست‌های شما بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.');
+      } else {
+        setErrorMessage('خطا در ارتباط با سرور AvalAI. لطفاً دوباره تلاش کنید.');
+      }
+      setValue(draft);
+    }
   };
 
   return (
@@ -90,18 +114,25 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
             </section>
 
             {hasMessages ? (
-              <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 p-3 backdrop-blur md:p-4">
-                <Composer
-                  value={value}
-                  onChange={setValue}
-                  onSubmit={submit}
-                  disabled={sendMutation.isPending || !chatId}
-                  search={search}
-                  deepThink={deepThink}
-                  onToggleSearch={() => setSearch((prev) => !prev)}
-                  onToggleDeepThink={() => setDeepThink((prev) => !prev)}
-                />
-              </div>
+              <footer className="border-t border-border bg-background/80 px-3 py-3 backdrop-blur md:px-4 lg:px-6">
+                <div className="mx-auto w-full max-w-[920px] space-y-2">
+                  {errorMessage ? (
+                    <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {errorMessage}
+                    </div>
+                  ) : null}
+                  <Composer
+                    value={value}
+                    onChange={setValue}
+                    onSubmit={submit}
+                    disabled={sendMutation.isPending || !chatId}
+                    search={search}
+                    deepThink={deepThink}
+                    onToggleSearch={() => setSearch((prev) => !prev)}
+                    onToggleDeepThink={() => setDeepThink((prev) => !prev)}
+                  />
+                </div>
+              </footer>
             ) : null}
           </LayoutGroup>
         </main>
