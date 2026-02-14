@@ -3,13 +3,13 @@ export interface StreamParser {
   flush?(): string[];
 }
 
-export class PlainTextStreamParser implements StreamParser {
+export class parsePlainTextChunks implements StreamParser {
   parse(chunk: string): string[] {
     return [chunk];
   }
 }
 
-export class JsonLineStreamParser implements StreamParser {
+export class parseJsonLines implements StreamParser {
   private buffer = '';
 
   parse(chunk: string): string[] {
@@ -17,8 +17,7 @@ export class JsonLineStreamParser implements StreamParser {
     const lines = this.buffer.split('\n');
     this.buffer = lines.pop() ?? '';
 
-    // TODO(BE): Backend may send JSON Lines: one JSON object per line.
-    // Example expected shape: {"delta":"..."}
+    // TODO(BE): Define JSONL framing fields for deltas, tool calls and done markers.
     return lines
       .map((line) => line.trim())
       .filter(Boolean)
@@ -38,7 +37,7 @@ export class JsonLineStreamParser implements StreamParser {
   }
 }
 
-export class SseLikeStreamParser implements StreamParser {
+export class parseSSEFrames implements StreamParser {
   private buffer = '';
 
   parse(chunk: string): string[] {
@@ -46,7 +45,7 @@ export class SseLikeStreamParser implements StreamParser {
     const frames = this.buffer.split('\n\n');
     this.buffer = frames.pop() ?? '';
 
-    // TODO(BE): If backend sends SSE-like frames over POST, parse lines starting with "data:".
+    // TODO(BE): Confirm SSE event schema including error/done markers and tool blocks.
     return frames.flatMap((frame) =>
       frame
         .split('\n')

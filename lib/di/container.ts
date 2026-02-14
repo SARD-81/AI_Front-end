@@ -1,10 +1,16 @@
 import { HttpChatRepository } from '@/data/http/chatRepository.http';
 import { HttpClient } from '@/data/http/httpClient';
 import { FetchStreamTransport } from '@/data/http/streamTransport.fetch';
-import { JsonLineStreamParser, PlainTextStreamParser, SseLikeStreamParser } from '@/data/http/streamParsers';
+import { parseJsonLines, parsePlainTextChunks, parseSSEFrames } from '@/data/http/streamParsers';
+import { LocalSettingsRepository } from '@/data/local/settingsRepository.local';
+import { MockUploadRepository } from '@/data/local/uploadRepository.mock';
+import { ConsoleTelemetry } from '@/data/telemetry/telemetry.console';
 import type { AuthProvider } from '@/domain/ports/AuthProvider';
 import type { ChatRepository } from '@/domain/ports/ChatRepository';
+import type { SettingsRepository } from '@/domain/ports/SettingsRepository';
 import type { StreamTransport } from '@/domain/ports/StreamTransport';
+import type { Telemetry } from '@/domain/ports/Telemetry';
+import type { UploadRepository } from '@/domain/ports/UploadRepository';
 import { useAuthStore } from '@/store/useAuthStore';
 import { env } from '@/lib/di/env';
 
@@ -18,6 +24,9 @@ class StoreAuthProvider implements AuthProvider {
 export interface AppContainer {
   chatRepository: ChatRepository;
   streamTransport: StreamTransport;
+  settingsRepository: SettingsRepository;
+  telemetry: Telemetry;
+  uploadRepository: UploadRepository;
 }
 
 const authProvider = new StoreAuthProvider();
@@ -25,13 +34,15 @@ const httpClient = new HttpClient(env.apiBaseUrl, authProvider);
 
 const streamParser =
   env.streamParser === 'jsonl'
-    ? new JsonLineStreamParser()
+    ? new parseJsonLines()
     : env.streamParser === 'sse'
-      ? new SseLikeStreamParser()
-      : new PlainTextStreamParser();
+      ? new parseSSEFrames()
+      : new parsePlainTextChunks();
 
-// TODO(BE): For production, switch parser strategy according to backend protocol.
 export const container: AppContainer = {
   chatRepository: new HttpChatRepository(httpClient),
   streamTransport: new FetchStreamTransport(env.apiBaseUrl, authProvider, streamParser),
+  settingsRepository: new LocalSettingsRepository(),
+  telemetry: new ConsoleTelemetry(),
+  uploadRepository: new MockUploadRepository(),
 };

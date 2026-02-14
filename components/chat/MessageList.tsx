@@ -1,58 +1,58 @@
 'use client';
 
 import { MessageBubble } from '@/components/chat/MessageBubble';
+import { Button } from '@/components/ui/Button';
 import { useChatStore } from '@/store/useChatStore';
 import { useThreadsStore } from '@/store/useThreadsStore';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 export function MessageList() {
-  const { activeThreadId } = useThreadsStore();
-  const { messagesByThread, fetchMessages, errorByThread, retryLast } = useChatStore();
-  const ref = useRef<HTMLDivElement>(null);
-  const [stickToBottom, setStickToBottom] = useState(true);
+  const activeThreadId = useThreadsStore((s) => s.activeThreadId);
+  const fetchMessages = useChatStore((s) => s.fetchMessages);
+  const messagesByThread = useChatStore((s) => s.messagesByThread);
+  const errorByThread = useChatStore((s) => s.errorByThread);
+  const retryLast = useChatStore((s) => s.retryLast);
+  const hasMoreByThread = useChatStore((s) => s.hasMoreByThread);
 
   useEffect(() => {
-    if (activeThreadId) {
-      void fetchMessages(activeThreadId);
-    }
+    if (activeThreadId) void fetchMessages(activeThreadId, true);
   }, [activeThreadId, fetchMessages]);
 
   const messages = useMemo(() => (activeThreadId ? messagesByThread[activeThreadId] ?? [] : []), [activeThreadId, messagesByThread]);
-
-  useEffect(() => {
-    if (!ref.current || !stickToBottom) return;
-    ref.current.scrollTop = ref.current.scrollHeight;
-  }, [messages, stickToBottom]);
+  const pinned = messages.filter((m) => m.pinned);
 
   return (
-    <div
-      ref={ref}
-      className="flex-1 space-y-3 overflow-auto rounded-xl border border-slate-700 p-4"
-      onScroll={(event) => {
-        const el = event.currentTarget;
-        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-        setStickToBottom(nearBottom);
-      }}
-    >
-      {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
-      ))}
+    <section className="flex-1 rounded-xl border border-slate-700 p-2" role="log" aria-live="polite">
+      {pinned.length ? (
+        <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+          <p className="mb-1">پیام‌های سنجاق‌شده</p>
+          {pinned.map((message) => (
+            <p key={`pin-${message.id}`} className="truncate">• {message.content}</p>
+          ))}
+        </div>
+      ) : null}
+
+      {activeThreadId && hasMoreByThread[activeThreadId] ? (
+        <Button className="mb-2 bg-slate-700" onClick={() => void fetchMessages(activeThreadId, false)}>
+          بارگذاری پیام‌های قبلی
+        </Button>
+      ) : null}
+
+      <Virtuoso
+        style={{ height: '60vh' }}
+        data={messages}
+        itemContent={(_, message) => <MessageBubble key={message.id} message={message} />}
+      />
+
       {activeThreadId && errorByThread[activeThreadId] ? (
-        <div className="rounded-lg border border-rose-700 bg-rose-950/40 p-3 text-sm">
+        <div className="mt-2 rounded-lg border border-rose-700 bg-rose-950/40 p-3 text-sm">
           <p>{errorByThread[activeThreadId]}</p>
           <button className="mt-2 rounded bg-rose-700 px-2 py-1 text-xs" onClick={() => void retryLast(activeThreadId)}>
             تلاش مجدد
           </button>
-          <p className="mt-2 text-xs text-slate-300">
-            {errorByThread[activeThreadId]?.includes('401') || errorByThread[activeThreadId]?.includes('403')
-              ? 'TODO(BE): در این وضعیت باید رفرش توکن یا هدایت به ورود انجام شود.'
-              : null}
-            {errorByThread[activeThreadId]?.includes('429')
-              ? ' TODO(BE): مقدار Retry-After از هدر خوانده شود.'
-              : null}
-          </p>
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }

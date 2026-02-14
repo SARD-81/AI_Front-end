@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Vazirmatn } from 'next/font/google';
 import '@/app/globals.css';
 import { MswProvider } from '@/components/layout/MswProvider';
+import { AppErrorBoundary } from '@/components/system/AppErrorBoundary';
 
 const vazirmatn = Vazirmatn({ subsets: ['arabic'] });
 
@@ -15,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fa" dir="rtl">
       <body className={vazirmatn.className}>
         <MswProvider />
-        {children}
+        <AppErrorBoundary>{children}</AppErrorBoundary>
       </body>
     </html>
   );

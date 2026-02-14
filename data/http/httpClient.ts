@@ -19,6 +19,9 @@ export class HttpClient {
       headers.set('Content-Type', 'application/json');
 
       // TODO(BE): Adjust to cookie-based auth if backend expects credentials instead of bearer token.
+      if (typeof window !== 'undefined') {
+        headers.set('x-demo-scenario', localStorage.getItem('demo-scenario') || 'normal');
+      }
       if (auth.token) {
         headers.set('Authorization', `Bearer ${auth.token}`);
       }

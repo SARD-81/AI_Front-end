@@ -1,7 +1,7 @@
 import { endpoints } from '@/data/http/endpoints';
 import { HttpClient } from '@/data/http/httpClient';
 import type { ChatRepository } from '@/domain/ports/ChatRepository';
-import type { Message, Thread } from '@/domain/types/chat';
+import type { ModelInfo, PromptTemplate, Thread, ThreadMessagesPage } from '@/domain/types/chat';
 
 export class HttpChatRepository implements ChatRepository {
   constructor(private readonly client: HttpClient) {}
@@ -31,7 +31,16 @@ export class HttpChatRepository implements ChatRepository {
     });
   }
 
-  getMessages(threadId: string): Promise<Message[]> {
-    return this.client.request<Message[]>(endpoints.threadMessages(threadId));
+  getMessages(threadId: string, cursor?: string): Promise<ThreadMessagesPage> {
+    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return this.client.request<ThreadMessagesPage>(`${endpoints.threadMessages(threadId)}${qs}`);
+  }
+
+  getModels(): Promise<ModelInfo[]> {
+    return this.client.request<ModelInfo[]>(endpoints.models);
+  }
+
+  getPromptTemplates(): Promise<PromptTemplate[]> {
+    return this.client.request<PromptTemplate[]>(endpoints.prompts);
   }
 }
