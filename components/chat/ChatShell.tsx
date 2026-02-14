@@ -4,22 +4,22 @@ import {useMemo, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useSearchParams} from 'next/navigation';
-import {useTranslations} from 'next-intl';
 import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
 import {Composer} from './Composer';
 import {MessageList} from './MessageList';
+import {ChatEmptyState} from './ChatEmptyState';
 import {useChat, useSendMessage} from '@/hooks/use-chat-data';
 
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
-  const t = useTranslations('app');
   const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [value, setValue] = useState('');
   const [search, setSearch] = useState(false);
   const [deepThink, setDeepThink] = useState(false);
   const [streamContent, setStreamContent] = useState('');
+  const [focusTrigger, setFocusTrigger] = useState(0);
 
   const {data: chat} = useChat(chatId);
   const sendMutation = useSendMessage(chatId ?? '');
@@ -70,23 +70,22 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
               {hasMessages ? (
                 <MessageList messages={messages} typing={sendMutation.isPending && !streamContent} />
               ) : (
-                <div className="flex h-full items-center justify-center px-4">
-                  <div className="w-full max-w-[800px] space-y-4 text-center">
-                    <h1 className="text-sm text-muted-foreground md:text-base">{t('emptyTitle')}</h1>
-                    <p className="text-sm text-muted-foreground md:text-base">{t('emptyDescription')}</p>
-                    <Composer
-                      value={value}
-                      onChange={setValue}
-                      onSubmit={submit}
-                      disabled={sendMutation.isPending || !chatId}
-                      search={search}
-                      deepThink={deepThink}
-                      onToggleSearch={() => setSearch((prev) => !prev)}
-                      onToggleDeepThink={() => setDeepThink((prev) => !prev)}
-                      autoFocus={shouldAutoFocus}
-                    />
-                  </div>
-                </div>
+                <ChatEmptyState
+                  value={value}
+                  onChange={setValue}
+                  onSubmit={submit}
+                  disabled={sendMutation.isPending || !chatId}
+                  search={search}
+                  deepThink={deepThink}
+                  onToggleSearch={() => setSearch((prev) => !prev)}
+                  onToggleDeepThink={() => setDeepThink((prev) => !prev)}
+                  autoFocus={shouldAutoFocus}
+                  focusTrigger={focusTrigger}
+                  onPromptSelect={(prompt) => {
+                    setValue(prompt);
+                    setFocusTrigger((prev) => prev + 1);
+                  }}
+                />
               )}
             </section>
 
