@@ -3,14 +3,13 @@
 import { Composer } from '@/components/chat/Composer';
 import { ChatStartHeader } from '@/components/chat/ChatStartHeader';
 import { MessageList } from '@/components/chat/MessageList';
-import { ThreadList } from '@/components/chat/ThreadList';
 import { CommandPalette } from '@/components/system/CommandPalette';
 import { Badge } from '@/components/ui/Badge';
 import { ToastHost } from '@/components/ui/Toast';
 import { useThreadsStore } from '@/store/useThreadsStore';
+import { Sidebar } from '@/components/layout/Sidebar';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useChatStore } from '@/store/useChatStore';
-import Link from 'next/link';
 import { useEffect } from 'react';
 
 export function AppShell() {
@@ -29,15 +28,7 @@ export function AppShell() {
 
   return (
     <div className="grid h-screen grid-cols-12 gap-3 p-3">
-      <aside className="col-span-12 rounded-2xl border border-slate-700 bg-slate-900/50 p-3 lg:col-span-3">
-        <nav className="mb-3 flex gap-2 text-xs">
-          <Link href="/chat">گفتگوها</Link>
-          <Link href="/models">مدل‌ها</Link>
-          <Link href="/prompts">قالب‌ها</Link>
-          <Link href="/settings">تنظیمات</Link>
-        </nav>
-        <ThreadList />
-      </aside>
+      <Sidebar />
       <main
         className="col-span-12 flex flex-col gap-3 rounded-2xl border border-slate-700 p-3 lg:col-span-9"
         style={{
