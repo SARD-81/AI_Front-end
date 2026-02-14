@@ -2,7 +2,7 @@ import './globals.css';
 import type {Metadata} from 'next';
 
 export const metadata: Metadata = {
-  title: 'DeepSeek Persian Clone',
+  title: 'AI Persian Clone',
   description: 'Frontend-only Persian RTL chat UI clone'
 };
 
