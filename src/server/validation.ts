@@ -19,7 +19,7 @@ export function validateStreamChatInput(value: unknown): StreamChatInput {
   if (typeof chatId !== 'string' || !chatId.trim()) throw new Error('chatId is required.');
   if (!Array.isArray(messages) || messages.length === 0) throw new Error('messages must be a non-empty array.');
 
-  const normalized = messages.map((message) => {
+  const normalized: Array<{role: ChatRole; content: string}> = messages.map((message) => {
     if (!isRecord(message)) throw new Error('Each message must be an object.');
     if (message.role !== 'system' && message.role !== 'user' && message.role !== 'assistant') {
       throw new Error('Invalid message role.');
@@ -32,11 +32,17 @@ export function validateStreamChatInput(value: unknown): StreamChatInput {
 
   if (model !== undefined && typeof model !== 'string') throw new Error('model must be string.');
   if (temperature !== undefined && typeof temperature !== 'number') throw new Error('temperature must be number.');
-  if (max_tokens !== undefined && (!Number.isInteger(max_tokens) || max_tokens <= 0)) {
+  if (max_tokens !== undefined && (typeof max_tokens !== 'number' || !Number.isInteger(max_tokens) || max_tokens <= 0)) {
     throw new Error('max_tokens must be a positive integer.');
   }
 
-  return {chatId, messages: normalized, model: model as string | undefined, temperature: temperature as number | undefined, max_tokens: max_tokens as number | undefined};
+  return {
+    chatId,
+    messages: normalized,
+    model: typeof model === 'string' ? model : undefined,
+    temperature: typeof temperature === 'number' ? temperature : undefined,
+    max_tokens: typeof max_tokens === 'number' ? max_tokens : undefined
+  };
 }
 
 export function validateTitle(value: unknown) {

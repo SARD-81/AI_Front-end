@@ -1,48 +1,76 @@
-import {deleteChat, getChat, renameChat} from '@/src/server/app-chat-store';
-import {jsonError, toErrorResponse} from '@/src/server/route-utils';
-import {validateTitle} from '@/src/server/validation';
+import {deleteChat, getChat, renameChat} from '../../../_lib/app-chat-store';
+import {jsonError, toErrorResponse} from '../../../_lib/route-utils';
+import {validateTitle} from '../../../_lib/validation';
 
-export async function GET(_: Request, {params}: {params: Promise<{id: string}>}) {
+export const runtime = 'nodejs';
+
+function getChatIdFromUrl(request: Request): string {
+  const {pathname} = new URL(request.url);
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[segments.length - 1] ?? '';
+}
+
+function toClientMessage(message: {
+  id: string;
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+  avalaiRequestId?: string;
+}) {
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+    avalaiRequestId: message.avalaiRequestId
+  };
+}
+
+export async function GET(request: Request) {
   try {
-    const {id} = await params;
-    const result = await getChat(id);
+    const chatId = getChatIdFromUrl(request);
+    const result = await getChat(chatId);
     if (!result) {
       return jsonError('Chat not found.', 404);
     }
+
     return Response.json({
       id: result.chat.id,
       title: result.chat.title,
-      messages: result.messages
+      messages: result.messages.map(toClientMessage)
     });
   } catch (error) {
     return toErrorResponse(error);
   }
 }
 
-export async function PATCH(request: Request, {params}: {params: Promise<{id: string}>}) {
+export async function PATCH(request: Request) {
   try {
-    const {id} = await params;
-    const body = validateTitle(await request.json());
-    if (!body.title) {
+    const chatId = getChatIdFromUrl(request);
+    const payload = validateTitle(await request.json().catch(() => ({})));
+    if (!payload.title) {
       return jsonError('title is required.', 400);
     }
-    const updated = await renameChat(id, body.title);
+
+    const updated = await renameChat(chatId, payload.title);
     if (!updated) {
       return jsonError('Chat not found.', 404);
     }
+
     return Response.json(updated);
   } catch (error) {
     return toErrorResponse(error);
   }
 }
 
-export async function DELETE(_: Request, {params}: {params: Promise<{id: string}>}) {
+export async function DELETE(request: Request) {
   try {
-    const {id} = await params;
-    const removed = await deleteChat(id);
+    const chatId = getChatIdFromUrl(request);
+    const removed = await deleteChat(chatId);
     if (!removed) {
       return jsonError('Chat not found.', 404);
     }
+
     return new Response(null, {status: 204});
   } catch (error) {
     return toErrorResponse(error);

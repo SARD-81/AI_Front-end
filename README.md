@@ -72,3 +72,17 @@ pnpm start
 ## نکته‌ی توسعه
 
 برای تجربه‌ی مستقل از بک‌اند، داده‌ی نمونه داخل `hooks/use-chat-data.ts` با فلگ `USE_LOCAL_MOCKS = true` فعال است و به‌سادگی قابل حذف/جایگزینی است.
+
+
+## 6) App API داخلی برای چت (Node runtime)
+
+Route Handlerهای زیر در `app/api/app/chats/**` فعال هستند و داده‌ها را در فایل `.data/app-chats.json` ذخیره می‌کنند:
+
+- `GET /api/app/chats` → لیست چت‌ها (200)
+- `POST /api/app/chats` → ساخت چت جدید (201)
+- `GET /api/app/chats/:id` → جزئیات چت + پیام‌ها (200 یا 404)
+- `PATCH /api/app/chats/:id` → تغییر عنوان چت (200 یا 404)
+- `DELETE /api/app/chats/:id` → حذف چت و پیام‌ها (204 یا 404)
+- `POST /api/app/chats/:id/messages` → افزودن پیام‌ها (201 یا 404)
+
+هر سه route از `runtime = "nodejs"` استفاده می‌کنند تا دسترسی filesystem برای persist محلی تضمین شود.
