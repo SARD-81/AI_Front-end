@@ -1,14 +1,15 @@
+/**
+ * Self-check curls:
+ * curl http://localhost:3000/api/app/chats
+ * curl http://localhost:3000/api/app/chats/%3Cid%3E
+ * curl http://localhost:3000/api/app/chats/<REAL_UUID_FROM_LIST>
+ */
 import {deleteChat, getChat, renameChat} from '../../../_lib/app-chat-store';
 import {jsonError, toErrorResponse} from '../../../_lib/route-utils';
+import {validateChatId} from '../../../_lib/validate-id';
 import {validateTitle} from '../../../_lib/validation';
 
 export const runtime = 'nodejs';
-
-function getChatIdFromUrl(request: Request): string {
-  const {pathname} = new URL(request.url);
-  const segments = pathname.split('/').filter(Boolean);
-  return segments[segments.length - 1] ?? '';
-}
 
 function toClientMessage(message: {
   id: string;
@@ -26,10 +27,17 @@ function toClientMessage(message: {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  _request: Request,
+  {params}: {params: {id: string}}
+) {
   try {
-    const chatId = getChatIdFromUrl(request);
-    const result = await getChat(chatId);
+    const validationError = validateChatId(params.id);
+    if (validationError) {
+      return jsonError(validationError, 400);
+    }
+
+    const result = await getChat(params.id);
     if (!result) {
       return jsonError('Chat not found.', 404);
     }
@@ -44,15 +52,22 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(
+  request: Request,
+  {params}: {params: {id: string}}
+) {
   try {
-    const chatId = getChatIdFromUrl(request);
+    const validationError = validateChatId(params.id);
+    if (validationError) {
+      return jsonError(validationError, 400);
+    }
+
     const payload = validateTitle(await request.json().catch(() => ({})));
     if (!payload.title) {
       return jsonError('title is required.', 400);
     }
 
-    const updated = await renameChat(chatId, payload.title);
+    const updated = await renameChat(params.id, payload.title);
     if (!updated) {
       return jsonError('Chat not found.', 404);
     }
@@ -63,10 +78,17 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  _request: Request,
+  {params}: {params: {id: string}}
+) {
   try {
-    const chatId = getChatIdFromUrl(request);
-    const removed = await deleteChat(chatId);
+    const validationError = validateChatId(params.id);
+    if (validationError) {
+      return jsonError(validationError, 400);
+    }
+
+    const removed = await deleteChat(params.id);
     if (!removed) {
       return jsonError('Chat not found.', 404);
     }

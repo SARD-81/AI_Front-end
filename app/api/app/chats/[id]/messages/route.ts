@@ -1,14 +1,9 @@
 import {appendMessages, getChat} from '../../../../_lib/app-chat-store';
 import {jsonError, toErrorResponse} from '../../../../_lib/route-utils';
+import {validateChatId} from '../../../../_lib/validate-id';
 import {validateMessages} from '../../../../_lib/validation';
 
 export const runtime = 'nodejs';
-
-function getChatIdFromUrl(request: Request): string {
-  const {pathname} = new URL(request.url);
-  const segments = pathname.split('/').filter(Boolean);
-  return segments[segments.length - 2] ?? '';
-}
 
 function toClientMessage(message: {
   id: string;
@@ -26,10 +21,17 @@ function toClientMessage(message: {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  _request: Request,
+  {params}: {params: {id: string}}
+) {
   try {
-    const chatId = getChatIdFromUrl(request);
-    const result = await getChat(chatId);
+    const validationError = validateChatId(params.id);
+    if (validationError) {
+      return jsonError(validationError, 400);
+    }
+
+    const result = await getChat(params.id);
     if (!result) {
       return jsonError('Chat not found.', 404);
     }
@@ -40,11 +42,18 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  {params}: {params: {id: string}}
+) {
   try {
-    const chatId = getChatIdFromUrl(request);
+    const validationError = validateChatId(params.id);
+    if (validationError) {
+      return jsonError(validationError, 400);
+    }
+
     const payload = validateMessages(await request.json().catch(() => ({})));
-    const created = await appendMessages(chatId, payload);
+    const created = await appendMessages(params.id, payload);
 
     if (!created) {
       return jsonError('Chat not found.', 404);
