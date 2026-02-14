@@ -1,7 +1,6 @@
-export interface AuthContext {
-  token?: string;
-}
-
 export interface AuthProvider {
-  getAuthContext(): Promise<AuthContext>;
+  getAccessToken(): Promise<string | null>;
+  refresh(): Promise<void>;
+  signOut(): Promise<void>;
+  // TODO(BE): clarify Bearer vs Cookie auth, refresh endpoint, expiry windows, and SSO flow.
 }
