@@ -20,9 +20,13 @@ export type ChatDetail = {
   messages: ChatMessage[];
 };
 
+export type ThinkingLevel = 'standard' | 'low' | 'medium' | 'high';
+
 export type SendMessagePayload = {
   content: string;
   deepThink: boolean;
   search: boolean;
+  thinkingLevel: ThinkingLevel;
+  // TODO(BACKEND): map thinkingLevel to backend parameters.
   // TODO: include attachment metadata once backend upload contract is finalized.
 };
