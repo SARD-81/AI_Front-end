@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '../styles/tokens.css';
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-feature-settings: 'ss01';
+}
+
+:root,
+.light,
+.dark {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.prose-chat pre,
+.prose-chat code {
+  direction: ltr;
+  unicode-bidi: plaintext;
+}

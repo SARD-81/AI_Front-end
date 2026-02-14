@@ -1,0 +1,21 @@
+{
+  "app": {
+    "newChat": "گفت‌وگوی جدید",
+    "emptyTitle": "از چه چیزی می‌خواهید صحبت کنیم؟",
+    "emptyDescription": "یک موضوع انتخاب کنید یا گفت‌وگوی تازه بسازید.",
+    "composerPlaceholder": "پیام خود را بنویسید...",
+    "send": "ارسال",
+    "search": "جستجو",
+    "deepThink": "DeepThink",
+    "today": "امروز",
+    "month": "۳۰ روز اخیر",
+    "older": "قدیمی‌تر",
+    "rename": "تغییر نام",
+    "delete": "حذف",
+    "theme": "پوسته",
+    "light": "روشن",
+    "dark": "تیره",
+    "system": "سیستم",
+    "typing": "در حال تایپ..."
+  }
+}
