@@ -63,7 +63,8 @@ const PaperclipIcon = () => (
 
 const SendIcon = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-    <path d="m7 13 5-5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 6v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="m7 11 5-5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -93,27 +94,30 @@ export function ChatStartHeader({ seedKey }: ChatStartHeaderProps) {
           <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{PERSIAN_HEADLINES[headlineIndex]}</h1>
         </div>
 
-        <div className="w-full max-w-[880px] rounded-[30px] border border-slate-700/80 bg-slate-900/70 p-4 shadow-[0_25px_60px_-30px_rgba(56,189,248,0.4)] sm:p-5">
-          <div dir="ltr" className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-              <span className="ml-1 text-sm text-slate-400 sm:text-base">پیام خود را بنویسید…</span>
-              <button className="inline-flex items-center gap-1 rounded-full border border-sky-500/60 px-3 py-1.5 text-xs text-sky-300 transition hover:border-sky-300 hover:text-sky-200">
-                <SparkIcon />
-                دیپ‌تینک
-              </button>
-              <button className="inline-flex items-center gap-1 rounded-full border border-sky-500/60 px-3 py-1.5 text-xs text-sky-300 transition hover:border-sky-300 hover:text-sky-200">
-                <SearchIcon />
-                جستجو
-              </button>
-            </div>
+        <div className="w-full max-w-[880px] rounded-[28px] border border-slate-700/80 bg-[#2f2f34] p-4 shadow-[0_25px_60px_-30px_rgba(15,23,42,0.7)] sm:p-5">
+          <div dir="rtl" className="flex flex-col gap-4">
+            <span className="text-right text-sm text-slate-300 sm:text-[30px]">پیام خود را بنویسید…</span>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/80 text-slate-200 transition hover:border-slate-400 hover:text-white">
-                <PaperclipIcon />
-              </button>
-              <button className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400">
-                <SendIcon />
-              </button>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+                <button className="inline-flex items-center gap-1 rounded-full border border-sky-500/60 px-3 py-1.5 text-xs text-sky-300 transition hover:border-sky-300 hover:text-sky-200">
+                  <SparkIcon />
+                  دیپ‌تینک
+                </button>
+                <button className="inline-flex items-center gap-1 rounded-full border border-sky-500/60 px-3 py-1.5 text-xs text-sky-300 transition hover:border-sky-300 hover:text-sky-200">
+                  <SearchIcon />
+                  جستجو
+                </button>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-500 bg-transparent text-slate-200 transition hover:border-slate-300 hover:text-white">
+                  <PaperclipIcon />
+                </button>
+                <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-500 text-white transition hover:bg-sky-400">
+                  <SendIcon />
+                </button>
+              </div>
             </div>
           </div>
         </div>
