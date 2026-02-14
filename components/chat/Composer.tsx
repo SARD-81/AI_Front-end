@@ -18,6 +18,7 @@ type ComposerProps = {
   onToggleSearch: () => void;
   onToggleDeepThink: () => void;
   autoFocus?: boolean;
+  focusTrigger?: number;
 };
 
 export function Composer({
@@ -29,7 +30,8 @@ export function Composer({
   deepThink,
   onToggleSearch,
   onToggleDeepThink,
-  autoFocus
+  autoFocus,
+  focusTrigger
 }: ComposerProps) {
   const t = useTranslations('app');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -37,6 +39,11 @@ export function Composer({
   useEffect(() => {
     if (autoFocus) textareaRef.current?.focus();
   }, [autoFocus]);
+
+  useEffect(() => {
+    if (focusTrigger === undefined) return;
+    textareaRef.current?.focus();
+  }, [focusTrigger]);
 
   return (
     <motion.div

@@ -1,0 +1,102 @@
+'use client';
+
+import {Button} from '@/components/ui/button';
+import {cn} from '@/lib/utils';
+import {Composer} from './Composer';
+
+const suggestedPrompts = [
+  'شرایط استفاده از فرصت مطالعاتی کوتاه مدت',
+  'شرایط تغییر رشته',
+  'ترکیب اعضای شورای عالی انقلاب فرهنگی',
+  'راه اندازی یک رشته جدید در دانشگاه',
+  'تحصیل همزمان در دو رشته',
+  'تبدیل وضعیت از رسمی-آزمایشی به رسمی-قطعی',
+  'حداقل و حداکثر واحد قابل اخذ در هر نیمسال',
+  'سنوات مجاز تحصیل در مقطع دکتری'
+] as const;
+
+type ChatEmptyStateProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  disabled?: boolean;
+  search: boolean;
+  deepThink: boolean;
+  onToggleSearch: () => void;
+  onToggleDeepThink: () => void;
+  autoFocus?: boolean;
+  focusTrigger?: number;
+  onPromptSelect: (prompt: string) => void;
+};
+
+export function ChatEmptyState({
+  value,
+  onChange,
+  onSubmit,
+  disabled,
+  search,
+  deepThink,
+  onToggleSearch,
+  onToggleDeepThink,
+  autoFocus,
+  focusTrigger,
+  onPromptSelect
+}: ChatEmptyStateProps) {
+  return (
+    <div className="flex h-full items-center justify-center px-4" dir="rtl">
+      <div className="w-full max-w-[800px] space-y-6 text-center">
+        <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-primary/90 via-primary to-primary/60 p-[3px] shadow-soft">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
+            <span className="text-lg font-semibold text-primary">وزارت</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h1 className="text-balance text-2xl font-semibold leading-10 text-foreground md:text-3xl">
+            به دستیار هوشمند وزارت علوم، تحقیقات و
+            <br />
+            فناوری خوش آمدید
+          </h1>
+          <p className="mx-auto max-w-[720px] text-pretty text-sm leading-7 text-muted-foreground md:text-base">
+            یک گفتگو با دستیار پیشرفته هوش مصنوعی آغاز کنید. سؤال بپرسید، کمک بگیرید یا فقط یک گفتگوی دوستانه
+            داشته باشید
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <Composer
+            value={value}
+            onChange={onChange}
+            onSubmit={onSubmit}
+            disabled={disabled}
+            search={search}
+            deepThink={deepThink}
+            onToggleSearch={onToggleSearch}
+            onToggleDeepThink={onToggleDeepThink}
+            autoFocus={autoFocus}
+            focusTrigger={focusTrigger}
+          />
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            {suggestedPrompts.map((prompt) => (
+              <Button
+                key={prompt}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onPromptSelect(prompt)}
+                className={cn(
+                  'h-auto rounded-full border-border bg-background px-4 py-2 text-sm text-foreground transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
+                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                )}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
