@@ -1,6 +1,27 @@
 import {apiFetch} from './client';
 import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
+const DEFAULT_MODEL = 'gpt-oss-120b-aws-bedrock';
+
+type ChatCompletionRequest = {
+  model: string;
+  messages: Array<{role: 'user'; content: string}>;
+  temperature: number;
+  max_tokens: number;
+  thinkingLevel: SendMessagePayload['thinkingLevel'];
+};
+
+function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
+  return {
+    model: DEFAULT_MODEL,
+    messages: [{role: 'user', content: payload.content}],
+    temperature: 0.7,
+    max_tokens: 1024,
+    thinkingLevel: payload.thinkingLevel
+    // TODO(BACKEND): map thinkingLevel to provider parameters
+  };
+}
+
 export async function getChats() {
   // TODO: wire GET /chats
   return apiFetch<ChatSummary[]>('/chats');
@@ -38,28 +59,45 @@ export async function sendMessage(chatId: string, payload: SendMessagePayload) {
 }
 
 export async function sendMessageStreaming(
-  chatId: string,
+  _chatId: string,
   payload: SendMessagePayload,
   onToken: (token: string) => void,
   onDone: () => void
 ) {
-  // TODO: define BASE_URL usage once backend endpoint is ready.
-  const response = await fetch(`/chats/${chatId}/messages/stream`, {
+  const requestPayload = buildCompletionPayload(payload);
+
+  const response = await fetch('/api/chat/stream', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
-    // TODO: include auth strategy matching apiFetch.
+    body: JSON.stringify(requestPayload)
   });
 
-  if (!response.body || !response.ok) {
-    throw new Error('Streaming request failed.');
+  if (!response.ok || !response.body) {
+    const fallbackResponse = await fetch('/api/chat/complete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(requestPayload)
+    });
+
+    if (!fallbackResponse.ok) {
+      throw new Error('ارسال پیام ناموفق بود. لطفاً دوباره تلاش کنید.');
+    }
+
+    const completion = (await fallbackResponse.json()) as {
+      choices?: Array<{message?: {content?: string}}>;
+    };
+
+    const content = completion.choices?.[0]?.message?.content ?? '';
+    if (content) {
+      onToken(content);
+    }
+    onDone();
+    return;
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
 
-  // TODO: backend must specify exact stream format (SSE, JSONL, or plain text chunks).
-  // TODO: backend must specify explicit end-of-stream signal if not relying on stream close.
   while (true) {
     const {value, done} = await reader.read();
     if (done) {
