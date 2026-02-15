@@ -31,10 +31,32 @@ const mockMessages: Record<string, ChatMessage[]> = {
   '3': [{id: 'm4', role: 'assistant', content: 'TypeScript را از Generics شروع کنیم؟', createdAt: now.toISOString()}]
 };
 
+function normalizeChatSummary(chat: Partial<ChatSummary> | undefined): ChatSummary | null {
+  if (!chat?.id) return null;
+
+  return {
+    id: chat.id,
+    title: chat.title ?? 'گفت‌وگو',
+    updatedAt: chat.updatedAt ?? new Date().toISOString()
+  };
+}
+
+function normalizeChats(chats: ChatSummary[] | undefined): ChatSummary[] {
+  if (!Array.isArray(chats)) return [];
+  return chats
+    .map((chat) => normalizeChatSummary(chat))
+    .filter((chat): chat is ChatSummary => chat !== null);
+}
+
 export function useChats() {
   return useQuery({
     queryKey: ['chats'],
-    queryFn: async () => (USE_LOCAL_MOCKS ? mockChats : getChats())
+    queryFn: async () => {
+      if (USE_LOCAL_MOCKS) return mockChats;
+
+      const chats = await getChats();
+      return normalizeChats(chats);
+    }
   });
 }
 
@@ -68,6 +90,7 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
     const nowDate = new Date();
 
     chats?.forEach((chat) => {
+      if (!chat) return;
       const diffDays = Math.floor((nowDate.getTime() - new Date(chat.updatedAt).getTime()) / 86400000);
       if (diffDays < 1) today.push(chat);
       else if (diffDays <= 30) month.push(chat);
@@ -119,7 +142,14 @@ export function useChatActions() {
           mockMessages[id] = [];
           return item;
         }
-        return createChat();
+        const createdChat = await createChat();
+        const normalizedChat = normalizeChatSummary(createdChat);
+
+        if (!normalizedChat) {
+          throw new Error('chat creation response is invalid');
+        }
+
+        return normalizedChat;
       },
       onSuccess: (chat) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => {
