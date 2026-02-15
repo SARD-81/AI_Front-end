@@ -1,5 +1,9 @@
 const DEFAULT_AVALAI_BASE_URL = 'https://api.avalai.ir/v1';
-const DEFAULT_MODEL = 'gpt-oss-120b-aws-bedrock';
+const MODEL_FALLBACK_URLS = ['https://api.avalai.ir/v1/models', 'https://api.avalai.ir/v1beta/models'];
+
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
+let cachedDefaultModel: string | null = null;
 
 type ChatRole = 'system' | 'user' | 'assistant';
 
@@ -23,15 +27,23 @@ type AvalaiErrorPayload = {
   };
 };
 
+type ModelsAttemptError = {
+  endpoint: string;
+  status: number;
+  responseText: string;
+};
+
 export class AvalaiApiError extends Error {
   status: number;
   details?: unknown;
+  requestId?: string;
 
-  constructor(status: number, message: string, details?: unknown) {
+  constructor(status: number, message: string, details?: unknown, requestId?: string) {
     super(message);
     this.name = 'AvalaiApiError';
     this.status = status;
     this.details = details;
+    this.requestId = requestId;
   }
 }
 
@@ -44,19 +56,18 @@ function getAvalaiConfig() {
   }
 
   const baseUrl = process.env.AVALAI_BASE_URL?.trim() || DEFAULT_AVALAI_BASE_URL;
+  const defaultModel = process.env.AVALAI_DEFAULT_MODEL?.trim();
 
   return {
     apiKey,
     baseUrl,
-    model: DEFAULT_MODEL
+    defaultModel: defaultModel || undefined
   };
 }
 
-function buildPayload(payload: AvalaiChatPayload, stream: boolean) {
-  const {model} = getAvalaiConfig();
-
+function buildPayload(payload: AvalaiChatPayload, stream: boolean, model: string) {
   return {
-    model: payload.model?.trim() || model,
+    model,
     messages: payload.messages,
     temperature: payload.temperature,
     max_tokens: payload.max_tokens,
@@ -66,37 +77,130 @@ function buildPayload(payload: AvalaiChatPayload, stream: boolean) {
   };
 }
 
-async function parseAvalaiError(response: Response) {
-  let details: unknown;
-
+async function readResponseText(response: Response) {
   try {
-    details = await response.json();
+    return await response.text();
   } catch {
-    details = await response.text();
+    return '';
   }
-
-  const payload = details as AvalaiErrorPayload;
-  const message = payload?.error?.message || `خطا در ارتباط با اوالای (HTTP ${response.status}).`;
-
-  throw new AvalaiApiError(response.status, message, payload?.error?.details ?? details);
 }
 
-export async function avalaiChatComplete(payload: AvalaiChatPayload) {
-  const {apiKey, baseUrl} = getAvalaiConfig();
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
+async function parseAvalaiError(response: Response): Promise<never> {
+  let details: unknown;
+  let message: string;
+
+  try {
+    details = (await response.json()) as AvalaiErrorPayload;
+    const payload = details as AvalaiErrorPayload;
+    message = payload?.error?.message || `خطا در ارتباط با اوالای (HTTP ${response.status}).`;
+    details = payload?.error?.details ?? details;
+  } catch {
+    const text = await readResponseText(response);
+    details = text;
+    message = text || `خطا در ارتباط با اوالای (HTTP ${response.status}).`;
+  }
+
+  const requestId = response.headers.get('x-request-id') ?? response.headers.get('x-avalai-request-id') ?? undefined;
+  throw new AvalaiApiError(response.status, message, details, requestId);
+}
+
+function extractModelIds(payload: unknown): string[] {
+  const list =
+    payload && typeof payload === 'object' && Array.isArray((payload as {data?: unknown[]}).data)
+      ? ((payload as {data: unknown[]}).data ?? [])
+      : [];
+
+  return list
+    .map((item) => {
+      if (!item || typeof item !== 'object') return undefined;
+      const id = (item as {id?: unknown}).id;
+      return typeof id === 'string' && id.trim() ? id.trim() : undefined;
+    })
+    .filter((item): item is string => Boolean(item));
+}
+
+function getModelsEndpoints(baseUrl: string) {
+  return [`${baseUrl.replace(/\/$/, '')}/models`, ...MODEL_FALLBACK_URLS];
+}
+
+async function fetchModelsFromEndpoint(endpoint: string, apiKey: string) {
+  const response = await fetch(endpoint, {
+    method: 'GET',
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(buildPayload(payload, false))
+      Accept: 'application/json'
+    }
   });
 
   if (!response.ok) {
-    await parseAvalaiError(response);
+    throw {
+      endpoint,
+      status: response.status,
+      responseText: await readResponseText(response)
+    } as ModelsAttemptError;
   }
 
   return response.json();
+}
+
+export async function getAvalaiModels() {
+  const {apiKey, baseUrl} = getAvalaiConfig();
+  const endpoints = getModelsEndpoints(baseUrl);
+  const errors: ModelsAttemptError[] = [];
+
+  for (const endpoint of endpoints) {
+    try {
+      const json = await fetchModelsFromEndpoint(endpoint, apiKey);
+      return {json, endpoint};
+    } catch (error) {
+      errors.push(error as ModelsAttemptError);
+    }
+  }
+
+  throw new AvalaiApiError(
+    502,
+    'دریافت لیست مدل‌های اوالای ناموفق بود.',
+    {
+      message: 'All model-list endpoints failed.',
+      attempts: errors
+    }
+  );
+}
+
+async function getFallbackModel(excludeModel?: string) {
+  const {json} = await getAvalaiModels();
+  const modelIds = extractModelIds(json);
+
+  if (modelIds.length === 0) {
+    throw new AvalaiApiError(500, 'هیچ مدل معتبری برای این API Key پیدا نشد.', {
+      code: 'AVALAI_MODELS_EMPTY',
+      modelsPayload: json
+    });
+  }
+
+  const preferred = modelIds.find((id) => id !== excludeModel) ?? modelIds[0];
+  cachedDefaultModel = preferred;
+  return preferred;
+}
+
+async function resolveRequestedModel(modelFromBody?: string) {
+  const requested = modelFromBody?.trim();
+  if (requested) return requested;
+
+  const {defaultModel} = getAvalaiConfig();
+  if (defaultModel) return defaultModel;
+
+  if (cachedDefaultModel) return cachedDefaultModel;
+
+  return getFallbackModel();
+}
+
+function isModelNotFound(status: number, message: string) {
+  const normalizedMessage = message.toLowerCase();
+  return (
+    status === 404 ||
+    (normalizedMessage.includes('requested resource') && normalizedMessage.includes('does not exist'))
+  );
 }
 
 function extractTextFromSseData(dataLine: string) {
@@ -116,21 +220,68 @@ function extractTextFromSseData(dataLine: string) {
   }
 }
 
-export async function avalaiChatStream(payload: AvalaiChatPayload) {
+async function sendChatRequest(payload: AvalaiChatPayload, model: string, stream: boolean) {
   const {apiKey, baseUrl} = getAvalaiConfig();
-  const upstreamResponse = await fetch(`${baseUrl}/chat/completions`, {
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      Accept: 'text/event-stream'
+      ...(stream ? {Accept: 'text/event-stream'} : {})
     },
-    body: JSON.stringify(buildPayload(payload, true))
+    body: JSON.stringify(buildPayload(payload, stream, model))
   });
 
-  if (!upstreamResponse.ok) {
-    await parseAvalaiError(upstreamResponse);
+  if (!response.ok) {
+    await parseAvalaiError(response);
   }
+
+  const requestId = response.headers.get('x-request-id') ?? response.headers.get('x-avalai-request-id') ?? undefined;
+  return {response, requestId};
+}
+
+async function sendChatWithModelFallback(payload: AvalaiChatPayload, stream: boolean) {
+  const requestedModel = await resolveRequestedModel(payload.model);
+
+  try {
+    const result = await sendChatRequest(payload, requestedModel, stream);
+    return {
+      ...result,
+      requestedModel,
+      modelUsed: requestedModel
+    };
+  } catch (error) {
+    if (!(error instanceof AvalaiApiError) || !isModelNotFound(error.status, error.message)) {
+      throw error;
+    }
+
+    const fallbackModel = await getFallbackModel(requestedModel);
+    const retried = await sendChatRequest(payload, fallbackModel, stream);
+
+    return {
+      ...retried,
+      requestedModel,
+      modelUsed: fallbackModel
+    };
+  }
+}
+
+export async function avalaiChatComplete(payload: AvalaiChatPayload) {
+  const {response, modelUsed, requestedModel, requestId} = await sendChatWithModelFallback(payload, false);
+  return {
+    data: await response.json(),
+    modelUsed,
+    requestedModel,
+    requestId
+  };
+}
+
+export async function avalaiChatStream(payload: AvalaiChatPayload) {
+  const {response: upstreamResponse, modelUsed, requestedModel, requestId} = await sendChatWithModelFallback(
+    payload,
+    true
+  );
 
   if (!upstreamResponse.body) {
     throw new AvalaiApiError(502, 'پاسخ استریم از اوالای معتبر نبود.');
@@ -189,12 +340,29 @@ export async function avalaiChatStream(payload: AvalaiChatPayload) {
     }
   });
 
-  return new Response(stream, {
+  const downstreamResponse = new Response(stream, {
     status: 200,
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive'
+      Connection: 'keep-alive',
+      'X-Model-Used': modelUsed,
+      'X-Backend-Provider': 'avalai'
     }
   });
+
+  if (IS_DEV) {
+    console.debug('[avalai] stream response', {
+      requestedModel,
+      modelUsed,
+      requestId
+    });
+  }
+
+  return {
+    response: downstreamResponse,
+    modelUsed,
+    requestedModel,
+    requestId
+  };
 }

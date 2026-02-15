@@ -1,13 +1,15 @@
 import {apiFetch} from './client';
 import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
-const DEFAULT_MODEL = 'gpt-oss-120b-aws-bedrock';
 const STREAM_ENDPOINT = '/api/chat/stream';
 const COMPLETE_ENDPOINT = '/api/chat/complete';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
+const MODEL_NOT_FOUND_FA_MESSAGE =
+  'مدل انتخاب‌شده برای API Key شما فعال نیست. از /api/avalai/models لیست مدل‌های مجاز را بگیرید و AVALAI_DEFAULT_MODEL را تنظیم کنید.';
+
 type ChatCompletionRequest = {
-  model: string;
+  model?: string;
   messages: Array<{role: 'user'; content: string}>;
   temperature: number;
   max_tokens: number;
@@ -22,7 +24,6 @@ type RouteErrorPayload = {
 
 function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
   return {
-    model: DEFAULT_MODEL,
     messages: [{role: 'user', content: payload.content}],
     temperature: 0.7,
     max_tokens: 1024,
@@ -31,12 +32,23 @@ function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequ
   };
 }
 
+function isModelNotFoundMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes('requested resource') && normalized.includes('does not exist');
+}
+
 async function parseRouteError(response: Response) {
   const fallbackMessage = 'ارتباط با سرویس گفتگو برقرار نشد. لطفاً دوباره تلاش کنید.';
 
   try {
     const payload = (await response.json()) as RouteErrorPayload;
-    return payload.error?.message?.trim() || fallbackMessage;
+    const message = payload.error?.message?.trim() || fallbackMessage;
+
+    if (response.status === 404 || isModelNotFoundMessage(message)) {
+      return MODEL_NOT_FOUND_FA_MESSAGE;
+    }
+
+    return message;
   } catch {
     return fallbackMessage;
   }
@@ -99,13 +111,14 @@ export async function sendMessageStreaming(
   if (IS_DEV) {
     debugLog('stream response headers', {
       endpoint: STREAM_ENDPOINT,
-      backendProvider: response.headers.get('X-Backend-Provider')
+      backendProvider: response.headers.get('X-Backend-Provider'),
+      modelUsed: response.headers.get('X-Model-Used')
     });
   }
 
   if (!response.ok || !response.body) {
     const streamErrorMessage = await parseRouteError(response);
-    debugLog('stream failed; fallback triggered', {
+    debugLog('stream failed; fallback complete attempt', {
       endpoint: STREAM_ENDPOINT,
       status: response.status,
       hasBody: Boolean(response.body)
@@ -121,7 +134,8 @@ export async function sendMessageStreaming(
     if (IS_DEV) {
       debugLog('complete response headers', {
         endpoint: COMPLETE_ENDPOINT,
-        backendProvider: fallbackResponse.headers.get('X-Backend-Provider')
+        backendProvider: fallbackResponse.headers.get('X-Backend-Provider'),
+        modelUsed: fallbackResponse.headers.get('X-Model-Used')
       });
     }
 
