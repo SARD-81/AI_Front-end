@@ -23,8 +23,10 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [streamContent, setStreamContent] = useState('');
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
+  const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
 
-  const {data: chat} = useChat(chatId);
+  const chatQuery = useChat(chatId);
+  const chat = chatQuery.data;
   const actions = useChatActions();
   const sendMutation = useSendMessage();
 
@@ -34,8 +36,9 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     return [...list, {id: 'streaming', role: 'assistant' as const, content: streamContent, createdAt: new Date().toISOString()}];
   }, [chat?.messages, streamContent]);
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = messages.length > 0 || hasSubmittedMessage;
   const shouldAutoFocus = searchParams.get('focus') === '1';
+  const showMessagesLoading = hasMessages && !chat && chatQuery.isFetching && !streamContent;
 
   const submit = async () => {
     if (!value.trim() || sendMutation.isPending || actions.create.isPending) return;
@@ -52,6 +55,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     setErrorMessage('');
     setValue('');
     setStreamContent('');
+    setHasSubmittedMessage(true);
 
     try {
       let activeChatId = chatId;
@@ -62,16 +66,18 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
         router.push(`/${locale}/chat/${activeChatId}`);
       }
 
-      await sendMutation.mutateAsync({
+      const result = await sendMutation.mutateAsync({
         chatId: activeChatId,
         payload,
         onToken: (chunk) => setStreamContent((prev) => prev + chunk)
       });
+
+      if (result?.assistantCommitted) {
+        setStreamContent('');
+      }
     } catch (error) {
       const fallback = 'ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.';
       setErrorMessage(error instanceof Error ? error.message : fallback);
-    } finally {
-      setStreamContent('');
     }
   };
 
@@ -102,7 +108,11 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">
               {hasMessages ? (
-                <MessageList messages={messages} typing={sendMutation.isPending && !streamContent} />
+                showMessagesLoading ? (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">در حال بارگذاری گفتگو...</div>
+                ) : (
+                  <MessageList messages={messages} typing={sendMutation.isPending && !streamContent} />
+                )
               ) : (
                 <ChatEmptyState
                   value={value}

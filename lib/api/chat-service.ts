@@ -3,6 +3,7 @@ import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
 const STREAM_ENDPOINT = '/api/chat/stream';
 const COMPLETE_ENDPOINT = '/api/chat/complete';
+const APP_CHATS_ENDPOINT = '/api/app/chats';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const MODEL_NOT_FOUND_FA_MESSAGE =
@@ -20,6 +21,16 @@ type RouteErrorPayload = {
   error?: {
     message?: string;
   };
+};
+
+export type AppendMessageInput = {
+  role: 'user' | 'assistant';
+  content: string;
+  avalaiRequestId?: string;
+};
+
+export type StreamResult = {
+  avalaiRequestId?: string;
 };
 
 function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
@@ -63,6 +74,10 @@ function debugLog(message: string, details?: Record<string, unknown>) {
   console.debug(`[chat-service] ${message}`);
 }
 
+function readAvaLAIRequestId(headers: Headers) {
+  return headers.get('X-AvalAI-Request-Id') ?? headers.get('X-Request-Id') ?? undefined;
+}
+
 export async function getChats() {
   return apiFetch<ChatSummary[]>('/chats');
 }
@@ -86,6 +101,14 @@ export async function deleteChat(chatId: string) {
   return apiFetch<void>(`/chats/${chatId}`, {method: 'DELETE'});
 }
 
+export async function appendMessages(chatId: string, messages: AppendMessageInput[]) {
+  return fetch(`${APP_CHATS_ENDPOINT}/${chatId}/messages`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({messages})
+  });
+}
+
 export async function sendMessage(chatId: string, payload: SendMessagePayload) {
   return apiFetch<ChatDetail>(`/chats/${chatId}/messages`, {
     method: 'POST',
@@ -98,7 +121,7 @@ export async function sendMessageStreaming(
   payload: SendMessagePayload,
   onToken: (token: string) => void,
   onDone: () => void
-) {
+): Promise<StreamResult> {
   const requestPayload = buildCompletionPayload(payload);
 
   debugLog('calling endpoint', {endpoint: STREAM_ENDPOINT, mode: 'stream'});
@@ -108,11 +131,14 @@ export async function sendMessageStreaming(
     body: JSON.stringify(requestPayload)
   });
 
+  const avalaiRequestId = readAvaLAIRequestId(response.headers);
+
   if (IS_DEV) {
     debugLog('stream response headers', {
       endpoint: STREAM_ENDPOINT,
       backendProvider: response.headers.get('X-Backend-Provider'),
-      modelUsed: response.headers.get('X-Model-Used')
+      modelUsed: response.headers.get('X-Model-Used'),
+      avalaiRequestId
     });
   }
 
@@ -131,11 +157,14 @@ export async function sendMessageStreaming(
       body: JSON.stringify(requestPayload)
     });
 
+    const fallbackRequestId = readAvaLAIRequestId(fallbackResponse.headers) ?? avalaiRequestId;
+
     if (IS_DEV) {
       debugLog('complete response headers', {
         endpoint: COMPLETE_ENDPOINT,
         backendProvider: fallbackResponse.headers.get('X-Backend-Provider'),
-        modelUsed: fallbackResponse.headers.get('X-Model-Used')
+        modelUsed: fallbackResponse.headers.get('X-Model-Used'),
+        avalaiRequestId: fallbackRequestId
       });
     }
 
@@ -153,7 +182,7 @@ export async function sendMessageStreaming(
       onToken(content);
     }
     onDone();
-    return;
+    return {avalaiRequestId: fallbackRequestId};
   }
 
   const reader = response.body.getReader();
@@ -169,4 +198,6 @@ export async function sendMessageStreaming(
     }
     onToken(decoder.decode(value, {stream: true}));
   }
+
+  return {avalaiRequestId};
 }
