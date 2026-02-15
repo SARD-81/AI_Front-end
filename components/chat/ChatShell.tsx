@@ -3,7 +3,7 @@
 import {useMemo, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
-import {useSearchParams} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
@@ -11,10 +11,11 @@ import {useThinkingLevel} from '@/hooks/use-thinking-level';
 import {Composer} from './Composer';
 import {MessageList} from './MessageList';
 import {ChatEmptyState} from './ChatEmptyState';
-import {useChat, useSendMessage} from '@/hooks/use-chat-data';
+import {useChat, useChatActions, useSendMessage} from '@/hooks/use-chat-data';
 
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [value, setValue] = useState('');
   const [search, setSearch] = useState(false);
@@ -24,6 +25,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [errorMessage, setErrorMessage] = useState('');
 
   const {data: chat} = useChat(chatId);
+  const actions = useChatActions();
   const sendMutation = useSendMessage();
 
   const messages = useMemo(() => {
@@ -36,7 +38,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const shouldAutoFocus = searchParams.get('focus') === '1';
 
   const submit = async () => {
-    if (!chatId || !value.trim() || sendMutation.isPending) return;
+    if (!value.trim() || sendMutation.isPending || actions.create.isPending) return;
 
     const message = value;
     const payload = {
@@ -52,8 +54,16 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     setStreamContent('');
 
     try {
+      let activeChatId = chatId;
+
+      if (!activeChatId) {
+        const created = await actions.create.mutateAsync();
+        activeChatId = created.id;
+        router.push(`/${locale}/chat/${activeChatId}`);
+      }
+
       await sendMutation.mutateAsync({
-        chatId,
+        chatId: activeChatId,
         payload,
         onToken: (chunk) => setStreamContent((prev) => prev + chunk)
       });
@@ -98,7 +108,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   value={value}
                   onChange={setValue}
                   onSubmit={submit}
-                  disabled={sendMutation.isPending || !chatId}
+                  disabled={sendMutation.isPending || actions.create.isPending}
                   search={search}
                   thinkingLevel={thinkingLevel}
                   onToggleSearch={() => setSearch((prev) => !prev)}
@@ -119,7 +129,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   value={value}
                   onChange={setValue}
                   onSubmit={submit}
-                  disabled={sendMutation.isPending || !chatId}
+                  disabled={sendMutation.isPending || actions.create.isPending}
                   search={search}
                   thinkingLevel={thinkingLevel}
                   onToggleSearch={() => setSearch((prev) => !prev)}
