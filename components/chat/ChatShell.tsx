@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -24,6 +24,8 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
+  const [copyToast, setCopyToast] = useState('');
+  const copyToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chatQuery = useChat(chatId);
   const chat = chatQuery.data;
@@ -40,12 +42,19 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const shouldAutoFocus = searchParams.get('focus') === '1';
   const showMessagesLoading = hasMessages && !chat && chatQuery.isFetching && !streamContent;
 
-  const submit = async () => {
-    if (!value.trim() || sendMutation.isPending || actions.create.isPending) return;
+  const showCopyToast = (text: string) => {
+    if (copyToastTimerRef.current) {
+      clearTimeout(copyToastTimerRef.current);
+    }
+    setCopyToast(text);
+    copyToastTimerRef.current = setTimeout(() => setCopyToast(''), 1400);
+  };
 
-    const message = value;
+  const submitMessage = async (nextValue: string) => {
+    if (!nextValue.trim() || sendMutation.isPending || actions.create.isPending) return;
+
     const payload = {
-      content: message,
+      content: nextValue,
       search,
       thinkingLevel,
       deepThink: thinkingLevel !== 'standard'
@@ -81,6 +90,29 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     }
   };
 
+  const submit = async () => submitMessage(value);
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      showCopyToast('کپی شد');
+    } catch {
+      showCopyToast('کپی نشد');
+    }
+  };
+
+  const handleEditMessage = (content: string) => {
+    setValue(content);
+    setFocusTrigger((prev) => prev + 1);
+  };
+
+  const handleRegenerate = async () => {
+    const currentMessages = chat?.messages ?? [];
+    const lastUserMessage = [...currentMessages].reverse().find((message) => message.role === 'user');
+    if (!lastUserMessage) return;
+    await submitMessage(lastUserMessage.content);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <div className="hidden h-full shrink-0 lg:block">
@@ -111,7 +143,13 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                 showMessagesLoading ? (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">در حال بارگذاری گفتگو...</div>
                 ) : (
-                  <MessageList messages={messages} typing={sendMutation.isPending && !streamContent} />
+                  <MessageList
+                    messages={messages}
+                    typing={sendMutation.isPending && !streamContent}
+                    onCopyMessage={handleCopyMessage}
+                    onEditMessage={(message) => handleEditMessage(message.content)}
+                    onRegenerate={handleRegenerate}
+                  />
                 )
               ) : (
                 <ChatEmptyState
@@ -144,12 +182,22 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   thinkingLevel={thinkingLevel}
                   onToggleSearch={() => setSearch((prev) => !prev)}
                   onThinkingLevelChange={setThinkingLevel}
+                  focusTrigger={focusTrigger}
                 />
               </div>
             ) : null}
           </LayoutGroup>
         </main>
       </Sheet>
+
+      <div
+        aria-live="polite"
+        className={`pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-3 py-1 text-xs text-background transition-all duration-200 ${
+          copyToast ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+        }`}
+      >
+        {copyToast}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {Check, Copy} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
 import type {ChatMessage} from '@/lib/api/chat';
+import {MessageActions} from './MessageActions';
 
 function CodeBlock({value}: {value: string}) {
   const [copied, setCopied] = useState(false);
@@ -31,41 +32,85 @@ function CodeBlock({value}: {value: string}) {
   );
 }
 
-export function MessageBubble({message}: {message: ChatMessage}) {
+function ThinkingIndicator() {
+  return (
+    <div className="inline-flex min-h-10 items-center gap-2 py-1 text-sm text-muted-foreground transition-opacity duration-200">
+      <span>در حال پاسخ…</span>
+      <span className="flex items-center gap-1" aria-hidden>
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none" />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
+          style={{animationDelay: '120ms'}}
+        />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
+          style={{animationDelay: '240ms'}}
+        />
+      </span>
+    </div>
+  );
+}
+
+type MessageBubbleProps = {
+  message: ChatMessage;
+  onCopyMessage: (content: string) => void;
+  onEditMessage?: (message: ChatMessage) => void;
+  onRegenerate?: () => void;
+};
+
+export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenerate}: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const isTyping = message.id === 'typing';
 
   return (
     <article className={cn('flex w-full', isUser ? 'justify-start' : 'justify-end')} aria-live="polite">
-      <div
-        className={cn(
-          'prose-chat w-full max-w-[92%] rounded-2xl border px-4 py-3 text-[15px] leading-7 shadow-card md:max-w-[80%]',
-          isUser ? 'border-border bg-card' : 'border-primary/20 bg-primary/10 dark:bg-primary/15'
-        )}
-      >
-        {isUser ? (
-          <p className="whitespace-pre-wrap m-0">{message.content}</p>
+      <div className={cn('flex flex-col', isUser ? 'items-start' : 'items-end', 'max-w-[90%] md:max-w-[75%]')}>
+        {isTyping ? (
+          <ThinkingIndicator />
         ) : (
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              p: ({children}) => <p className="my-2">{children}</p>,
-              code: ({className, children, ...props}) => {
-                const text = String(children).replace(/\n$/, '');
-                if (className?.includes('language-')) {
-                  return <CodeBlock value={text} />;
-                }
-                return (
-                  <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
-                    {text}
-                  </code>
-                );
-              },
-              pre: ({children}) => <>{children}</>
-            }}
+          <div
+            className={cn(
+              'prose-chat rounded-2xl px-4 py-3 text-[15px] leading-7 transition-all duration-200',
+              isUser
+                ? 'inline-flex w-fit max-w-full border border-border bg-card shadow-card'
+                : 'w-full max-w-full border-none bg-transparent px-0 py-0 shadow-none'
+            )}
           >
-            {message.content}
-          </ReactMarkdown>
+            {isUser ? (
+              <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({children}) => <p className="my-2 leading-8">{children}</p>,
+                  code: ({className, children, ...props}) => {
+                    const text = String(children).replace(/\n$/, '');
+                    if (className?.includes('language-')) {
+                      return <CodeBlock value={text} />;
+                    }
+                    return (
+                      <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
+                        {text}
+                      </code>
+                    );
+                  },
+                  pre: ({children}) => <>{children}</>
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            )}
+          </div>
         )}
+
+        {!isTyping ? (
+          <MessageActions
+            role={message.role}
+            onCopy={() => onCopyMessage(message.content)}
+            onEdit={isUser ? () => onEditMessage?.(message) : undefined}
+            onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
+          />
+        ) : null}
       </div>
     </article>
   );

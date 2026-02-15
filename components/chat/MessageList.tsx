@@ -5,7 +5,15 @@ import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
 import type {ChatMessage} from '@/lib/api/chat';
 import {MessageBubble} from './MessageBubble';
 
-export function MessageList({messages, typing}: {messages: ChatMessage[]; typing: boolean}) {
+type MessageListProps = {
+  messages: ChatMessage[];
+  typing: boolean;
+  onCopyMessage: (content: string) => void;
+  onEditMessage: (message: ChatMessage) => void;
+  onRegenerate: () => void;
+};
+
+export function MessageList({messages, typing, onCopyMessage, onEditMessage, onRegenerate}: MessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [atBottom, setAtBottom] = useState(true);
 
@@ -24,7 +32,12 @@ export function MessageList({messages, typing}: {messages: ChatMessage[]; typing
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
         itemContent={(_, message) => (
           <div className="px-3 py-2 md:px-6">
-            <MessageBubble message={message} />
+            <MessageBubble
+              message={message}
+              onCopyMessage={onCopyMessage}
+              onEditMessage={onEditMessage}
+              onRegenerate={onRegenerate}
+            />
           </div>
         )}
       />
