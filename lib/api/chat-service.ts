@@ -3,7 +3,6 @@ import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
 const STREAM_ENDPOINT = '/api/chat/stream';
 const COMPLETE_ENDPOINT = '/api/chat/complete';
-const APP_CHATS_ENDPOINT = '/api/app/chats';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const MODEL_NOT_FOUND_FA_MESSAGE =
@@ -102,9 +101,11 @@ export async function deleteChat(chatId: string) {
 }
 
 export async function appendMessages(chatId: string, messages: AppendMessageInput[]) {
-  return fetch(`${APP_CHATS_ENDPOINT}/${chatId}/messages`, {
+  return apiFetch<{
+    id: string;
+    appended: Array<AppendMessageInput & {id: string; chatId: string; createdAt: string}>;
+  }>(`/chats/${chatId}/messages`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({messages})
   });
 }
