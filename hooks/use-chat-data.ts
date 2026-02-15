@@ -101,11 +101,19 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
   }, [chats]);
 }
 
-export function useSendMessage(chatId: string) {
+export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({payload, onToken}: {payload: SendMessagePayload; onToken: (chunk: string) => void}) => {
+    mutationFn: async ({
+      chatId,
+      payload,
+      onToken
+    }: {
+      chatId: string;
+      payload: SendMessagePayload;
+      onToken: (chunk: string) => void;
+    }) => {
       if (USE_LOCAL_MOCKS) {
         const phrase = 'حتماً. این یک پاسخ نمونه‌ی تدریجی برای نمایش است.';
         for (const char of phrase) {
@@ -122,7 +130,8 @@ export function useSendMessage(chatId: string) {
       }
       return sendMessageStreaming(chatId, payload, onToken, () => undefined);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
+      const {chatId} = variables;
       await queryClient.invalidateQueries({queryKey: ['chat', chatId]});
       await queryClient.invalidateQueries({queryKey: ['chats']});
     }
