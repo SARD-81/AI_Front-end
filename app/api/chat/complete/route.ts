@@ -6,6 +6,8 @@ const BACKEND_PROVIDER_HEADERS = {
   'X-Backend-Provider': 'avalai'
 };
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 type RouteError = {
   error: {
     message: string;
@@ -61,8 +63,23 @@ export async function POST(request: Request) {
 
   try {
     const payload = validatePayload(await request.json());
-    const response = await avalaiChatComplete(payload);
-    return Response.json(response, {status: 200, headers: BACKEND_PROVIDER_HEADERS});
+    const result = await avalaiChatComplete(payload);
+
+    if (IS_DEV) {
+      console.debug('[chat/complete]', {
+        requestedModel: payload.model,
+        actualModelUsed: result.modelUsed,
+        avalaiRequestId: result.requestId
+      });
+    }
+
+    return Response.json(result.data, {
+      status: 200,
+      headers: {
+        ...BACKEND_PROVIDER_HEADERS,
+        'X-Model-Used': result.modelUsed
+      }
+    });
   } catch (error) {
     const routeError: RouteError = {
       error: {
