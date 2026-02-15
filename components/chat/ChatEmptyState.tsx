@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
@@ -48,15 +49,22 @@ export function ChatEmptyState({
       <div className="w-full max-w-[800px] space-y-6 text-center">
         <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-primary/90 via-primary to-primary/60 p-[3px] shadow-soft">
           <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
-            <span className="text-lg font-semibold text-primary">وزارت</span>
+            <Image
+              src="/logo.png"
+              alt="لوگو"
+              width={60}
+              height={60}
+              priority
+              className="h-60 w-60 object-contain"
+            />
           </div>
         </div>
 
         <div className="space-y-3">
           <h1 className="text-balance text-2xl font-semibold leading-10 text-foreground md:text-3xl">
-            به دستیار هوشمند وزارت علوم، تحقیقات و
+            به دستیار هوشمند دانشگاه
             <br />
-            فناوری خوش آمدید
+            شهید بهشتی خوش آمدید
           </h1>
           <p className="mx-auto max-w-[720px] text-pretty text-sm leading-7 text-muted-foreground md:text-base">
             یک گفتگو با دستیار پیشرفته هوش مصنوعی آغاز کنید. سؤال بپرسید، کمک بگیرید یا فقط یک گفتگوی دوستانه

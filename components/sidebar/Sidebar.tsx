@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
 import {
-  ChevronsLeft,
+  ChevronsRight,
   EllipsisVertical,
   LogOut,
   MessageCircle,
@@ -126,7 +126,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
                 title={collapsed ? 'باز کردن' : 'بستن'}
               >
-                <ChevronsLeft className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
+                <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
               </Button>
             </motion.div>
           </SidebarHeader>
