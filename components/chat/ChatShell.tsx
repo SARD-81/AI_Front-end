@@ -24,7 +24,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [errorMessage, setErrorMessage] = useState('');
 
   const {data: chat} = useChat(chatId);
-  const sendMutation = useSendMessage(chatId ?? '');
+  const sendMutation = useSendMessage();
 
   const messages = useMemo(() => {
     const list = chat?.messages ?? [];
@@ -53,6 +53,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
     try {
       await sendMutation.mutateAsync({
+        chatId,
         payload,
         onToken: (chunk) => setStreamContent((prev) => prev + chunk)
       });
