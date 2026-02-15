@@ -3,16 +3,10 @@
 import {useMemo} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
-import {
-  createChat,
-  deleteChat,
-  getChatById,
-  getChats,
-  renameChat,
-  sendMessageStreaming
-} from '@/lib/api/chat-service';
+import {appendMessages, createChat, deleteChat, getChatById, getChats, renameChat, sendMessageStreaming} from '@/lib/api/chat-service';
 
 const USE_LOCAL_MOCKS = process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const now = new Date();
 
@@ -125,6 +119,18 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
   }, [chats]);
 }
 
+function upsertChatSummary(chats: ChatSummary[] | undefined, chatId: string) {
+  const updatedAt = new Date().toISOString();
+  const next = chats ?? [];
+  const existing = next.find((item) => item.id === chatId);
+  if (!existing) {
+    return [{id: chatId, title: 'گفت‌وگو', updatedAt}, ...next];
+  }
+
+  const rest = next.filter((item) => item.id !== chatId);
+  return [{...existing, updatedAt}, ...rest];
+}
+
 export function useSendMessage() {
   const queryClient = useQueryClient();
 
@@ -138,25 +144,114 @@ export function useSendMessage() {
       payload: SendMessagePayload;
       onToken: (chunk: string) => void;
     }) => {
+      const nowIso = new Date().toISOString();
+      const userMessage: ChatMessage = {
+        id: `user-${crypto.randomUUID()}`,
+        role: 'user',
+        content: payload.content,
+        createdAt: nowIso
+      };
+
+      queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+        const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
+        return {
+          ...base,
+          messages: [...base.messages, userMessage]
+        };
+      });
+      queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
+
       if (USE_LOCAL_MOCKS) {
         const phrase = 'حتماً. این یک پاسخ نمونه‌ی تدریجی برای نمایش است.';
+        const currentMessages = mockMessages[chatId] ?? [];
+        mockMessages[chatId] = [...currentMessages, userMessage];
+
+        if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
+        if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
+
+        let finalText = '';
         for (const char of phrase) {
           await new Promise((resolve) => setTimeout(resolve, 25));
+          finalText += char;
           onToken(char);
         }
-        const currentMessages = mockMessages[chatId] ?? [];
-        mockMessages[chatId] = [
-          ...currentMessages,
-          {id: crypto.randomUUID(), role: 'user', content: payload.content, createdAt: new Date().toISOString()},
-          {id: crypto.randomUUID(), role: 'assistant', content: phrase, createdAt: new Date().toISOString()}
-        ];
-        return;
+
+        if (IS_DEV) console.debug('[chat-send] streaming ended', {chatId, length: finalText.length});
+
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${crypto.randomUUID()}`,
+          role: 'assistant',
+          content: finalText,
+          createdAt: new Date().toISOString()
+        };
+
+        mockMessages[chatId] = [...mockMessages[chatId], assistantMessage];
+        queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+          const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
+          return {...base, messages: [...base.messages, assistantMessage]};
+        });
+
+        if (IS_DEV) console.debug('[chat-send] assistant message persisted', {chatId});
+
+        return {assistantCommitted: true};
       }
-      return sendMessageStreaming(chatId, payload, onToken, () => undefined);
+
+      const userPersistResponse = await appendMessages(chatId, [{role: 'user', content: payload.content}]);
+      if (!userPersistResponse.ok) {
+        throw new Error('ارسال پیام کاربر با خطا مواجه شد.');
+      }
+      if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
+
+      let finalText = '';
+      if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
+      const streamResult = await sendMessageStreaming(
+        chatId,
+        payload,
+        (chunk) => {
+          finalText += chunk;
+          onToken(chunk);
+        },
+        () => {
+          if (IS_DEV) console.debug('[chat-send] streaming ended', {chatId, length: finalText.length});
+        }
+      );
+
+      const trimmed = finalText.trim();
+      if (!trimmed) {
+        return {assistantCommitted: false};
+      }
+
+      const assistantPersistResponse = await appendMessages(chatId, [
+        {
+          role: 'assistant',
+          content: trimmed,
+          avalaiRequestId: streamResult.avalaiRequestId
+        }
+      ]);
+
+      if (!assistantPersistResponse.ok) {
+        throw new Error('ذخیره پاسخ دستیار با خطا مواجه شد.');
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${crypto.randomUUID()}`,
+        role: 'assistant',
+        content: trimmed,
+        createdAt: new Date().toISOString()
+      };
+
+      queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+        const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
+        return {...base, messages: [...base.messages, assistantMessage]};
+      });
+      queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
+
+      if (IS_DEV) console.debug('[chat-send] assistant message persisted', {chatId});
+
+      return {assistantCommitted: true};
     },
-    onSuccess: async (_data, variables) => {
-      const {chatId} = variables;
-      await queryClient.invalidateQueries({queryKey: ['chat', chatId]});
+    onSettled: async (_data, _error, variables) => {
+      await queryClient.invalidateQueries({queryKey: ['chat', variables.chatId]});
       await queryClient.invalidateQueries({queryKey: ['chats']});
     }
   });
