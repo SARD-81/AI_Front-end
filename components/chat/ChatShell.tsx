@@ -21,6 +21,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const {thinkingLevel, setThinkingLevel} = useThinkingLevel('standard');
   const [streamContent, setStreamContent] = useState('');
   const [focusTrigger, setFocusTrigger] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const {data: chat} = useChat(chatId);
   const sendMutation = useSendMessage(chatId ?? '');
@@ -36,20 +37,31 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
   const submit = async () => {
     if (!chatId || !value.trim() || sendMutation.isPending) return;
+
+    const message = value;
     const payload = {
-      content: value,
+      content: message,
       search,
       thinkingLevel,
       deepThink: thinkingLevel !== 'standard'
       // TODO(BACKEND): confirm mapping for deepThink compatibility.
     };
+
+    setErrorMessage('');
     setValue('');
     setStreamContent('');
-    await sendMutation.mutateAsync({
-      payload,
-      onToken: (chunk) => setStreamContent((prev) => prev + chunk)
-    });
-    setStreamContent('');
+
+    try {
+      await sendMutation.mutateAsync({
+        payload,
+        onToken: (chunk) => setStreamContent((prev) => prev + chunk)
+      });
+    } catch (error) {
+      const fallback = 'ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.';
+      setErrorMessage(error instanceof Error ? error.message : fallback);
+    } finally {
+      setStreamContent('');
+    }
   };
 
   return (
@@ -71,6 +83,10 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
               </Button>
             </SheetTrigger>
           </header>
+
+          {errorMessage ? (
+            <div className="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
+          ) : null}
 
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">

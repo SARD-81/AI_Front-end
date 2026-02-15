@@ -2,6 +2,9 @@ import {apiFetch} from './client';
 import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
 const DEFAULT_MODEL = 'gpt-oss-120b-aws-bedrock';
+const STREAM_ENDPOINT = '/api/chat/stream';
+const COMPLETE_ENDPOINT = '/api/chat/complete';
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 type ChatCompletionRequest = {
   model: string;
@@ -9,6 +12,12 @@ type ChatCompletionRequest = {
   temperature: number;
   max_tokens: number;
   thinkingLevel: SendMessagePayload['thinkingLevel'];
+};
+
+type RouteErrorPayload = {
+  error?: {
+    message?: string;
+  };
 };
 
 function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
@@ -22,23 +31,39 @@ function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequ
   };
 }
 
+async function parseRouteError(response: Response) {
+  const fallbackMessage = 'ارتباط با سرویس گفتگو برقرار نشد. لطفاً دوباره تلاش کنید.';
+
+  try {
+    const payload = (await response.json()) as RouteErrorPayload;
+    return payload.error?.message?.trim() || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
+
+function debugLog(message: string, details?: Record<string, unknown>) {
+  if (!IS_DEV) return;
+  if (details) {
+    console.debug(`[chat-service] ${message}`, details);
+    return;
+  }
+  console.debug(`[chat-service] ${message}`);
+}
+
 export async function getChats() {
-  // TODO: wire GET /chats
   return apiFetch<ChatSummary[]>('/chats');
 }
 
 export async function getChatById(chatId: string) {
-  // TODO: wire GET /chats/:id
   return apiFetch<ChatDetail>(`/chats/${chatId}`);
 }
 
 export async function createChat() {
-  // TODO: wire POST /chats
   return apiFetch<ChatSummary>('/chats', {method: 'POST'});
 }
 
 export async function renameChat(chatId: string, title: string) {
-  // TODO: wire PATCH /chats/:id
   return apiFetch<ChatSummary>(`/chats/${chatId}`, {
     method: 'PATCH',
     body: JSON.stringify({title})
@@ -46,12 +71,10 @@ export async function renameChat(chatId: string, title: string) {
 }
 
 export async function deleteChat(chatId: string) {
-  // TODO: wire DELETE /chats/:id
   return apiFetch<void>(`/chats/${chatId}`, {method: 'DELETE'});
 }
 
 export async function sendMessage(chatId: string, payload: SendMessagePayload) {
-  // TODO: wire POST /chats/:id/messages
   return apiFetch<ChatDetail>(`/chats/${chatId}/messages`, {
     method: 'POST',
     body: JSON.stringify(payload)
@@ -66,28 +89,52 @@ export async function sendMessageStreaming(
 ) {
   const requestPayload = buildCompletionPayload(payload);
 
-  const response = await fetch('/api/chat/stream', {
+  debugLog('calling endpoint', {endpoint: STREAM_ENDPOINT, mode: 'stream'});
+  const response = await fetch(STREAM_ENDPOINT, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(requestPayload)
   });
 
+  if (IS_DEV) {
+    debugLog('stream response headers', {
+      endpoint: STREAM_ENDPOINT,
+      backendProvider: response.headers.get('X-Backend-Provider')
+    });
+  }
+
   if (!response.ok || !response.body) {
-    const fallbackResponse = await fetch('/api/chat/complete', {
+    const streamErrorMessage = await parseRouteError(response);
+    debugLog('stream failed; fallback triggered', {
+      endpoint: STREAM_ENDPOINT,
+      status: response.status,
+      hasBody: Boolean(response.body)
+    });
+
+    debugLog('calling endpoint', {endpoint: COMPLETE_ENDPOINT, mode: 'fallback-complete'});
+    const fallbackResponse = await fetch(COMPLETE_ENDPOINT, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(requestPayload)
     });
 
+    if (IS_DEV) {
+      debugLog('complete response headers', {
+        endpoint: COMPLETE_ENDPOINT,
+        backendProvider: fallbackResponse.headers.get('X-Backend-Provider')
+      });
+    }
+
     if (!fallbackResponse.ok) {
-      throw new Error('ارسال پیام ناموفق بود. لطفاً دوباره تلاش کنید.');
+      const completeErrorMessage = await parseRouteError(fallbackResponse);
+      throw new Error(completeErrorMessage || streamErrorMessage);
     }
 
     const completion = (await fallbackResponse.json()) as {
-      choices?: Array<{message?: {content?: string}}>;
+      choices?: Array<{message?: {content?: string}; text?: string}>;
     };
 
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '';
     if (content) {
       onToken(content);
     }
@@ -101,6 +148,8 @@ export async function sendMessageStreaming(
   while (true) {
     const {value, done} = await reader.read();
     if (done) {
+      const rest = decoder.decode();
+      if (rest) onToken(rest);
       onDone();
       break;
     }

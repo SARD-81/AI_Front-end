@@ -2,6 +2,10 @@ import {AvalaiApiError, avalaiChatStream, type AvalaiChatPayload} from '@/app/ap
 
 export const runtime = 'nodejs';
 
+const BACKEND_PROVIDER_HEADERS = {
+  'X-Backend-Provider': 'avalai'
+};
+
 type RouteError = {
   error: {
     message: string;
@@ -48,9 +52,20 @@ function validatePayload(payload: unknown): AvalaiChatPayload {
 }
 
 export async function POST(request: Request) {
+  if (!process.env.AVALAI_API_KEY) {
+    return Response.json(
+      {error: {message: 'Missing AVALAI_API_KEY'}},
+      {status: 500, headers: BACKEND_PROVIDER_HEADERS}
+    );
+  }
+
   try {
     const payload = validatePayload(await request.json());
-    return await avalaiChatStream(payload);
+    const response = await avalaiChatStream(payload);
+
+    response.headers.set('X-Backend-Provider', 'avalai');
+
+    return response;
   } catch (error) {
     const routeError: RouteError = {
       error: {
@@ -64,11 +79,6 @@ export async function POST(request: Request) {
       routeError.error.details = error.details;
     }
 
-    return Response.json(routeError, {status});
+    return Response.json(routeError, {status, headers: BACKEND_PROVIDER_HEADERS});
   }
 }
-
-// Test (stream):
-// curl -N -X POST http://localhost:3000/api/chat/stream \
-//   -H "Content-Type: application/json" \
-//   -d '{"model":"gpt-oss-120b-aws-bedrock","messages":[{"role":"user","content":"سلام"}],"temperature":0.7,"max_tokens":128}'

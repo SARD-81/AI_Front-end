@@ -2,6 +2,10 @@ import {AvalaiApiError, avalaiChatComplete, type AvalaiChatPayload} from '@/app/
 
 export const runtime = 'nodejs';
 
+const BACKEND_PROVIDER_HEADERS = {
+  'X-Backend-Provider': 'avalai'
+};
+
 type RouteError = {
   error: {
     message: string;
@@ -48,10 +52,17 @@ function validatePayload(payload: unknown): AvalaiChatPayload {
 }
 
 export async function POST(request: Request) {
+  if (!process.env.AVALAI_API_KEY) {
+    return Response.json(
+      {error: {message: 'Missing AVALAI_API_KEY'}},
+      {status: 500, headers: BACKEND_PROVIDER_HEADERS}
+    );
+  }
+
   try {
     const payload = validatePayload(await request.json());
     const response = await avalaiChatComplete(payload);
-    return Response.json(response, {status: 200});
+    return Response.json(response, {status: 200, headers: BACKEND_PROVIDER_HEADERS});
   } catch (error) {
     const routeError: RouteError = {
       error: {
@@ -63,14 +74,9 @@ export async function POST(request: Request) {
       if (error.details !== undefined) {
         routeError.error.details = error.details;
       }
-      return Response.json(routeError, {status: error.status});
+      return Response.json(routeError, {status: error.status, headers: BACKEND_PROVIDER_HEADERS});
     }
 
-    return Response.json(routeError, {status: 500});
+    return Response.json(routeError, {status: 500, headers: BACKEND_PROVIDER_HEADERS});
   }
 }
-
-// Test (non-stream):
-// curl -X POST http://localhost:3000/api/chat/complete \
-//   -H "Content-Type: application/json" \
-//   -d '{"model":"gpt-oss-120b-aws-bedrock","messages":[{"role":"user","content":"سلام"}],"temperature":0.7,"max_tokens":128}'
