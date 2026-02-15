@@ -12,7 +12,7 @@ import {
   sendMessageStreaming
 } from '@/lib/api/chat-service';
 
-const USE_LOCAL_MOCKS = true;
+const USE_LOCAL_MOCKS = process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
 
 const now = new Date();
 
@@ -119,7 +119,6 @@ export function useChatActions() {
           mockMessages[id] = [];
           return item;
         }
-        // TODO(BACKEND): replace with POST /chats and return created chat payload.
         return createChat();
       },
       onSuccess: (chat) => {
@@ -145,7 +144,6 @@ export function useChatActions() {
           }
           return Promise.resolve(undefined);
         }
-        // TODO(BACKEND): PATCH /chats/:id for title updates.
         return renameChat(chatId, title).then(() => undefined);
       },
       onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
@@ -158,10 +156,14 @@ export function useChatActions() {
           delete mockMessages[chatId];
           return Promise.resolve(undefined);
         }
-        // TODO(BACKEND): DELETE /chats/:id endpoint integration.
         return deleteChat(chatId);
       },
-      onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
+      onSuccess: (_data, chatId) => {
+        queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
+          (previous ?? []).filter((item) => item.id !== chatId)
+        );
+        queryClient.removeQueries({queryKey: ['chat', chatId]});
+      }
     })
   };
 }
