@@ -196,10 +196,7 @@ export function useSendMessage() {
         return {assistantCommitted: true};
       }
 
-      const userPersistResponse = await appendMessages(chatId, [{role: 'user', content: payload.content}]);
-      if (!userPersistResponse.ok) {
-        throw new Error('ارسال پیام کاربر با خطا مواجه شد.');
-      }
+      await appendMessages(chatId, [{role: 'user', content: payload.content}]);
       if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
 
       let finalText = '';
@@ -221,7 +218,7 @@ export function useSendMessage() {
         return {assistantCommitted: false};
       }
 
-      const assistantPersistResponse = await appendMessages(chatId, [
+      await appendMessages(chatId, [
         {
           role: 'assistant',
           content: trimmed,
@@ -229,9 +226,6 @@ export function useSendMessage() {
         }
       ]);
 
-      if (!assistantPersistResponse.ok) {
-        throw new Error('ذخیره پاسخ دستیار با خطا مواجه شد.');
-      }
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${crypto.randomUUID()}`,
