@@ -6,15 +6,19 @@ import remarkGfm from 'remark-gfm';
 import {Check, Copy} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
+import {copyToClipboard} from '@/lib/utils/clipboard';
 import type {ChatMessage} from '@/lib/api/chat';
 import {MessageActions} from './MessageActions';
 
 function CodeBlock({value}: {value: string}) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1400);
+    const copiedSuccessfully = await copyToClipboard(value);
+
+    if (copiedSuccessfully) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useRef, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -13,6 +13,8 @@ import {Composer} from './Composer';
 import {MessageList} from './MessageList';
 import {ChatEmptyState} from './ChatEmptyState';
 import {useChat, useChatActions, useSendMessage} from '@/hooks/use-chat-data';
+import {copyToClipboard} from '@/lib/utils/clipboard';
+import {toast} from 'sonner';
 
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const searchParams = useSearchParams();
@@ -25,8 +27,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
-  const [copyToast, setCopyToast] = useState('');
-  const copyToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chatQuery = useChat(chatId);
   const chat = chatQuery.data;
@@ -45,13 +45,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
 
-  const showCopyToast = (text: string) => {
-    if (copyToastTimerRef.current) {
-      clearTimeout(copyToastTimerRef.current);
-    }
-    setCopyToast(text);
-    copyToastTimerRef.current = setTimeout(() => setCopyToast(''), 1400);
-  };
 
   const submitMessage = async (nextValue: string) => {
     if (!nextValue.trim() || sendMutation.isPending || actions.create.isPending) return;
@@ -96,12 +89,14 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const submit = async () => submitMessage(value);
 
   const handleCopyMessage = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      showCopyToast('کپی شد');
-    } catch {
-      showCopyToast('کپی نشد');
+    const copied = await copyToClipboard(content);
+
+    if (copied) {
+      toast.success('کپی شد');
+      return;
     }
+
+    toast.error('کپی پیام ممکن نبود');
   };
 
   const handleEditMessage = (content: string) => {
@@ -195,15 +190,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           </LayoutGroup>
         </main>
       </Sheet>
-
-      <div
-        aria-live="polite"
-        className={`pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-3 py-1 text-xs text-background transition-all duration-200 ${
-          copyToast ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
-        }`}
-      >
-        {copyToast}
-      </div>
     </div>
   );
 }
