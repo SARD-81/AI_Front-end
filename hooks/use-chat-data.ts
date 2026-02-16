@@ -11,7 +11,6 @@ import {
   getChatById,
   getChats,
   renameChat,
-  sendMessageComplete,
   sendMessageStreaming
 } from '@/lib/api/chat-service';
 import {uid} from '@/lib/utils/uid';
@@ -149,11 +148,9 @@ export function useSendMessage() {
       if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
 
       let finalText = '';
-      let providerRequestId: string | undefined;
-
       try {
         if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
-        const streamResult = await sendMessageStreaming(
+        await sendMessageStreaming(
           chatId,
           payload,
           (chunk) => {
@@ -166,45 +163,23 @@ export function useSendMessage() {
             }
           }
         );
-        providerRequestId = streamResult.providerRequestId;
       } catch (streamError) {
-        if (IS_DEV) {
-          console.debug('[chat-send] fallback triggered', {
-            chatId,
-            reason: streamError instanceof Error ? streamError.message : 'stream_failed'
-          });
-        }
+        const message = streamError instanceof Error ? streamError.message : 'ارتباط با مدل برقرار نشد.';
+        toast.error(message);
+        throw new Error(message);
       }
 
-      let assistantContent = finalText.trim();
+      const assistantContent = finalText.trim();
 
       if (!assistantContent) {
-        if (IS_DEV) {
-          console.debug('[chat-send] fallback triggered', {
-            chatId,
-            reason: 'empty_stream_response'
-          });
-        }
-
-        try {
-          const fallbackResult = await sendMessageComplete(payload);
-          assistantContent = fallbackResult.content.trim();
-          providerRequestId = fallbackResult.providerRequestId ?? providerRequestId;
-        } catch {
-          toast.error(EMPTY_RESPONSE_MESSAGE);
-          throw new Error('پاسخ استریم و تکمیلی از سرور دریافت نشد.');
-        }
-      }
-
-      if (!assistantContent) {
+        toast.error(EMPTY_RESPONSE_MESSAGE);
         throw new Error(EMPTY_RESPONSE_MESSAGE);
       }
 
       await appendMessages(chatId, [
         {
           role: 'assistant',
-          content: assistantContent,
-          providerRequestId
+          content: assistantContent
         }
       ]);
 

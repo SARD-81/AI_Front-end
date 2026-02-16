@@ -34,21 +34,17 @@ npm run start
 - `components/chat/*` لیست پیام، پیام، کامپوزر
 - `lib/api/*` لایه‌ی API و DTO
 
-## 3) متغیر محیطی اجباری
+## 3) متغیرهای محیطی
 
-- `NEXT_PUBLIC_API_BASE_URL` (اجباری)
+- `NEXT_PUBLIC_API_BASE_URL` (برای CRUD چت)
+- `NEXT_PUBLIC_DEMO_MODE=true` (برای دمو مستقیم OpenRouter از مرورگر)
+- `NEXT_PUBLIC_OPENROUTER_API_KEY` (فقط دمو؛ در مرورگر قابل مشاهده است)
 
-نمونه:
+نمونه کامل در `.env.example` آمده است.
 
-```bash
-NEXT_PUBLIC_API_BASE_URL="https://YOUR-REAL-BACKEND"
-```
-
-اگر این متغیر تنظیم نشده باشد، در UI پیام فارسی نمایش داده می‌شود:
+اگر `NEXT_PUBLIC_API_BASE_URL` تنظیم نشده باشد، در UI پیام فارسی نمایش داده می‌شود:
 
 `آدرس API تنظیم نشده است. متغیر NEXT_PUBLIC_API_BASE_URL را تنظیم کنید.`
-
-در محیط development نیز خطا throw می‌شود تا پیکربندی اشتباه سریع مشخص شود.
 
 ## 4) قرارداد API مورد انتظار
 
@@ -59,9 +55,9 @@ NEXT_PUBLIC_API_BASE_URL="https://YOUR-REAL-BACKEND"
 - `GET    /chats/:id`
 - `PATCH  /chats/:id`
 - `DELETE /chats/:id`
-- `POST   /chats/:id/messages`
-- `POST   /chat/stream`
-- `POST   /chat/complete` (fallback اختیاری)
+- `POST   /chats/:id/messages` (برای persist پیام‌ها)
+
+> ارسال به LLM در حالت دمو از طریق provider مرورگر (`OpenRouterBrowserProvider`) انجام می‌شود و از مسیرهای BFF در Next.js استفاده نمی‌کند.
 
 > مسیرها در `lib/config/api-endpoints.ts` قابل تنظیم هستند.
 
