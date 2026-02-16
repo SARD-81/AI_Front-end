@@ -2,8 +2,8 @@ import {deleteChat, getChatDetail, renameChat} from '@/app/api/app/_lib/chat-sto
 
 export const runtime = 'nodejs';
 
-export async function GET(_request: Request, context: {params: Promise<{id: string}>}) {
-  const {id} = await context.params;
+export async function GET(_request: Request, {params}: {params: Promise<{id: string}>}) {
+  const {id} = await params;
   const chat = await getChatDetail(id);
 
   if (!chat) {
@@ -20,8 +20,8 @@ export async function GET(_request: Request, context: {params: Promise<{id: stri
   );
 }
 
-export async function PATCH(request: Request, context: {params: Promise<{id: string}>}) {
-  const {id} = await context.params;
+export async function PATCH(request: Request, {params}: {params: Promise<{id: string}>}) {
+  const {id} = await params;
   const payload = (await request.json().catch(() => ({}))) as {title?: unknown};
 
   if (typeof payload.title !== 'string' || !payload.title.trim()) {
@@ -36,8 +36,8 @@ export async function PATCH(request: Request, context: {params: Promise<{id: str
   return Response.json(updated, {status: 200});
 }
 
-export async function DELETE(_request: Request, context: {params: Promise<{id: string}>}) {
-  const {id} = await context.params;
+export async function DELETE(_request: Request, {params}: {params: Promise<{id: string}>}) {
+  const {id} = await params;
   const deleted = await deleteChat(id);
 
   if (!deleted) {

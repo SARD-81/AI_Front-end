@@ -32,6 +32,11 @@ export type StreamResult = {
   avalaiRequestId?: string;
 };
 
+export type CompleteResult = {
+  content: string;
+  avalaiRequestId?: string;
+};
+
 function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
   return {
     messages: [{role: 'user', content: payload.content}],
@@ -117,6 +122,42 @@ export async function sendMessage(chatId: string, payload: SendMessagePayload) {
   });
 }
 
+export async function sendMessageComplete(payload: SendMessagePayload): Promise<CompleteResult> {
+  const requestPayload = buildCompletionPayload(payload);
+
+  debugLog('calling endpoint', {endpoint: COMPLETE_ENDPOINT, mode: 'complete'});
+  const response = await fetch(COMPLETE_ENDPOINT, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(requestPayload)
+  });
+
+  const avalaiRequestId = readAvaLAIRequestId(response.headers);
+
+  if (IS_DEV) {
+    debugLog('complete response headers', {
+      endpoint: COMPLETE_ENDPOINT,
+      backendProvider: response.headers.get('X-Backend-Provider'),
+      modelUsed: response.headers.get('X-Model-Used'),
+      avalaiRequestId
+    });
+  }
+
+  if (!response.ok) {
+    const completeErrorMessage = await parseRouteError(response);
+    throw new Error(completeErrorMessage);
+  }
+
+  const completion = (await response.json()) as {
+    choices?: Array<{message?: {content?: string}; text?: string}>;
+  };
+
+  return {
+    content: completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '',
+    avalaiRequestId
+  };
+}
+
 export async function sendMessageStreaming(
   _chatId: string,
   payload: SendMessagePayload,
@@ -145,45 +186,7 @@ export async function sendMessageStreaming(
 
   if (!response.ok || !response.body) {
     const streamErrorMessage = await parseRouteError(response);
-    debugLog('stream failed; fallback complete attempt', {
-      endpoint: STREAM_ENDPOINT,
-      status: response.status,
-      hasBody: Boolean(response.body)
-    });
-
-    debugLog('calling endpoint', {endpoint: COMPLETE_ENDPOINT, mode: 'fallback-complete'});
-    const fallbackResponse = await fetch(COMPLETE_ENDPOINT, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(requestPayload)
-    });
-
-    const fallbackRequestId = readAvaLAIRequestId(fallbackResponse.headers) ?? avalaiRequestId;
-
-    if (IS_DEV) {
-      debugLog('complete response headers', {
-        endpoint: COMPLETE_ENDPOINT,
-        backendProvider: fallbackResponse.headers.get('X-Backend-Provider'),
-        modelUsed: fallbackResponse.headers.get('X-Model-Used'),
-        avalaiRequestId: fallbackRequestId
-      });
-    }
-
-    if (!fallbackResponse.ok) {
-      const completeErrorMessage = await parseRouteError(fallbackResponse);
-      throw new Error(completeErrorMessage || streamErrorMessage);
-    }
-
-    const completion = (await fallbackResponse.json()) as {
-      choices?: Array<{message?: {content?: string}; text?: string}>;
-    };
-
-    const content = completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '';
-    if (content) {
-      onToken(content);
-    }
-    onDone();
-    return {avalaiRequestId: fallbackRequestId};
+    throw new Error(streamErrorMessage);
   }
 
   const reader = response.body.getReader();

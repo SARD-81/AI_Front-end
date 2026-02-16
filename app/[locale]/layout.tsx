@@ -25,12 +25,10 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang="fa" dir="rtl" suppressHydrationWarning>
-      <body className={`${vazirmatn.variable} font-sans`}>
-        <AppProviders locale={locale} messages={messages}>
-          {children}
-        </AppProviders>
-      </body>
-    </html>
+    <div className={`${vazirmatn.variable} font-sans`}>
+      <AppProviders locale={locale} messages={messages}>
+        {children}
+      </AppProviders>
+    </div>
   );
 }

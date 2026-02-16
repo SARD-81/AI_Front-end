@@ -7,6 +7,7 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
+import {Skeleton} from '@/components/ui/skeleton';
 import {useThinkingLevel} from '@/hooks/use-thinking-level';
 import {Composer} from './Composer';
 import {MessageList} from './MessageList';
@@ -38,9 +39,11 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     return [...list, {id: 'streaming', role: 'assistant' as const, content: streamContent, createdAt: new Date().toISOString()}];
   }, [chat?.messages, streamContent]);
 
-  const hasMessages = messages.length > 0 || hasSubmittedMessage;
   const shouldAutoFocus = searchParams.get('focus') === '1';
-  const showMessagesLoading = hasMessages && !chat && chatQuery.isFetching && !streamContent;
+  const isChatLoading = Boolean(chatId) && !chat && chatQuery.isFetching;
+  const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
+  const hasMessages = messages.length > 0;
+  const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
 
   const showCopyToast = (text: string) => {
     if (copyToastTimerRef.current) {
@@ -139,19 +142,14 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">
-              {hasMessages ? (
-                showMessagesLoading ? (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">در حال بارگذاری گفتگو...</div>
-                ) : (
-                  <MessageList
-                    messages={messages}
-                    typing={sendMutation.isPending && !streamContent}
-                    onCopyMessage={handleCopyMessage}
-                    onEditMessage={(message) => handleEditMessage(message.content)}
-                    onRegenerate={handleRegenerate}
-                  />
-                )
-              ) : (
+              {isChatLoading ? (
+                <div className="space-y-4 px-4 py-6 md:px-6">
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-16 w-4/5" />
+                  <Skeleton className="h-12 w-3/5" />
+                  <Skeleton className="h-20 w-5/6" />
+                </div>
+              ) : shouldShowEmptyState ? (
                 <ChatEmptyState
                   value={value}
                   onChange={setValue}
@@ -168,10 +166,18 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                     setFocusTrigger((prev) => prev + 1);
                   }}
                 />
+              ) : (
+                <MessageList
+                  messages={messages}
+                  typing={sendMutation.isPending && !streamContent}
+                  onCopyMessage={handleCopyMessage}
+                  onEditMessage={(message) => handleEditMessage(message.content)}
+                  onRegenerate={handleRegenerate}
+                />
               )}
             </section>
 
-            {hasMessages ? (
+            {!shouldShowEmptyState ? (
               <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 p-3 backdrop-blur md:p-4">
                 <Composer
                   value={value}
