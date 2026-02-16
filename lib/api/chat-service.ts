@@ -6,7 +6,7 @@ const COMPLETE_ENDPOINT = '/api/chat/complete';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const MODEL_NOT_FOUND_FA_MESSAGE =
-  'مدل انتخاب‌شده برای API Key شما فعال نیست. از /api/avalai/models لیست مدل‌های مجاز را بگیرید و AVALAI_DEFAULT_MODEL را تنظیم کنید.';
+  'مدل انتخاب‌شده در OpenRouter در دسترس نیست. مقدار OPENROUTER_DEFAULT_MODEL یا مدل ارسالی را بررسی کنید.';
 
 type ChatCompletionRequest = {
   model?: string;
@@ -25,20 +25,21 @@ type RouteErrorPayload = {
 export type AppendMessageInput = {
   role: 'user' | 'assistant';
   content: string;
-  avalaiRequestId?: string;
+  providerRequestId?: string;
 };
 
 export type StreamResult = {
-  avalaiRequestId?: string;
+  providerRequestId?: string;
 };
 
 export type CompleteResult = {
   content: string;
-  avalaiRequestId?: string;
+  providerRequestId?: string;
 };
 
 function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequest {
   return {
+    model: 'openai/gpt-4o-mini',
     messages: [{role: 'user', content: payload.content}],
     temperature: 0.7,
     max_tokens: 1024,
@@ -49,7 +50,7 @@ function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequ
 
 function isModelNotFoundMessage(message: string) {
   const normalized = message.toLowerCase();
-  return normalized.includes('requested resource') && normalized.includes('does not exist');
+  return normalized.includes('model') && (normalized.includes('not found') || normalized.includes('does not exist'));
 }
 
 async function parseRouteError(response: Response) {
@@ -78,8 +79,8 @@ function debugLog(message: string, details?: Record<string, unknown>) {
   console.debug(`[chat-service] ${message}`);
 }
 
-function readAvaLAIRequestId(headers: Headers) {
-  return headers.get('X-AvalAI-Request-Id') ?? headers.get('X-Request-Id') ?? undefined;
+function readProviderRequestId(headers: Headers) {
+  return headers.get('X-Request-Id') ?? headers.get('x-openrouter-request-id') ?? undefined;
 }
 
 export async function getChats() {
@@ -132,14 +133,14 @@ export async function sendMessageComplete(payload: SendMessagePayload): Promise<
     body: JSON.stringify(requestPayload)
   });
 
-  const avalaiRequestId = readAvaLAIRequestId(response.headers);
+  const providerRequestId = readProviderRequestId(response.headers);
 
   if (IS_DEV) {
     debugLog('complete response headers', {
       endpoint: COMPLETE_ENDPOINT,
-      backendProvider: response.headers.get('X-Backend-Provider'),
+      llmProvider: response.headers.get('X-LLM-Provider'),
       modelUsed: response.headers.get('X-Model-Used'),
-      avalaiRequestId
+      providerRequestId
     });
   }
 
@@ -154,7 +155,7 @@ export async function sendMessageComplete(payload: SendMessagePayload): Promise<
 
   return {
     content: completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '',
-    avalaiRequestId
+    providerRequestId
   };
 }
 
@@ -173,14 +174,14 @@ export async function sendMessageStreaming(
     body: JSON.stringify(requestPayload)
   });
 
-  const avalaiRequestId = readAvaLAIRequestId(response.headers);
+  const providerRequestId = readProviderRequestId(response.headers);
 
   if (IS_DEV) {
     debugLog('stream response headers', {
       endpoint: STREAM_ENDPOINT,
-      backendProvider: response.headers.get('X-Backend-Provider'),
+      llmProvider: response.headers.get('X-LLM-Provider'),
       modelUsed: response.headers.get('X-Model-Used'),
-      avalaiRequestId
+      providerRequestId
     });
   }
 
@@ -203,5 +204,5 @@ export async function sendMessageStreaming(
     onToken(decoder.decode(value, {stream: true}));
   }
 
-  return {avalaiRequestId};
+  return {providerRequestId};
 }

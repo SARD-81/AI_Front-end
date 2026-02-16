@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 type MessageInput = {
   role: 'user' | 'assistant';
   content: string;
-  avalaiRequestId?: string;
+  providerRequestId?: string;
 };
 
 function isValidMessage(item: unknown): item is MessageInput {
@@ -17,7 +17,7 @@ function isValidMessage(item: unknown): item is MessageInput {
 
   if (role !== 'user' && role !== 'assistant') return false;
   if (typeof content !== 'string' || !content.trim()) return false;
-  if (message.avalaiRequestId !== undefined && typeof message.avalaiRequestId !== 'string') return false;
+  if (message.providerRequestId !== undefined && typeof message.providerRequestId !== 'string') return false;
 
   return true;
 }
