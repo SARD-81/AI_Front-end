@@ -13,6 +13,7 @@ import {
   sendMessageComplete,
   sendMessageStreaming
 } from '@/lib/api/chat-service';
+import {uid} from '@/lib/utils/uid';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 const USE_LOCAL_MOCKS = IS_DEV && process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
@@ -161,7 +162,7 @@ export function useSendMessage() {
     }) => {
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
-        id: `user-${crypto.randomUUID()}`,
+        id: uid('user'),
         role: 'user',
         content: payload.content,
         createdAt: nowIso
@@ -194,7 +195,7 @@ export function useSendMessage() {
         if (IS_DEV) console.debug('[chat-send] streaming ended with length', {chatId, length: finalText.length});
 
         const assistantMessage: ChatMessage = {
-          id: `assistant-${crypto.randomUUID()}`,
+          id: uid('assistant'),
           role: 'assistant',
           content: finalText,
           createdAt: new Date().toISOString()
@@ -270,7 +271,7 @@ export function useSendMessage() {
       ]);
 
       const assistantMessage: ChatMessage = {
-        id: `assistant-${crypto.randomUUID()}`,
+        id: uid('assistant'),
         role: 'assistant',
         content: assistantContent,
         createdAt: new Date().toISOString()
@@ -293,7 +294,7 @@ export function useChatActions() {
   const queryClient = useQueryClient();
 
   const createFallbackChat = (title?: string): ChatSummary => ({
-    id: crypto.randomUUID(),
+    id: uid(),
     title: title ?? 'گفت‌وگوی جدید',
     updatedAt: new Date().toISOString()
   });
