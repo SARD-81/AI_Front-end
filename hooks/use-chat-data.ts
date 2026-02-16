@@ -179,8 +179,6 @@ export function useSendMessage() {
       let assistantContent = finalText.trim();
 
       if (!assistantContent) {
-        toast.error(EMPTY_RESPONSE_MESSAGE);
-
         if (IS_DEV) {
           console.debug('[chat-send] fallback triggered', {
             chatId,
@@ -188,9 +186,14 @@ export function useSendMessage() {
           });
         }
 
-        const fallbackResult = await sendMessageComplete(payload);
-        assistantContent = fallbackResult.content.trim();
-        providerRequestId = fallbackResult.providerRequestId ?? providerRequestId;
+        try {
+          const fallbackResult = await sendMessageComplete(payload);
+          assistantContent = fallbackResult.content.trim();
+          providerRequestId = fallbackResult.providerRequestId ?? providerRequestId;
+        } catch {
+          toast.error(EMPTY_RESPONSE_MESSAGE);
+          throw new Error('پاسخ استریم و تکمیلی از سرور دریافت نشد.');
+        }
       }
 
       if (!assistantContent) {

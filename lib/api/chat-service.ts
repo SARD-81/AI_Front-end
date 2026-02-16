@@ -1,12 +1,10 @@
-import {apiFetch} from './client';
+import {apiFetch, resolveApiUrl} from './client';
+import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import type {ChatDetail, ChatSummary, SendMessagePayload} from './chat';
 
-const STREAM_ENDPOINT = '/api/chat/stream';
-const COMPLETE_ENDPOINT = '/api/chat/complete';
 const IS_DEV = process.env.NODE_ENV !== 'production';
-
-const MODEL_NOT_FOUND_FA_MESSAGE =
-  'مدل انتخاب‌شده در OpenRouter در دسترس نیست. مقدار OPENROUTER_DEFAULT_MODEL یا مدل ارسالی را بررسی کنید.';
+const STREAM_ERROR_FA_MESSAGE = 'استریم پاسخ از سرور ناموفق بود. لطفاً دوباره تلاش کنید.';
+const COMPLETE_ERROR_FA_MESSAGE = 'پاسخ کامل از سرور دریافت نشد. لطفاً دوباره تلاش کنید.';
 
 type ChatCompletionRequest = {
   model?: string;
@@ -20,6 +18,7 @@ type RouteErrorPayload = {
   error?: {
     message?: string;
   };
+  message?: string;
 };
 
 export type AppendMessageInput = {
@@ -48,23 +47,12 @@ function buildCompletionPayload(payload: SendMessagePayload): ChatCompletionRequ
   };
 }
 
-function isModelNotFoundMessage(message: string) {
-  const normalized = message.toLowerCase();
-  return normalized.includes('model') && (normalized.includes('not found') || normalized.includes('does not exist'));
-}
-
-async function parseRouteError(response: Response) {
-  const fallbackMessage = 'ارتباط با سرویس گفتگو برقرار نشد. لطفاً دوباره تلاش کنید.';
-
+async function parseRouteError(response: Response, fallbackMessage: string) {
   try {
     const payload = (await response.json()) as RouteErrorPayload;
-    const message = payload.error?.message?.trim() || fallbackMessage;
+    const message = payload.error?.message?.trim() || payload.message?.trim();
 
-    if (response.status === 404 || isModelNotFoundMessage(message)) {
-      return MODEL_NOT_FOUND_FA_MESSAGE;
-    }
-
-    return message;
+    return message || fallbackMessage;
   } catch {
     return fallbackMessage;
   }
@@ -80,44 +68,44 @@ function debugLog(message: string, details?: Record<string, unknown>) {
 }
 
 function readProviderRequestId(headers: Headers) {
-  return headers.get('X-Request-Id') ?? headers.get('x-openrouter-request-id') ?? undefined;
+  return headers.get('X-Request-Id') ?? headers.get('x-request-id') ?? undefined;
 }
 
 export async function getChats() {
-  return apiFetch<ChatSummary[]>('/chats');
+  return apiFetch<ChatSummary[]>(API_ENDPOINTS.chatsBase);
 }
 
 export async function getChatById(chatId: string) {
-  return apiFetch<ChatDetail>(`/chats/${chatId}`);
+  return apiFetch<ChatDetail>(API_ENDPOINTS.chatById(chatId));
 }
 
 export async function createChat() {
-  return apiFetch<ChatSummary>('/chats', {method: 'POST'});
+  return apiFetch<ChatSummary>(API_ENDPOINTS.chatsBase, {method: 'POST'});
 }
 
 export async function renameChat(chatId: string, title: string) {
-  return apiFetch<ChatSummary>(`/chats/${chatId}`, {
+  return apiFetch<ChatSummary>(API_ENDPOINTS.chatById(chatId), {
     method: 'PATCH',
     body: JSON.stringify({title})
   });
 }
 
 export async function deleteChat(chatId: string) {
-  return apiFetch<void>(`/chats/${chatId}`, {method: 'DELETE'});
+  return apiFetch<void>(API_ENDPOINTS.chatById(chatId), {method: 'DELETE'});
 }
 
 export async function appendMessages(chatId: string, messages: AppendMessageInput[]) {
   return apiFetch<{
     id: string;
     appended: Array<AppendMessageInput & {id: string; chatId: string; createdAt: string}>;
-  }>(`/chats/${chatId}/messages`, {
+  }>(API_ENDPOINTS.chatMessages(chatId), {
     method: 'POST',
     body: JSON.stringify({messages})
   });
 }
 
 export async function sendMessage(chatId: string, payload: SendMessagePayload) {
-  return apiFetch<ChatDetail>(`/chats/${chatId}/messages`, {
+  return apiFetch<ChatDetail>(API_ENDPOINTS.chatMessages(chatId), {
     method: 'POST',
     body: JSON.stringify(payload)
   });
@@ -125,9 +113,11 @@ export async function sendMessage(chatId: string, payload: SendMessagePayload) {
 
 export async function sendMessageComplete(payload: SendMessagePayload): Promise<CompleteResult> {
   const requestPayload = buildCompletionPayload(payload);
+  const endpoint = resolveApiUrl(API_ENDPOINTS.complete);
 
-  debugLog('calling endpoint', {endpoint: COMPLETE_ENDPOINT, mode: 'complete'});
-  const response = await fetch(COMPLETE_ENDPOINT, {
+  debugLog('calling endpoint', {endpoint, mode: 'complete'});
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(requestPayload)
@@ -135,26 +125,18 @@ export async function sendMessageComplete(payload: SendMessagePayload): Promise<
 
   const providerRequestId = readProviderRequestId(response.headers);
 
-  if (IS_DEV) {
-    debugLog('complete response headers', {
-      endpoint: COMPLETE_ENDPOINT,
-      llmProvider: response.headers.get('X-LLM-Provider'),
-      modelUsed: response.headers.get('X-Model-Used'),
-      providerRequestId
-    });
-  }
-
   if (!response.ok) {
-    const completeErrorMessage = await parseRouteError(response);
+    const completeErrorMessage = await parseRouteError(response, COMPLETE_ERROR_FA_MESSAGE);
     throw new Error(completeErrorMessage);
   }
 
   const completion = (await response.json()) as {
     choices?: Array<{message?: {content?: string}; text?: string}>;
+    content?: string;
   };
 
   return {
-    content: completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '',
+    content: completion.content ?? completion.choices?.[0]?.message?.content ?? completion.choices?.[0]?.text ?? '',
     providerRequestId
   };
 }
@@ -166,9 +148,11 @@ export async function sendMessageStreaming(
   onDone: () => void
 ): Promise<StreamResult> {
   const requestPayload = buildCompletionPayload(payload);
+  const endpoint = resolveApiUrl(API_ENDPOINTS.stream);
 
-  debugLog('calling endpoint', {endpoint: STREAM_ENDPOINT, mode: 'stream'});
-  const response = await fetch(STREAM_ENDPOINT, {
+  debugLog('calling endpoint', {endpoint, mode: 'stream'});
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(requestPayload)
@@ -176,17 +160,8 @@ export async function sendMessageStreaming(
 
   const providerRequestId = readProviderRequestId(response.headers);
 
-  if (IS_DEV) {
-    debugLog('stream response headers', {
-      endpoint: STREAM_ENDPOINT,
-      llmProvider: response.headers.get('X-LLM-Provider'),
-      modelUsed: response.headers.get('X-Model-Used'),
-      providerRequestId
-    });
-  }
-
   if (!response.ok || !response.body) {
-    const streamErrorMessage = await parseRouteError(response);
+    const streamErrorMessage = await parseRouteError(response, STREAM_ERROR_FA_MESSAGE);
     throw new Error(streamErrorMessage);
   }
 
@@ -206,3 +181,5 @@ export async function sendMessageStreaming(
 
   return {providerRequestId};
 }
+
+// TODO(BACKEND): ensure backend CORS allows your frontend origin (e.g., deployed Vercel domain).

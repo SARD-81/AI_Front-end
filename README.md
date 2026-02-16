@@ -34,35 +34,54 @@ npm run start
 - `components/chat/*` لیست پیام، پیام، کامپوزر
 - `lib/api/*` لایه‌ی API و DTO
 
-## 3) متغیرهای محیطی OpenRouter
+## 3) متغیر محیطی اجباری
 
-- `OPENROUTER_API_KEY` (اجباری)
-- `OPENROUTER_BASE_URL` (اختیاری، پیش‌فرض: `https://openrouter.ai/api/v1`)
-- `OPENROUTER_DEFAULT_MODEL` (اختیاری، پیش‌فرض: `openai/gpt-4o-mini`)
-- `OPENROUTER_SITE_URL` (اختیاری، برای هدر `HTTP-Referer`)
-- `OPENROUTER_APP_NAME` (اختیاری، برای هدر `X-Title`)
+- `NEXT_PUBLIC_API_BASE_URL` (اجباری)
 
-> همه‌ی فراخوانی‌های LLM فقط در Route Handlerهای سرور انجام می‌شود و API key در مرورگر استفاده نمی‌شود.
+نمونه:
 
-## 4) محل دقیق TODOهای اتصال بک‌اند
+```bash
+NEXT_PUBLIC_API_BASE_URL="https://YOUR-REAL-BACKEND"
+```
+
+اگر این متغیر تنظیم نشده باشد، در UI پیام فارسی نمایش داده می‌شود:
+
+`آدرس API تنظیم نشده است. متغیر NEXT_PUBLIC_API_BASE_URL را تنظیم کنید.`
+
+در محیط development نیز خطا throw می‌شود تا پیکربندی اشتباه سریع مشخص شود.
+
+## 4) قرارداد API مورد انتظار
+
+این پروژه **PURE FRONTEND** است و مستقیماً به بک‌اند واقعی متصل می‌شود (بدون BFF در Next.js):
+
+- `GET    /chats`
+- `POST   /chats`
+- `GET    /chats/:id`
+- `PATCH  /chats/:id`
+- `DELETE /chats/:id`
+- `POST   /chats/:id/messages`
+- `POST   /chat/stream`
+- `POST   /chat/complete` (fallback اختیاری)
+
+> مسیرها در `lib/config/api-endpoints.ts` قابل تنظیم هستند.
+
+> TODO(BACKEND): باید CORS برای origin فرانت‌اند (مثلاً دامنه Vercel) در بک‌اند فعال باشد.
+
+## 5) محل دقیق TODOهای اتصال بک‌اند
 
 - `lib/api/client.ts`
-  - TODO برای `BASE_URL`
   - TODO برای استراتژی auth (token/cookie)
+- `lib/config/api-endpoints.ts`
+  - TODO برای تنظیم مسیرها در صورت تفاوت قرارداد بک‌اند
 - `lib/api/chat-service.ts`
-  - TODO برای `GET /chats`
-  - TODO برای `GET /chats/:id`
-  - TODO برای `POST /chats`
-  - TODO برای `POST /chats/:id/messages`
-  - TODO برای `PATCH /chats/:id`
-  - TODO برای `DELETE /chats/:id`
-  - TODO برای پروتکل استریم (SSE/JSONL/plain text) و end-of-stream
+  - TODO برای map کردن `thinkingLevel` به پارامترهای واقعی بک‌اند
+  - TODO برای CORS در بک‌اند
 - `components/chat/Composer.tsx`
   - TODO برای اتصال آپلود فایل
 - `lib/api/chat.ts`
   - TODO برای metadata ضمیمه‌ها
 
-## 5) تغییر توکن‌های رنگ/تم
+## 6) تغییر توکن‌های رنگ/تم
 
 - توکن‌های رنگ، spacing، radius در `styles/tokens.css` تعریف شده‌اند.
 - نگاشت Tailwind به variables در `tailwind.config.ts` انجام شده است.
@@ -70,7 +89,7 @@ npm run start
   1. متغیرهای `:root` و `.dark` را تغییر دهید.
   2. در صورت نیاز shadow/border radius را در Tailwind extend تنظیم کنید.
 
-## 6) RTL و LTR برای code blocks
+## 7) RTL و LTR برای code blocks
 
 - جهت کل اپ در `app/[locale]/layout.tsx` روی `dir="rtl"` تنظیم شده.
 - برای جلوگیری از بهم‌ریختگی کد:
