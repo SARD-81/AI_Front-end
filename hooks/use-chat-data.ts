@@ -3,10 +3,23 @@
 import {useMemo} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
-import {appendMessages, createChat, deleteChat, getChatById, getChats, renameChat, sendMessageStreaming} from '@/lib/api/chat-service';
+import {
+  appendMessages,
+  createChat,
+  deleteChat,
+  getChatById,
+  getChats,
+  renameChat,
+  sendMessageComplete,
+  sendMessageStreaming
+} from '@/lib/api/chat-service';
 
-const USE_LOCAL_MOCKS = process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
 const IS_DEV = process.env.NODE_ENV !== 'production';
+const USE_LOCAL_MOCKS = IS_DEV && process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
+
+if (USE_LOCAL_MOCKS && IS_DEV) {
+  console.warn('[chat] حالت mock فعال است و فقط در محیط توسعه قابل استفاده است.');
+}
 
 const now = new Date();
 
@@ -24,6 +37,8 @@ const mockMessages: Record<string, ChatMessage[]> = {
   '2': [{id: 'm3', role: 'assistant', content: 'می‌تونیم تقویم هفتگی محتوا بچینیم.', createdAt: now.toISOString()}],
   '3': [{id: 'm4', role: 'assistant', content: 'TypeScript را از Generics شروع کنیم؟', createdAt: now.toISOString()}]
 };
+
+const EMPTY_RESPONSE_MESSAGE = 'پاسخ خالی دریافت شد. لطفاً دوباره تلاش کنید.';
 
 function normalizeChatSummary(chat: (Partial<ChatSummary> & Record<string, unknown>) | undefined): ChatSummary | null {
   if (!chat) return null;
@@ -176,7 +191,7 @@ export function useSendMessage() {
           onToken(char);
         }
 
-        if (IS_DEV) console.debug('[chat-send] streaming ended', {chatId, length: finalText.length});
+        if (IS_DEV) console.debug('[chat-send] streaming ended with length', {chatId, length: finalText.length});
 
         const assistantMessage: ChatMessage = {
           id: `assistant-${crypto.randomUUID()}`,
@@ -191,7 +206,7 @@ export function useSendMessage() {
           return {...base, messages: [...base.messages, assistantMessage]};
         });
 
-        if (IS_DEV) console.debug('[chat-send] assistant message persisted', {chatId});
+        if (IS_DEV) console.debug('[chat-send] assistant committed', {chatId});
 
         return {assistantCommitted: true};
       }
@@ -200,37 +215,64 @@ export function useSendMessage() {
       if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
 
       let finalText = '';
-      if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
-      const streamResult = await sendMessageStreaming(
-        chatId,
-        payload,
-        (chunk) => {
-          finalText += chunk;
-          onToken(chunk);
-        },
-        () => {
-          if (IS_DEV) console.debug('[chat-send] streaming ended', {chatId, length: finalText.length});
-        }
-      );
+      let avalaiRequestId: string | undefined;
 
-      const trimmed = finalText.trim();
-      if (!trimmed) {
-        return {assistantCommitted: false};
+      try {
+        if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
+        const streamResult = await sendMessageStreaming(
+          chatId,
+          payload,
+          (chunk) => {
+            finalText += chunk;
+            onToken(chunk);
+          },
+          () => {
+            if (IS_DEV) {
+              console.debug('[chat-send] streaming ended with length', {chatId, length: finalText.length});
+            }
+          }
+        );
+        avalaiRequestId = streamResult.avalaiRequestId;
+      } catch (streamError) {
+        if (IS_DEV) {
+          console.debug('[chat-send] fallback triggered', {
+            chatId,
+            reason: streamError instanceof Error ? streamError.message : 'stream_failed'
+          });
+        }
+      }
+
+      let assistantContent = finalText.trim();
+
+      if (!assistantContent) {
+        if (IS_DEV) {
+          console.debug('[chat-send] fallback triggered', {
+            chatId,
+            reason: 'empty_stream_response'
+          });
+        }
+
+        const fallbackResult = await sendMessageComplete(payload);
+        assistantContent = fallbackResult.content.trim();
+        avalaiRequestId = fallbackResult.avalaiRequestId ?? avalaiRequestId;
+      }
+
+      if (!assistantContent) {
+        throw new Error(EMPTY_RESPONSE_MESSAGE);
       }
 
       await appendMessages(chatId, [
         {
           role: 'assistant',
-          content: trimmed,
-          avalaiRequestId: streamResult.avalaiRequestId
+          content: assistantContent,
+          avalaiRequestId
         }
       ]);
-
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${crypto.randomUUID()}`,
         role: 'assistant',
-        content: trimmed,
+        content: assistantContent,
         createdAt: new Date().toISOString()
       };
 
@@ -240,13 +282,9 @@ export function useSendMessage() {
       });
       queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
 
-      if (IS_DEV) console.debug('[chat-send] assistant message persisted', {chatId});
+      if (IS_DEV) console.debug('[chat-send] assistant committed', {chatId});
 
       return {assistantCommitted: true};
-    },
-    onSettled: async (_data, _error, variables) => {
-      await queryClient.invalidateQueries({queryKey: ['chat', variables.chatId]});
-      await queryClient.invalidateQueries({queryKey: ['chats']});
     }
   });
 }

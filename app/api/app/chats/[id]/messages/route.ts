@@ -22,8 +22,8 @@ function isValidMessage(item: unknown): item is MessageInput {
   return true;
 }
 
-export async function POST(request: Request, context: {params: Promise<{id: string}>}) {
-  const {id} = await context.params;
+export async function POST(request: Request, {params}: {params: Promise<{id: string}>}) {
+  const {id} = await params;
   const payload = (await request.json().catch(() => ({}))) as {messages?: unknown};
 
   if (!Array.isArray(payload.messages) || payload.messages.length === 0 || !payload.messages.every(isValidMessage)) {

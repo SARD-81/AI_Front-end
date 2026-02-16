@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
-  return children;
+  return (
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground">{children}</body>
+    </html>
+  );
 }
