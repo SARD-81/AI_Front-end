@@ -2,6 +2,7 @@
 
 import {useMemo} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {toast} from 'sonner';
 import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
 import {
   appendMessages,
@@ -16,29 +17,6 @@ import {
 import {uid} from '@/lib/utils/uid';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
-const USE_LOCAL_MOCKS = IS_DEV && process.env.NEXT_PUBLIC_USE_MOCK_CHAT === 'true';
-
-if (USE_LOCAL_MOCKS && IS_DEV) {
-  console.warn('[chat] حالت mock فعال است و فقط در محیط توسعه قابل استفاده است.');
-}
-
-const now = new Date();
-
-const mockChats: ChatSummary[] = [
-  {id: '1', title: 'برنامه‌ریزی سفر شیراز', updatedAt: now.toISOString()},
-  {id: '2', title: 'ایده‌های تولید محتوا', updatedAt: new Date(now.getTime() - 86400000 * 4).toISOString()},
-  {id: '3', title: 'مرور TypeScript', updatedAt: new Date(now.getTime() - 86400000 * 36).toISOString()}
-];
-
-const mockMessages: Record<string, ChatMessage[]> = {
-  '1': [
-    {id: 'm1', role: 'assistant', content: 'سلام! برای سفر شیراز چه سبک برنامه‌ای مد نظر دارید؟', createdAt: now.toISOString()},
-    {id: 'm2', role: 'user', content: 'سه روز زمان دارم و دوست دارم فرهنگی باشد.', createdAt: now.toISOString()}
-  ],
-  '2': [{id: 'm3', role: 'assistant', content: 'می‌تونیم تقویم هفتگی محتوا بچینیم.', createdAt: now.toISOString()}],
-  '3': [{id: 'm4', role: 'assistant', content: 'TypeScript را از Generics شروع کنیم؟', createdAt: now.toISOString()}]
-};
-
 const EMPTY_RESPONSE_MESSAGE = 'پاسخ خالی دریافت شد. لطفاً دوباره تلاش کنید.';
 
 function normalizeChatSummary(chat: (Partial<ChatSummary> & Record<string, unknown>) | undefined): ChatSummary | null {
@@ -86,8 +64,6 @@ export function useChats() {
   return useQuery({
     queryKey: ['chats'],
     queryFn: async () => {
-      if (USE_LOCAL_MOCKS) return mockChats;
-
       const chats = await getChats();
       return normalizeChats(chats);
     }
@@ -101,14 +77,6 @@ export function useChat(chatId?: string) {
     queryFn: async (): Promise<ChatDetail> => {
       if (!chatId) {
         throw new Error('chatId is required');
-      }
-      if (USE_LOCAL_MOCKS) {
-        const chat = mockChats.find((item) => item.id === chatId);
-        return {
-          id: chatId,
-          title: chat?.title ?? 'گفت‌وگو',
-          messages: mockMessages[chatId] ?? []
-        };
       }
       return getChatById(chatId);
     }
@@ -177,46 +145,11 @@ export function useSendMessage() {
       });
       queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
 
-      if (USE_LOCAL_MOCKS) {
-        const phrase = 'حتماً. این یک پاسخ نمونه‌ی تدریجی برای نمایش است.';
-        const currentMessages = mockMessages[chatId] ?? [];
-        mockMessages[chatId] = [...currentMessages, userMessage];
-
-        if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
-        if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
-
-        let finalText = '';
-        for (const char of phrase) {
-          await new Promise((resolve) => setTimeout(resolve, 25));
-          finalText += char;
-          onToken(char);
-        }
-
-        if (IS_DEV) console.debug('[chat-send] streaming ended with length', {chatId, length: finalText.length});
-
-        const assistantMessage: ChatMessage = {
-          id: uid('assistant'),
-          role: 'assistant',
-          content: finalText,
-          createdAt: new Date().toISOString()
-        };
-
-        mockMessages[chatId] = [...mockMessages[chatId], assistantMessage];
-        queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
-          const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
-          return {...base, messages: [...base.messages, assistantMessage]};
-        });
-
-        if (IS_DEV) console.debug('[chat-send] assistant committed', {chatId});
-
-        return {assistantCommitted: true};
-      }
-
       await appendMessages(chatId, [{role: 'user', content: payload.content}]);
       if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
 
       let finalText = '';
-      let avalaiRequestId: string | undefined;
+      let providerRequestId: string | undefined;
 
       try {
         if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
@@ -233,7 +166,7 @@ export function useSendMessage() {
             }
           }
         );
-        avalaiRequestId = streamResult.avalaiRequestId;
+        providerRequestId = streamResult.providerRequestId;
       } catch (streamError) {
         if (IS_DEV) {
           console.debug('[chat-send] fallback triggered', {
@@ -246,6 +179,8 @@ export function useSendMessage() {
       let assistantContent = finalText.trim();
 
       if (!assistantContent) {
+        toast.error(EMPTY_RESPONSE_MESSAGE);
+
         if (IS_DEV) {
           console.debug('[chat-send] fallback triggered', {
             chatId,
@@ -255,7 +190,7 @@ export function useSendMessage() {
 
         const fallbackResult = await sendMessageComplete(payload);
         assistantContent = fallbackResult.content.trim();
-        avalaiRequestId = fallbackResult.avalaiRequestId ?? avalaiRequestId;
+        providerRequestId = fallbackResult.providerRequestId ?? providerRequestId;
       }
 
       if (!assistantContent) {
@@ -266,7 +201,7 @@ export function useSendMessage() {
         {
           role: 'assistant',
           content: assistantContent,
-          avalaiRequestId
+          providerRequestId
         }
       ]);
 
@@ -302,12 +237,6 @@ export function useChatActions() {
   return {
     create: useMutation({
       mutationFn: async ({title}: {title?: string} = {}) => {
-        if (USE_LOCAL_MOCKS) {
-          const item = createFallbackChat(title);
-          mockChats.unshift(item);
-          mockMessages[item.id] = [];
-          return item;
-        }
         try {
           const createdChat = (await createChat()) as Partial<ChatSummary> & Record<string, unknown>;
           const normalizedChat = normalizeChatSummary(createdChat);
@@ -335,29 +264,11 @@ export function useChatActions() {
       }
     }),
     rename: useMutation({
-      mutationFn: ({chatId, title}: {chatId: string; title: string}) => {
-        if (USE_LOCAL_MOCKS) {
-          const chat = mockChats.find((item) => item.id === chatId);
-          if (chat) {
-            chat.title = title;
-            chat.updatedAt = new Date().toISOString();
-          }
-          return Promise.resolve(undefined);
-        }
-        return renameChat(chatId, title).then(() => undefined);
-      },
+      mutationFn: ({chatId, title}: {chatId: string; title: string}) => renameChat(chatId, title).then(() => undefined),
       onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
     }),
     remove: useMutation({
-      mutationFn: (chatId: string) => {
-        if (USE_LOCAL_MOCKS) {
-          const index = mockChats.findIndex((item) => item.id === chatId);
-          if (index >= 0) mockChats.splice(index, 1);
-          delete mockMessages[chatId];
-          return Promise.resolve(undefined);
-        }
-        return deleteChat(chatId);
-      },
+      mutationFn: (chatId: string) => deleteChat(chatId),
       onSuccess: (_data, chatId) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
           (previous ?? []).filter((item) => item.id !== chatId)

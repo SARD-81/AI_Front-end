@@ -15,7 +15,7 @@ export type StoredMessage = {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
-  avalaiRequestId?: string;
+  providerRequestId?: string;
 };
 
 type StoreData = {
@@ -146,7 +146,7 @@ export async function deleteChat(chatId: string) {
 
 export async function appendMessages(
   chatId: string,
-  items: Array<Pick<StoredMessage, 'role' | 'content' | 'avalaiRequestId'>>
+  items: Array<Pick<StoredMessage, 'role' | 'content' | 'providerRequestId'>>
 ) {
   return withLock(async () => {
     const now = new Date().toISOString();
@@ -160,7 +160,7 @@ export async function appendMessages(
       role: item.role,
       content: item.content,
       createdAt: new Date(Date.now() + index).toISOString(),
-      ...(item.avalaiRequestId ? {avalaiRequestId: item.avalaiRequestId} : {})
+      ...(item.providerRequestId ? {providerRequestId: item.providerRequestId} : {})
     }));
 
     chat.updatedAt = now;

@@ -1,19 +1,19 @@
-# DeepSeek-Style Persian Chat UI (Frontend Only)
+# DeepSeek-Style Persian Chat UI
 
 اپلیکیشن حاضر یک کلون فرانت‌اندی از تجربه‌ی `chat.deepseek.com` با تمرکز روی RTL و زبان فارسی است.
 
 ## 1) نصب و اجرا
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 برای بیلد تولید:
 
 ```bash
-pnpm build
-pnpm start
+npm run build
+npm run start
 ```
 
 ## 2) معماری
@@ -34,9 +34,17 @@ pnpm start
 - `components/chat/*` لیست پیام، پیام، کامپوزر
 - `lib/api/*` لایه‌ی API و DTO
 
-## 3) محل دقیق TODOهای اتصال بک‌اند
+## 3) متغیرهای محیطی OpenRouter
 
-> این پروژه عمداً backend-free است و هیچ endpoint قطعی حدس زده نشده است.
+- `OPENROUTER_API_KEY` (اجباری)
+- `OPENROUTER_BASE_URL` (اختیاری، پیش‌فرض: `https://openrouter.ai/api/v1`)
+- `OPENROUTER_DEFAULT_MODEL` (اختیاری، پیش‌فرض: `openai/gpt-4o-mini`)
+- `OPENROUTER_SITE_URL` (اختیاری، برای هدر `HTTP-Referer`)
+- `OPENROUTER_APP_NAME` (اختیاری، برای هدر `X-Title`)
+
+> همه‌ی فراخوانی‌های LLM فقط در Route Handlerهای سرور انجام می‌شود و API key در مرورگر استفاده نمی‌شود.
+
+## 4) محل دقیق TODOهای اتصال بک‌اند
 
 - `lib/api/client.ts`
   - TODO برای `BASE_URL`
@@ -54,7 +62,7 @@ pnpm start
 - `lib/api/chat.ts`
   - TODO برای metadata ضمیمه‌ها
 
-## 4) تغییر توکن‌های رنگ/تم
+## 5) تغییر توکن‌های رنگ/تم
 
 - توکن‌های رنگ، spacing، radius در `styles/tokens.css` تعریف شده‌اند.
 - نگاشت Tailwind به variables در `tailwind.config.ts` انجام شده است.
@@ -62,14 +70,9 @@ pnpm start
   1. متغیرهای `:root` و `.dark` را تغییر دهید.
   2. در صورت نیاز shadow/border radius را در Tailwind extend تنظیم کنید.
 
-## 5) RTL و LTR برای code blocks
+## 6) RTL و LTR برای code blocks
 
 - جهت کل اپ در `app/[locale]/layout.tsx` روی `dir="rtl"` تنظیم شده.
 - برای جلوگیری از بهم‌ریختگی کد:
   - در `MessageBubble` روی `<pre dir="ltr">` و `<code dir="ltr">` اعمال شده.
   - در `app/globals.css` هم کلاس `prose-chat` برای code ها `direction: ltr` دارد.
-
-## نکته‌ی توسعه
-
-- حالت داده‌ی نمونه فقط با فلگ `NEXT_PUBLIC_USE_MOCK_CHAT=true` فعال می‌شود و مقدار پیش‌فرض آن خاموش است.
-- برای اتصال به اوالای، مقدار `AVALAI_API_KEY` را در `.env.local` تنظیم کنید و پس از تغییر، `pnpm dev` را ری‌استارت کنید.
