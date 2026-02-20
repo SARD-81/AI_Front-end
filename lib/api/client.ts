@@ -2,9 +2,6 @@ const DEFAULT_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-const MISSING_API_BASE_URL_MESSAGE =
-  'آدرس API تنظیم نشده است. متغیر NEXT_PUBLIC_API_BASE_URL را تنظیم کنید.';
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -16,23 +13,18 @@ export class ApiError extends Error {
 }
 
 function joinUrl(baseUrl: string, path: string) {
-  const normalizedBase = baseUrl.replace(/\/+$/, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (!baseUrl) {
+    return normalizedPath;
+  }
+
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
   return `${normalizedBase}${normalizedPath}`;
 }
 
 export function getApiBaseUrl() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-
-  if (!baseUrl) {
-    if (process.env.NODE_ENV !== 'production') {
-      throw new Error(MISSING_API_BASE_URL_MESSAGE);
-    }
-
-    throw new ApiError(MISSING_API_BASE_URL_MESSAGE, 500);
-  }
-
-  return baseUrl;
+  return process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? '';
 }
 
 export function resolveApiUrl(path: string) {
@@ -72,11 +64,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers: {
       ...DEFAULT_HEADERS,
       ...init?.headers
-      // TODO: Add auth token/cookie strategy (Bearer, httpOnly cookie, refresh flow) when backend auth is defined.
     }
   });
 
   return parseResponse<T>(response);
 }
-
-export {MISSING_API_BASE_URL_MESSAGE};

@@ -1,9 +1,9 @@
-import {canUseDirectOpenRouterInBrowser, DEMO_MODE_DISABLED_ERROR, llmConfig} from '@/lib/config/llm';
-import {BackendPlaceholderProvider} from '@/lib/llm/providers/backend-placeholder';
+import {canUseDirectOpenRouterInBrowser, llmConfig} from '@/lib/config/llm';
+import {OpenRouterBffProvider} from '@/lib/llm/providers/openrouter-bff';
 import {OpenRouterBrowserProvider} from '@/lib/llm/providers/openrouter-browser';
 import type {LlmProvider} from '@/lib/llm/types';
 
-const backendProvider = new BackendPlaceholderProvider();
+const bffProvider = new OpenRouterBffProvider();
 const demoProvider = new OpenRouterBrowserProvider();
 
 export function getLlmProvider(): LlmProvider {
@@ -19,13 +19,5 @@ export function getLlmProvider(): LlmProvider {
     };
   }
 
-  return {
-    async sendStreamingChat(input, onToken, onDone) {
-      try {
-        await backendProvider.sendStreamingChat(input, onToken, onDone);
-      } catch {
-        throw new Error(DEMO_MODE_DISABLED_ERROR);
-      }
-    }
-  };
+  return bffProvider;
 }

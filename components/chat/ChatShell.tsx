@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -15,7 +15,6 @@ import {ChatEmptyState} from './ChatEmptyState';
 import {useChat, useChatActions, useSendMessage} from '@/hooks/use-chat-data';
 import {copyToClipboard} from '@/lib/utils/clipboard';
 import {toast} from 'sonner';
-import {MISSING_API_BASE_URL_MESSAGE} from '@/lib/api/client';
 
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const searchParams = useSearchParams();
@@ -45,13 +44,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
-
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_API_BASE_URL?.trim()) {
-      setErrorMessage(MISSING_API_BASE_URL_MESSAGE);
-      toast.error(MISSING_API_BASE_URL_MESSAGE);
-    }
-  }, []);
 
 
   const submitMessage = async (nextValue: string) => {

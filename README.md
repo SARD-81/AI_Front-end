@@ -36,32 +36,29 @@ npm run start
 
 ## 3) متغیرهای محیطی
 
-- `NEXT_PUBLIC_API_BASE_URL` (برای CRUD چت)
-- `NEXT_PUBLIC_DEMO_MODE=true` (برای دمو مستقیم OpenRouter از مرورگر)
-- `NEXT_PUBLIC_OPENROUTER_API_KEY` (فقط دمو؛ در مرورگر قابل مشاهده است)
+- `OPENROUTER_API_KEY` (**الزامی** برای پروکسی سرور)
+- `OPENROUTER_BASE_URL` (اختیاری، پیش‌فرض: `https://openrouter.ai/api/v1`)
+- `OPENROUTER_DEFAULT_MODEL` (اختیاری، پیش‌فرض: `openai/gpt-4o-mini`)
+- `OPENROUTER_SITE_URL` (اختیاری، برای هدر `HTTP-Referer`)
+- `OPENROUTER_APP_NAME` (اختیاری، برای هدر `X-Title`)
+- `NEXT_PUBLIC_API_BASE_URL` (اختیاری؛ اگر خالی باشد CRUD چت روی same-origin BFF کار می‌کند)
+- `NEXT_PUBLIC_DEMO_MODE=true` (اختیاری، فقط برای دمو ناامن مستقیم از مرورگر)
 
 نمونه کامل در `.env.example` آمده است.
 
-اگر `NEXT_PUBLIC_API_BASE_URL` تنظیم نشده باشد، در UI پیام فارسی نمایش داده می‌شود:
+## 4) Local BFF (داخل Next.js)
 
-`آدرس API تنظیم نشده است. متغیر NEXT_PUBLIC_API_BASE_URL را تنظیم کنید.`
+برای رفع `Failed to fetch` در توسعه محلی، پروژه اکنون یک BFF داخلی دارد:
 
-## 4) قرارداد API مورد انتظار
+- CRUD چت (in-memory):
+  - `GET/POST /api/app/chats`
+  - `GET/PATCH/DELETE /api/app/chats/:id`
+  - `POST /api/app/chats/:id/messages`
+- پروکسی LLM به OpenRouter (فقط سمت سرور):
+  - `POST /api/chat/stream` (SSE)
+  - `POST /api/chat/complete` (fallback غیر استریم)
 
-این پروژه **PURE FRONTEND** است و مستقیماً به بک‌اند واقعی متصل می‌شود (بدون BFF در Next.js):
-
-- `GET    /chats`
-- `POST   /chats`
-- `GET    /chats/:id`
-- `PATCH  /chats/:id`
-- `DELETE /chats/:id`
-- `POST   /chats/:id/messages` (برای persist پیام‌ها)
-
-> ارسال به LLM در حالت دمو از طریق provider مرورگر (`OpenRouterBrowserProvider`) انجام می‌شود و از مسیرهای BFF در Next.js استفاده نمی‌کند.
-
-> مسیرها در `lib/config/api-endpoints.ts` قابل تنظیم هستند.
-
-> TODO(BACKEND): باید CORS برای origin فرانت‌اند (مثلاً دامنه Vercel) در بک‌اند فعال باشد.
+کلید OpenRouter فقط از env سرور خوانده می‌شود و به مرورگر ارسال نمی‌شود.
 
 ## 5) محل دقیق TODOهای اتصال بک‌اند
 
