@@ -91,4 +91,3 @@ export async function sendMessageStreaming(
   );
 }
 
-// TODO(BACKEND): route LLM requests through backend APIs and replace browser-direct demo provider.
