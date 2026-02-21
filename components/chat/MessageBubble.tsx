@@ -70,57 +70,68 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
     <article className="w-full" aria-live="polite">
       <div className="flex w-full flex-col">
         {isTyping ? (
-          <div className="mr-auto w-fit max-w-[min(40rem,92%)]">
+          <div className="mr-auto w-full max-w-[min(40rem,92%)]">
             <ThinkingIndicator />
           </div>
         ) : (
           <>
             <div
               className={cn(
-                'prose-chat text-[15px] leading-7 transition-all duration-200',
+                'relative text-[15px] leading-7 transition-all duration-200',
                 isUser
-                  ? 'ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card'
-                  : 'mr-auto w-fit max-w-[min(40rem,92%)] rounded-xl border border-border/60 bg-card/35 px-3 py-2 shadow-none'
+                  ? 'group ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card pb-11'
+                  : 'mr-auto w-full max-w-[min(40rem,92%)] bg-transparent border-0 shadow-none rounded-none px-0 py-0 text-foreground'
               )}
             >
               {isUser ? (
-                <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
+                <>
+                  <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
+                  <MessageActions
+                    role={message.role}
+                    onCopy={() => onCopyMessage(message.content)}
+                    onEdit={() => onEditMessage?.(message)}
+                    className="absolute bottom-2 end-2 mt-0 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
+                  />
+                </>
               ) : (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    p: ({children}) => <p className="my-2 leading-8">{children}</p>,
-                    code: ({className, children, ...props}) => {
-                      const text = String(children).replace(/\n$/, '');
-                      if (className?.includes('language-')) {
-                        return <CodeBlock value={text} />;
-                      }
-                      return (
-                        <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
-                          {text}
-                        </code>
-                      );
-                    },
-                    pre: ({children}) => <>{children}</>,
-                    table: ({children}) => (
-                      <div className="my-3 overflow-x-auto">
-                        <table>{children}</table>
-                      </div>
-                    )
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
+                <div className="prose-chat">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({children}) => <p className="my-2 leading-8">{children}</p>,
+                      code: ({className, children, ...props}) => {
+                        const text = String(children).replace(/\n$/, '');
+                        if (className?.includes('language-')) {
+                          return <CodeBlock value={text} />;
+                        }
+                        return (
+                          <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
+                            {text}
+                          </code>
+                        );
+                      },
+                      pre: ({children}) => <>{children}</>,
+                      table: ({children}) => (
+                        <div className="my-3 overflow-x-auto">
+                          <table>{children}</table>
+                        </div>
+                      )
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
 
-            <MessageActions
-              role={message.role}
-              onCopy={() => onCopyMessage(message.content)}
-              onEdit={isUser ? () => onEditMessage?.(message) : undefined}
-              onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
-              className={isUser ? 'ml-auto justify-end' : 'mr-auto justify-start'}
-            />
+            {!isUser ? (
+              <MessageActions
+                role={message.role}
+                onCopy={() => onCopyMessage(message.content)}
+                onRegenerate={onRegenerate}
+                className="mr-auto justify-start"
+              />
+            ) : null}
           </>
         )}
       </div>
