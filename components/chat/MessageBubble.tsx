@@ -62,9 +62,17 @@ type MessageBubbleProps = {
   onRegenerate?: () => void;
 };
 
+function isMostlyEnglish(text: string): boolean {
+  const latinLetters = (text.match(/[A-Za-z]/g) ?? []).length;
+  const arabicLetters = (text.match(/[\u0600-\u06FF]/g) ?? []).length;
+
+  return latinLetters >= 20 && latinLetters >= arabicLetters * 2;
+}
+
 export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenerate}: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
+  const isAssistantEnglish = message.role === 'assistant' && isMostlyEnglish(message.content);
 
   return (
     <article className="w-full" aria-live="polite">
@@ -97,7 +105,7 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
                   />
                 </div>
               ) : (
-                <div className="prose-chat">
+                <div dir={isAssistantEnglish ? 'ltr' : undefined} className={cn('prose-chat', isAssistantEnglish ? 'text-left ltr:text-left' : undefined)}>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
