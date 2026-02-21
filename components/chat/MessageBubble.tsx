@@ -67,54 +67,62 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
   const isTyping = message.id === 'typing';
 
   return (
-    <article className="flex w-full justify-center" aria-live="polite">
-      <div className="flex max-w-[90%] flex-col items-center md:max-w-[75%]">
+    <article className="w-full" aria-live="polite">
+      <div className="flex w-full flex-col">
         {isTyping ? (
-          <ThinkingIndicator />
-        ) : (
-          <div
-            className={cn(
-              'prose-chat rounded-2xl px-4 py-3 text-[15px] leading-7 transition-all duration-200',
-              isUser
-                ? 'inline-flex w-fit max-w-full border border-border bg-card shadow-card'
-                : 'w-full max-w-full border-none bg-transparent px-0 py-0 shadow-none'
-            )}
-          >
-            {isUser ? (
-              <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
-            ) : (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({children}) => <p className="my-2 leading-8">{children}</p>,
-                  code: ({className, children, ...props}) => {
-                    const text = String(children).replace(/\n$/, '');
-                    if (className?.includes('language-')) {
-                      return <CodeBlock value={text} />;
-                    }
-                    return (
-                      <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
-                        {text}
-                      </code>
-                    );
-                  },
-                  pre: ({children}) => <>{children}</>
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
-            )}
+          <div className="mr-auto w-fit max-w-[min(40rem,92%)]">
+            <ThinkingIndicator />
           </div>
-        )}
+        ) : (
+          <>
+            <div
+              className={cn(
+                'prose-chat text-[15px] leading-7 transition-all duration-200',
+                isUser
+                  ? 'ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-card px-4 py-3 shadow-card'
+                  : 'mr-auto w-fit max-w-[min(40rem,92%)] border-none bg-transparent px-1 py-1 shadow-none'
+              )}
+            >
+              {isUser ? (
+                <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({children}) => <p className="my-2 leading-8">{children}</p>,
+                    code: ({className, children, ...props}) => {
+                      const text = String(children).replace(/\n$/, '');
+                      if (className?.includes('language-')) {
+                        return <CodeBlock value={text} />;
+                      }
+                      return (
+                        <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
+                          {text}
+                        </code>
+                      );
+                    },
+                    pre: ({children}) => <>{children}</>,
+                    table: ({children}) => (
+                      <div className="my-3 overflow-x-auto">
+                        <table>{children}</table>
+                      </div>
+                    )
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              )}
+            </div>
 
-        {!isTyping ? (
-          <MessageActions
-            role={message.role}
-            onCopy={() => onCopyMessage(message.content)}
-            onEdit={isUser ? () => onEditMessage?.(message) : undefined}
-            onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
-          />
-        ) : null}
+            <MessageActions
+              role={message.role}
+              onCopy={() => onCopyMessage(message.content)}
+              onEdit={isUser ? () => onEditMessage?.(message) : undefined}
+              onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
+              className={isUser ? 'ml-auto justify-end' : 'mr-auto justify-start'}
+            />
+          </>
+        )}
       </div>
     </article>
   );

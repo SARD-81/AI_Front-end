@@ -43,7 +43,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
         atBottomThreshold={80}
         itemContent={(_, message) => (
-          <div className="px-3 py-2 md:px-6">
+          <div className="py-3">
             <MessageBubble
               message={message}
               onCopyMessage={onCopyMessage}

@@ -130,15 +130,17 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
         </SheetContent>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="relative flex h-14 items-center border-b border-border px-3 md:px-4 lg:px-6">
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="باز کردن گفتگوها">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
+          <header className="relative flex h-14 items-center border-b border-border">
+            <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="باز کردن گفتگوها">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+            </div>
 
-            <div className="pointer-events-none absolute inset-x-0 flex justify-center px-12">
-              <h1 className="w-full max-w-2xl truncate text-center text-sm font-medium md:text-base">{headerTitle}</h1>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <h1 className="w-full max-w-3xl truncate px-14 text-center text-sm font-medium sm:px-6 md:text-base">{headerTitle}</h1>
             </div>
           </header>
 
@@ -149,7 +151,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">
               {isChatLoading ? (
-                <div className="space-y-4 px-4 py-6 md:px-6">
+                <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 sm:px-6">
                   <Skeleton className="h-5 w-1/3" />
                   <Skeleton className="h-16 w-4/5" />
                   <Skeleton className="h-12 w-3/5" />
@@ -173,29 +175,33 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   }}
                 />
               ) : (
-                <MessageList
-                  messages={messages}
-                  typing={sendMutation.isPending && !streamContent}
-                  onCopyMessage={handleCopyMessage}
-                  onEditMessage={(message) => handleEditMessage(message.content)}
-                  onRegenerate={handleRegenerate}
-                />
+                <div className="mx-auto h-full w-full max-w-3xl px-4 sm:px-6">
+                  <MessageList
+                    messages={messages}
+                    typing={sendMutation.isPending && !streamContent}
+                    onCopyMessage={handleCopyMessage}
+                    onEditMessage={(message) => handleEditMessage(message.content)}
+                    onRegenerate={handleRegenerate}
+                  />
+                </div>
               )}
             </section>
 
             {!shouldShowEmptyState ? (
-              <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 p-3 backdrop-blur md:p-4">
-                <Composer
-                  value={value}
-                  onChange={setValue}
-                  onSubmit={submit}
-                  disabled={sendMutation.isPending || actions.create.isPending}
-                  search={search}
-                  thinkingLevel={thinkingLevel}
-                  onToggleSearch={() => setSearch((prev) => !prev)}
-                  onThinkingLevelChange={setThinkingLevel}
-                  focusTrigger={focusTrigger}
-                />
+              <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 py-3 backdrop-blur md:py-4">
+                <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+                  <Composer
+                    value={value}
+                    onChange={setValue}
+                    onSubmit={submit}
+                    disabled={sendMutation.isPending || actions.create.isPending}
+                    search={search}
+                    thinkingLevel={thinkingLevel}
+                    onToggleSearch={() => setSearch((prev) => !prev)}
+                    onThinkingLevelChange={setThinkingLevel}
+                    focusTrigger={focusTrigger}
+                  />
+                </div>
               </div>
             ) : null}
           </LayoutGroup>
