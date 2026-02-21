@@ -34,6 +34,31 @@ body {
   unicode-bidi: plaintext;
 }
 
+.prose-chat code {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+
+.prose-chat {
+  color: hsl(var(--foreground));
+}
+
+.prose-chat a {
+  color: hsl(var(--primary));
+  text-underline-offset: 3px;
+}
+
+.prose-chat a:hover {
+  color: hsl(var(--primary) / 0.85);
+}
+
+.prose-chat blockquote {
+  border-inline-start: 3px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  margin: 0.9rem 0;
+  padding-inline: 0.9rem;
+}
 .prose-chat table {
   width: 100%;
   border-collapse: collapse;
@@ -52,5 +77,5 @@ body {
 }
 
 .prose-chat thead th {
-  background: hsl(var(--muted) / 0.35);
+  background: hsl(var(--surface-2));
 }

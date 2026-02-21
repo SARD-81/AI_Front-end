@@ -84,7 +84,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
             <Link
               href={`/${locale}`}
               aria-label="خانه"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-1 text-primary"
               onClick={onNavigate}
             >
               <MessageCircle className="h-5 w-5" />
@@ -154,7 +154,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                         <motion.div layout key={chat.id} className="group">
                           <div
                             className={cn(
-                              'flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-200 hover:bg-accent/80 active:scale-[0.99]',
+                              'flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-200 hover:bg-accent/70 active:scale-[0.99]',
                               isActive && 'bg-accent'
                             )}
                           >
