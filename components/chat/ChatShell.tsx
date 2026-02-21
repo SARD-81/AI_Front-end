@@ -175,7 +175,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   }}
                 />
               ) : (
-                <div className="mx-auto h-full w-full max-w-3xl px-4 sm:px-6">
+                <div className="h-full w-full">
                   <MessageList
                     messages={messages}
                     typing={sendMutation.isPending && !streamContent}

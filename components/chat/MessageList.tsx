@@ -34,16 +34,16 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
   };
 
   return (
-    <div className="relative h-full min-h-0">
+    <div className="relative h-full min-h-0 w-full">
       <Virtuoso
         ref={virtuosoRef}
         data={items}
-        className="h-full"
+        className="h-full w-full"
         followOutput={atBottom ? 'auto' : false}
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
         atBottomThreshold={80}
         itemContent={(_, message) => (
-          <div className="py-3">
+          <div className="mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
             <MessageBubble
               message={message}
               onCopyMessage={onCopyMessage}
@@ -58,7 +58,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-4 start-4 z-10 h-10 w-10 rounded-full shadow-lg"
+          className="absolute bottom-24 end-4 z-10 h-10 w-10 rounded-full shadow-lg"
           onClick={scrollToBottom}
           aria-label="رفتن به پایین"
         >
