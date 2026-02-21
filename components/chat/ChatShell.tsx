@@ -44,6 +44,13 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
+  const headerTitle = useMemo(() => {
+    const firstUserMessage = (chat?.messages ?? []).find((message) => message.role === 'user')?.content?.trim();
+    const rawTitle = firstUserMessage || chat?.title || 'گفت‌وگو';
+    const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
+    const maxLength = 72;
+    return compactTitle.length > maxLength ? `${compactTitle.slice(0, maxLength)}…` : compactTitle;
+  }, [chat?.messages, chat?.title]);
 
 
   const submitMessage = async (nextValue: string) => {
@@ -123,12 +130,16 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
         </SheetContent>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="flex h-14 items-center border-b border-border px-3 md:px-4 lg:px-6">
+          <header className="relative flex h-14 items-center border-b border-border px-3 md:px-4 lg:px-6">
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="باز کردن گفتگوها">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
+
+            <div className="pointer-events-none absolute inset-x-0 flex justify-center px-12">
+              <h1 className="w-full max-w-2xl truncate text-center text-sm font-medium md:text-base">{headerTitle}</h1>
+            </div>
           </header>
 
           {errorMessage ? (
