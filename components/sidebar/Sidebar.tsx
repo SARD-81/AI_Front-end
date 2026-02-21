@@ -2,6 +2,7 @@
 
 import {AnimatePresence, LayoutGroup, motion} from 'motion/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {usePathname, useRouter} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
 import {
@@ -84,10 +85,14 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
             <Link
               href={`/${locale}`}
               aria-label="خانه"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-1 text-primary"
+              className={cn(
+                'flex h-10 items-center rounded-lg border border-border bg-surface-1 text-primary',
+                collapsed ? 'w-10 justify-center' : 'w-full gap-2 px-2'
+              )}
               onClick={onNavigate}
             >
-              <MessageCircle className="h-5 w-5" />
+              <Image src="/logo.png" alt="لوگوی دانشگاه شهید بهشتی" width={60} height={60} className="h-15 w-15" />
+              {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">دانشگاه شهید بهشتی</span> : null}
             </Link>
 
             <motion.div layout className={cn('flex items-center gap-2', collapsed && 'flex-col')}>

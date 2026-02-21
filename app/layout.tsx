@@ -2,8 +2,13 @@ import './globals.css';
 import type {Metadata} from 'next';
 
 export const metadata: Metadata = {
-  title: 'Persian AI',
-  description: 'Frontend-only Persian RTL chat UI clone'
+  title: 'دستیار دانشگاه شهید بهشتی',
+  description: 'Frontend-only Persian RTL chat UI clone',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png'
+  }
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

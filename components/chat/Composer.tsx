@@ -131,8 +131,8 @@ export function Composer({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" size="sm" className="transition-all duration-200 active:scale-[0.98]">
-                <span>سطح تفکر</span>
-                <span className="text-muted-foreground">{selectedLevel.title}</span>
+                <span>سطح تفکر :</span>
+                <span className="text-muted-foreground mr-3">{selectedLevel.title}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
