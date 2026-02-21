@@ -22,14 +22,14 @@ function CodeBlock({value}: {value: string}) {
   };
 
   return (
-    <div className="my-3 overflow-hidden rounded-md border border-border bg-muted/60">
+    <div className="my-3 overflow-hidden rounded-md border border-border bg-surface-1">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <span className="text-xs text-muted-foreground">code</span>
         <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </Button>
       </div>
-      <pre dir="ltr" className="overflow-x-auto p-3 text-sm leading-6">
+      <pre dir="ltr" className="overflow-x-auto bg-surface-1 p-3 text-sm leading-6 text-foreground">
         <code dir="ltr">{value}</code>
       </pre>
     </div>
@@ -79,8 +79,8 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
               className={cn(
                 'prose-chat text-[15px] leading-7 transition-all duration-200',
                 isUser
-                  ? 'ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-card px-4 py-3 shadow-card'
-                  : 'mr-auto w-fit max-w-[min(40rem,92%)] border-none bg-transparent px-1 py-1 shadow-none'
+                  ? 'ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card'
+                  : 'mr-auto w-fit max-w-[min(40rem,92%)] rounded-xl border border-border/60 bg-card/35 px-3 py-2 shadow-none'
               )}
             >
               {isUser ? (
@@ -96,7 +96,7 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
                         return <CodeBlock value={text} />;
                       }
                       return (
-                        <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
+                        <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
                           {text}
                         </code>
                       );

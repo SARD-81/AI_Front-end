@@ -16,7 +16,7 @@ export function SheetContent({
 }: Dialog.DialogContentProps & {children: React.ReactNode}) {
   return (
     <Dialog.Portal>
-      <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
+      <Dialog.Overlay className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm" />
       <Dialog.Content
         className={cn(
           'fixed inset-y-0 right-0 z-50 w-[88vw] max-w-xs border-l border-border bg-card p-4 shadow-soft focus-visible:outline-none',

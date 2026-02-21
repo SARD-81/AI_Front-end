@@ -145,7 +145,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           </header>
 
           {errorMessage ? (
-            <div className="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
+            <div className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
           ) : null}
 
           <LayoutGroup>

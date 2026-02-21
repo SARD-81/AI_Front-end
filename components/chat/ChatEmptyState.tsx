@@ -47,7 +47,7 @@ export function ChatEmptyState({
   return (
     <div className="flex h-full items-center justify-center px-4" dir="rtl">
       <div className="w-full max-w-[800px] space-y-6 text-center">
-        <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-primary/90 via-primary to-primary/60 p-[3px] shadow-soft">
+        <div className="mx-auto h-20 w-20 rounded-full border border-border bg-surface-1 p-[3px] shadow-soft">
           <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
             <Image
               src="/logo.png"

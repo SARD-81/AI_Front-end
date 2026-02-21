@@ -46,6 +46,22 @@ const config: Config = {
         popover: {
           DEFAULT: 'hsl(var(--popover))',
           foreground: 'hsl(var(--popover-foreground))'
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))'
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))'
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))'
+        },
+        surface: {
+          1: 'hsl(var(--surface-1))',
+          2: 'hsl(var(--surface-2))'
         }
       },
       borderRadius: {
@@ -54,8 +70,8 @@ const config: Config = {
         sm: 'var(--radius-sm)'
       },
       boxShadow: {
-        soft: '0 10px 30px -24px hsl(var(--foreground) / 0.35)',
-        card: '0 4px 14px -10px hsl(var(--foreground) / 0.25)'
+        soft: '0 16px 36px -28px hsl(var(--shadow-color) / var(--shadow-strength))',
+        card: '0 10px 24px -18px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%))'
       }
     }
   },
