@@ -79,20 +79,23 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
               className={cn(
                 'relative text-[15px] leading-7 transition-all duration-200',
                 isUser
-                  ? 'group ml-auto w-fit max-w-[min(32rem,85%)] rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card pb-11'
+                  ? 'ml-auto w-fit max-w-[min(32rem,85%)]'
                   : 'mr-auto w-full max-w-[min(40rem,92%)] bg-transparent border-0 shadow-none rounded-none px-0 py-0 text-foreground'
               )}
             >
               {isUser ? (
-                <>
-                  <p className="m-0 whitespace-pre-wrap break-words">{message.content}</p>
+                <div className="group relative w-fit max-w-full">
+                  <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card">
+                    {message.content}
+                  </p>
+                  <div className="absolute right-0 top-full h-2 w-full" aria-hidden />
                   <MessageActions
                     role={message.role}
                     onCopy={() => onCopyMessage(message.content)}
                     onEdit={() => onEditMessage?.(message)}
-                    className="absolute bottom-2 end-2 mt-0 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
+                    className="absolute right-0 top-full z-10 mt-2 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
                   />
-                </>
+                </div>
               ) : (
                 <div className="prose-chat">
                   <ReactMarkdown

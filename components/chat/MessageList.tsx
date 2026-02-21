@@ -58,7 +58,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-24 end-4 z-10 h-10 w-10 rounded-full shadow-lg"
+          className="absolute bottom-24 right-4 z-10 h-10 w-10 rounded-full shadow-lg"
           onClick={scrollToBottom}
           aria-label="رفتن به پایین"
         >
