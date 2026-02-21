@@ -16,7 +16,7 @@ export function MessageActions({role, onCopy, onEdit, onRegenerate}: MessageActi
     'h-7 w-7 rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95';
 
   return (
-    <div className={cn('mt-1.5 flex items-center gap-1', role === 'user' ? 'justify-start' : 'justify-end')}>
+    <div className={cn('mt-1.5 flex items-center justify-center gap-1')}>
       <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopy} aria-label="کپی">
         <Copy className="h-3.5 w-3.5" />
       </Button>

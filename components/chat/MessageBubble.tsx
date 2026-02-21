@@ -67,8 +67,8 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
   const isTyping = message.id === 'typing';
 
   return (
-    <article className={cn('flex w-full', isUser ? 'justify-start' : 'justify-end')} aria-live="polite">
-      <div className={cn('flex flex-col', isUser ? 'items-start' : 'items-end', 'max-w-[90%] md:max-w-[75%]')}>
+    <article className="flex w-full justify-center" aria-live="polite">
+      <div className="flex max-w-[90%] flex-col items-center md:max-w-[75%]">
         {isTyping ? (
           <ThinkingIndicator />
         ) : (
