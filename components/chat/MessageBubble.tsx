@@ -4,6 +4,7 @@ import {memo, useMemo, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {Check, Copy} from 'lucide-react';
+import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
 import {copyToClipboard} from '@/lib/utils/clipboard';
@@ -60,6 +61,8 @@ type MessageBubbleProps = {
   onCopyMessage: (content: string) => void;
   onEditMessage?: (message: ChatMessage) => void;
   onRegenerate?: () => void;
+  isLastAssistant?: boolean;
+  anchorId?: string;
 };
 
 function isMostlyEnglish(text: string): boolean {
@@ -69,7 +72,14 @@ function isMostlyEnglish(text: string): boolean {
   return latinLetters >= 20 && latinLetters >= arabicLetters * 2;
 }
 
-function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegenerate}: MessageBubbleProps) {
+function MessageBubbleComponent({
+  message,
+  onCopyMessage,
+  onEditMessage,
+  onRegenerate,
+  isLastAssistant,
+  anchorId
+}: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
   const isStreaming = message.id === 'streaming';
@@ -77,6 +87,18 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
     () => message.role === 'assistant' && isMostlyEnglish(message.content),
     [message.role, message.content]
   );
+
+  const handleCopyLink = async () => {
+    if (!anchorId || typeof window === 'undefined') return;
+    const deepLink = `${window.location.origin}${window.location.pathname}#${anchorId}`;
+    const copied = await copyToClipboard(deepLink);
+    if (copied) {
+      toast.success('لینک پیام کپی شد');
+      window.history.replaceState(null, '', `#${anchorId}`);
+      return;
+    }
+    toast.error('کپی لینک ممکن نبود');
+  };
 
   return (
     <article className="w-full" aria-live="polite">
@@ -97,6 +119,7 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
             >
               {isUser ? (
                 <div className="group relative w-fit max-w-full">
+                  {anchorId ? <span id={anchorId} data-anchor-id={anchorId} className="pointer-events-none absolute -top-2 h-0 w-0" aria-hidden /> : null}
                   <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-secondary px-4 py-3 text-foreground shadow-card">
                     {message.content}
                   </p>
@@ -104,6 +127,7 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
                   <MessageActions
                     role={message.role}
                     onCopy={() => onCopyMessage(message.content)}
+                    onCopyLink={handleCopyLink}
                     onEdit={() => onEditMessage?.(message)}
                     className="absolute right-0 top-full z-10 mt-2 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
                   />
@@ -148,7 +172,10 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
                 role={message.role}
                 onCopy={() => onCopyMessage(message.content)}
                 onRegenerate={onRegenerate}
-                className="mr-auto justify-start"
+                className={cn(
+                  'mr-auto justify-start transition-all duration-150',
+                  isLastAssistant ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                )}
               />
             ) : null}
           </>
@@ -163,5 +190,7 @@ export const MessageBubble = memo(
   (prevProps, nextProps) =>
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.role === nextProps.message.role &&
-    prevProps.message.content === nextProps.message.content
+    prevProps.message.content === nextProps.message.content &&
+    prevProps.isLastAssistant === nextProps.isLastAssistant &&
+    prevProps.anchorId === nextProps.anchorId
 );

@@ -26,6 +26,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {Sidebar as SidebarRoot, SidebarContent, SidebarFooter, SidebarHeader} from '@/components/ui/sidebar';
 import {useChatActions, useChats, useGroupedChats} from '@/hooks/use-chat-data';
 import {SettingsModal, useAppSettings} from '@/components/settings/SettingsModal';
+import {useMediaQuery} from '@/hooks/use-media-query';
 import {cn} from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 76;
@@ -44,15 +45,23 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
   const [editingTitle, setEditingTitle] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const {settings, setSettings} = useAppSettings();
 
   useEffect(() => {
+    if (isMobile) {
+      setCollapsed(false);
+      return;
+    }
+
     const stored = localStorage.getItem('sidebar-collapsed');
     if (stored) setCollapsed(stored === 'true'); // localStorage persistence for collapse state
-  }, []);
+  }, [isMobile]);
 
   const toggleCollapsed = () => {
+    if (isMobile) return;
+
     setCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem('sidebar-collapsed', String(next));
@@ -87,7 +96,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
         layout
         transition={{duration: 0.2, ease: 'easeOut'}}
         className="h-full"
-        style={{width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}}
+        style={{width: isMobile ? EXPANDED_WIDTH : collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}}
       >
         <SidebarRoot className="h-full w-full">
           <SidebarHeader className={cn('space-y-3 px-4 py-4', collapsed && 'flex flex-col items-center space-y-3 px-2 py-4')}>
@@ -131,17 +140,19 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 </AnimatePresence>
               </Button>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={toggleCollapsed}
-                aria-label={collapsed ? 'باز کردن نوار کناری' : 'بستن نوار کناری'}
-                className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
-                title={collapsed ? 'باز کردن' : 'بستن'}
-              >
-                <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
-              </Button>
+              {!isMobile ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleCollapsed}
+                  aria-label={collapsed ? 'باز کردن نوار کناری' : 'بستن نوار کناری'}
+                  className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
+                  title={collapsed ? 'باز کردن' : 'بستن'}
+                >
+                  <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
+                </Button>
+              ) : null}
             </motion.div>
           </SidebarHeader>
 
