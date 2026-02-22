@@ -62,6 +62,7 @@ function normalizeChats(chats: ChatSummary[] | undefined): ChatSummary[] {
 export function useChats() {
   return useQuery({
     queryKey: ['chats'],
+    staleTime: 15_000,
     queryFn: async () => {
       const chats = await getChats();
       return normalizeChats(chats);
@@ -73,6 +74,7 @@ export function useChat(chatId?: string) {
   return useQuery({
     queryKey: ['chat', chatId],
     enabled: Boolean(chatId),
+    staleTime: 15_000,
     queryFn: async (): Promise<ChatDetail> => {
       if (!chatId) {
         throw new Error('chatId is required');
@@ -147,19 +149,19 @@ export function useSendMessage() {
       await appendMessages(chatId, [{role: 'user', content: payload.content}]);
       if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
 
-      let finalText = '';
+      const chunks: string[] = [];
       try {
         if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
         await sendMessageStreaming(
           chatId,
           payload,
           (chunk) => {
-            finalText += chunk;
+            chunks.push(chunk);
             onToken(chunk);
           },
           () => {
             if (IS_DEV) {
-              console.debug('[chat-send] streaming ended with length', {chatId, length: finalText.length});
+              console.debug('[chat-send] streaming ended with length', {chatId, length: chunks.join('').length});
             }
           }
         );
@@ -169,7 +171,7 @@ export function useSendMessage() {
         throw new Error(message);
       }
 
-      const assistantContent = finalText.trim();
+      const assistantContent = chunks.join('').trim();
 
       if (!assistantContent) {
         toast.error(EMPTY_RESPONSE_MESSAGE);

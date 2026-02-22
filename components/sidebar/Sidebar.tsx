@@ -72,6 +72,11 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     [groups.month, groups.older, groups.today, t]
   );
 
+  const chatsById = useMemo(() => {
+    const entries = (chatsQuery.data ?? []).map((chat) => [chat.id, chat] as const);
+    return new Map(entries);
+  }, [chatsQuery.data]);
+
   return (
     <LayoutGroup>
       <motion.div
@@ -149,7 +154,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   <section key={group.title} className="space-y-1">
                     {!collapsed ? <p className="px-2 text-xs text-muted-foreground">{group.title}</p> : null}
                     {group.ids.map((id) => {
-                      const chat = chatsQuery.data?.find((item) => item.id === id);
+                      const chat = chatsById.get(id);
                       if (!chat) return null;
 
                       const href = `/${locale}/chat/${chat.id}`;

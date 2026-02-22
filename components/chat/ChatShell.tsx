@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -24,6 +24,9 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [search, setSearch] = useState(false);
   const {thinkingLevel, setThinkingLevel} = useThinkingLevel('standard');
   const [streamContent, setStreamContent] = useState('');
+  const streamChunksRef = useRef<string[]>([]);
+  const streamFrameRef = useRef<number | null>(null);
+  const streamCreatedAtRef = useRef<string | null>(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
@@ -36,8 +39,45 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const messages = useMemo(() => {
     const list = chat?.messages ?? [];
     if (!streamContent) return list;
-    return [...list, {id: 'streaming', role: 'assistant' as const, content: streamContent, createdAt: new Date().toISOString()}];
+    return [
+      ...list,
+      {
+        id: 'streaming',
+        role: 'assistant' as const,
+        content: streamContent,
+        createdAt: streamCreatedAtRef.current ?? new Date().toISOString()
+      }
+    ];
   }, [chat?.messages, streamContent]);
+
+  const flushStreamBuffer = () => {
+    streamFrameRef.current = null;
+    if (!streamChunksRef.current.length) return;
+    setStreamContent(streamChunksRef.current.join(''));
+  };
+
+  const scheduleStreamFlush = () => {
+    if (streamFrameRef.current !== null) return;
+    streamFrameRef.current = requestAnimationFrame(flushStreamBuffer);
+  };
+
+  const clearStreamingState = () => {
+    if (streamFrameRef.current !== null) {
+      cancelAnimationFrame(streamFrameRef.current);
+      streamFrameRef.current = null;
+    }
+    streamChunksRef.current = [];
+    streamCreatedAtRef.current = null;
+    setStreamContent('');
+  };
+
+  useEffect(() => {
+    return () => {
+      if (streamFrameRef.current !== null) {
+        cancelAnimationFrame(streamFrameRef.current);
+      }
+    };
+  }, []);
 
   const shouldAutoFocus = searchParams.get('focus') === '1';
   const isChatLoading = Boolean(chatId) && !chat && chatQuery.isFetching;
@@ -66,6 +106,8 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
 
     setErrorMessage('');
     setValue('');
+    streamChunksRef.current = [];
+    streamCreatedAtRef.current = new Date().toISOString();
     setStreamContent('');
     setHasSubmittedMessage(true);
 
@@ -81,13 +123,22 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
       const result = await sendMutation.mutateAsync({
         chatId: activeChatId,
         payload,
-        onToken: (chunk) => setStreamContent((prev) => prev + chunk)
+        onToken: (chunk) => {
+          streamChunksRef.current.push(chunk);
+          scheduleStreamFlush();
+        }
       });
 
+      if (streamFrameRef.current !== null) {
+        cancelAnimationFrame(streamFrameRef.current);
+        flushStreamBuffer();
+      }
+
       if (result?.assistantCommitted) {
-        setStreamContent('');
+        clearStreamingState();
       }
     } catch (error) {
+      clearStreamingState();
       const fallback = 'ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.';
       setErrorMessage(error instanceof Error ? error.message : fallback);
     }
