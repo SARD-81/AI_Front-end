@@ -37,6 +37,8 @@ body {
 .prose-chat code {
   background: hsl(var(--muted));
   color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
 }
 
 
@@ -50,7 +52,8 @@ body {
 }
 
 .prose-chat a:hover {
-  color: hsl(var(--primary) / 0.85);
+  color: hsl(var(--primary) / 0.9);
+  text-decoration: underline;
 }
 
 .prose-chat blockquote {
@@ -77,5 +80,5 @@ body {
 }
 
 .prose-chat thead th {
-  background: hsl(var(--surface-2));
+  background: hsl(var(--muted));
 }
