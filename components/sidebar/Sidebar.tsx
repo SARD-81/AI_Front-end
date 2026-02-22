@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {usePathname, useRouter} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {
   ChevronsRight,
   EllipsisVertical,
@@ -36,9 +37,15 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const t = useTranslations('app');
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const chatsQuery = useChats();
   const groups = useGroupedChats(chatsQuery.data);
   const actions = useChatActions();
+
+  const currentChatId = useMemo(() => {
+    const match = pathname?.match(/\/chat[s]?\/([^/?#]+)/);
+    return match?.[1] ?? null;
+  }, [pathname]);
 
   const [collapsed, setCollapsed] = useState(false);
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // keep row selected while menu stays open
@@ -246,7 +253,32 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                 >
                                   {t('rename')}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive" onClick={() => actions.remove.mutate(chat.id)}>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={async () => {
+                                    await actions.remove.mutateAsync(chat.id);
+                                    if (currentChatId !== chat.id) return;
+
+                                    const remainingChats = (queryClient.getQueryData(['chats']) as {id: string}[] | undefined) ?? [];
+                                    const nextChatId = remainingChats[0]?.id;
+
+                                    if (nextChatId) {
+                                      router.replace(`/${locale}/chat/${nextChatId}`);
+                                      onNavigate?.();
+                                      return;
+                                    }
+
+                                    try {
+                                      const created = await actions.create.mutateAsync({title: t('newChat')});
+                                      router.replace(`/${locale}/chat/${created.id}?focus=1`);
+                                      onNavigate?.();
+                                      return;
+                                    } catch {
+                                      router.replace(`/${locale}/chat`);
+                                      onNavigate?.();
+                                    }
+                                  }}
+                                >
                                   {t('delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>

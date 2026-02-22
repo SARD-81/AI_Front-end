@@ -20,10 +20,14 @@ type UserAnchor = {
   anchorId: string;
   messageIndex: number;
   messageId: string;
+  snippet: string;
 };
 
 export function MessageList({messages, typing, onCopyMessage, onEditMessage, onRegenerate}: MessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const isAnchorNavRef = useRef(false);
+  const anchorNavTimeoutRef = useRef<number | null>(null);
+  const initializedHashScrollRef = useRef(false);
   const [atBottom, setAtBottom] = useState(true);
   const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(undefined);
   const [hoveredAnchorId, setHoveredAnchorId] = useState<string | null>(null);
@@ -40,7 +44,8 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
       .map(({message, messageIndex}) => ({
         anchorId: `msg-${message.id}`,
         messageIndex,
-        messageId: message.id
+        messageId: message.id,
+        snippet: message.content.replace(/\s+/g, ' ').trim().slice(0, 80)
       }));
   }, [messages]);
 
@@ -55,18 +60,37 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
 
 
 
+  useEffect(
+    () => () => {
+      if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+    },
+    []
+  );
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const onHashTarget = () => {
+    const scrollFromHash = (behavior: ScrollBehavior) => {
+      if (isAnchorNavRef.current) return;
       const hash = window.location.hash.slice(1);
       if (!hash || !anchorsById.has(hash)) return;
       const anchor = anchorsById.get(hash);
       if (!anchor) return;
-      virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start'});
+
+      isAnchorNavRef.current = true;
+      virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start', behavior});
+      if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+      anchorNavTimeoutRef.current = window.setTimeout(() => {
+        isAnchorNavRef.current = false;
+      }, 750);
     };
 
-    onHashTarget();
+    if (!initializedHashScrollRef.current) {
+      initializedHashScrollRef.current = true;
+      scrollFromHash('auto');
+    }
+
+    const onHashTarget = () => scrollFromHash('smooth');
     window.addEventListener('hashchange', onHashTarget);
     return () => window.removeEventListener('hashchange', onHashTarget);
   }, [anchorsById]);
@@ -87,6 +111,14 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
   };
 
   const syncActiveFromRange = (range: ListRange) => {
+    if (isAnchorNavRef.current) {
+      const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+      const target = hash ? anchorsById.get(hash) : undefined;
+      if (target && target.messageIndex >= range.startIndex && target.messageIndex <= range.endIndex) {
+        isAnchorNavRef.current = false;
+      }
+    }
+
     const {startIndex} = range;
     let resolved = userAnchors[0];
     for (const anchor of userAnchors) {
@@ -107,9 +139,14 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         hoveredAnchorId={hoveredAnchorId}
         onAnchorHover={setHoveredAnchorId}
         onAnchorClick={(anchor) => {
+          isAnchorNavRef.current = true;
           virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start', behavior: 'smooth'});
           if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', `#${anchor.anchorId}`);
+            if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+            anchorNavTimeoutRef.current = window.setTimeout(() => {
+              isAnchorNavRef.current = false;
+            }, 750);
           }
         }}
       />
