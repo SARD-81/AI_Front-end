@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {memo, useMemo, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {Check, Copy} from 'lucide-react';
@@ -69,10 +69,14 @@ function isMostlyEnglish(text: string): boolean {
   return latinLetters >= 20 && latinLetters >= arabicLetters * 2;
 }
 
-export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenerate}: MessageBubbleProps) {
+function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegenerate}: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
-  const isAssistantEnglish = message.role === 'assistant' && isMostlyEnglish(message.content);
+  const isStreaming = message.id === 'streaming';
+  const isAssistantEnglish = useMemo(
+    () => message.role === 'assistant' && isMostlyEnglish(message.content),
+    [message.role, message.content]
+  );
 
   return (
     <article className="w-full" aria-live="polite">
@@ -106,31 +110,35 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
                 </div>
               ) : (
                 <div dir={isAssistantEnglish ? 'ltr' : undefined} className={cn('prose-chat', isAssistantEnglish ? 'text-left ltr:text-left' : undefined)}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({children}) => <p className="my-2 leading-8">{children}</p>,
-                      code: ({className, children, ...props}) => {
-                        const text = String(children).replace(/\n$/, '');
-                        if (className?.includes('language-')) {
-                          return <CodeBlock value={text} />;
-                        }
-                        return (
-                          <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
-                            {text}
-                          </code>
-                        );
-                      },
-                      pre: ({children}) => <>{children}</>,
-                      table: ({children}) => (
-                        <div className="my-3 overflow-x-auto">
-                          <table>{children}</table>
-                        </div>
-                      )
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
+                  {isStreaming ? (
+                    <p className="my-2 whitespace-pre-wrap break-words leading-8">{message.content}</p>
+                  ) : (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({children}) => <p className="my-2 leading-8">{children}</p>,
+                        code: ({className, children, ...props}) => {
+                          const text = String(children).replace(/\n$/, '');
+                          if (className?.includes('language-')) {
+                            return <CodeBlock value={text} />;
+                          }
+                          return (
+                            <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
+                              {text}
+                            </code>
+                          );
+                        },
+                        pre: ({children}) => <>{children}</>,
+                        table: ({children}) => (
+                          <div className="my-3 overflow-x-auto">
+                            <table>{children}</table>
+                          </div>
+                        )
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               )}
             </div>
@@ -149,3 +157,11 @@ export function MessageBubble({message, onCopyMessage, onEditMessage, onRegenera
     </article>
   );
 }
+
+export const MessageBubble = memo(
+  MessageBubbleComponent,
+  (prevProps, nextProps) =>
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.role === nextProps.message.role &&
+    prevProps.message.content === nextProps.message.content
+);
