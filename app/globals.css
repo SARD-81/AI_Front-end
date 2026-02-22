@@ -82,3 +82,43 @@ body {
 .prose-chat thead th {
   background: hsl(var(--muted));
 }
+
+html[data-accent='default'] {
+  --primary: 222 72% 50%;
+  --ring: 222 80% 52%;
+}
+
+html.dark[data-accent='default'] {
+  --primary: 216 45% 63%;
+  --ring: 217 55% 65%;
+}
+
+html[data-accent='blue'] {
+  --primary: 210 88% 52%;
+  --ring: 210 88% 52%;
+}
+
+html.dark[data-accent='blue'] {
+  --primary: 210 90% 64%;
+  --ring: 210 90% 64%;
+}
+
+html[data-accent='purple'] {
+  --primary: 268 82% 56%;
+  --ring: 268 82% 56%;
+}
+
+html.dark[data-accent='purple'] {
+  --primary: 268 84% 68%;
+  --ring: 268 84% 68%;
+}
+
+html[data-accent='green'] {
+  --primary: 152 62% 40%;
+  --ring: 152 62% 40%;
+}
+
+html.dark[data-accent='green'] {
+  --primary: 152 62% 50%;
+  --ring: 152 62% 50%;
+}
