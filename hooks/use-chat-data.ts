@@ -254,6 +254,7 @@ export function useChatActions() {
           (previous ?? []).filter((item) => item.id !== chatId)
         );
         queryClient.removeQueries({queryKey: ['chat', chatId]});
+        queryClient.invalidateQueries({queryKey: ['chats']});
       }
     })
   };

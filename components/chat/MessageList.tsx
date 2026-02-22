@@ -1,11 +1,12 @@
 'use client';
 
-import {useMemo, useRef, useState} from 'react';
-import {Virtuoso, type VirtuosoHandle} from 'react-virtuoso';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {Virtuoso, type ListRange, type VirtuosoHandle} from 'react-virtuoso';
 import {ArrowDown} from 'lucide-react';
 import type {ChatMessage} from '@/lib/api/chat';
 import {Button} from '@/components/ui/button';
 import {MessageBubble} from './MessageBubble';
+import {UserMessageRail} from './UserMessageRail';
 
 type MessageListProps = {
   messages: ChatMessage[];
@@ -15,14 +16,66 @@ type MessageListProps = {
   onRegenerate: () => void;
 };
 
+type UserAnchor = {
+  anchorId: string;
+  messageIndex: number;
+  messageId: string;
+};
+
 export function MessageList({messages, typing, onCopyMessage, onEditMessage, onRegenerate}: MessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [atBottom, setAtBottom] = useState(true);
+  const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(undefined);
+  const [hoveredAnchorId, setHoveredAnchorId] = useState<string | null>(null);
 
   const items = useMemo(() => {
     if (!typing) return messages;
     return [...messages, {id: 'typing', role: 'assistant' as const, content: '...', createdAt: new Date().toISOString()}];
   }, [messages, typing]);
+
+  const userAnchors = useMemo<UserAnchor[]>(() => {
+    return messages
+      .map((message, messageIndex) => ({message, messageIndex}))
+      .filter(({message}) => message.role === 'user')
+      .map(({message, messageIndex}) => ({
+        anchorId: `msg-${message.id}`,
+        messageIndex,
+        messageId: message.id
+      }));
+  }, [messages]);
+
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i]?.role === 'assistant') return messages[i]?.id;
+    }
+    return undefined;
+  }, [messages]);
+
+  const anchorsById = useMemo(() => new Map(userAnchors.map((anchor) => [anchor.anchorId, anchor])), [userAnchors]);
+
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const onHashTarget = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash || !anchorsById.has(hash)) return;
+      const anchor = anchorsById.get(hash);
+      if (!anchor) return;
+      virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start'});
+    };
+
+    onHashTarget();
+    window.addEventListener('hashchange', onHashTarget);
+    return () => window.removeEventListener('hashchange', onHashTarget);
+  }, [anchorsById]);
+
+  useEffect(() => {
+    if (!activeAnchorId && userAnchors.length) {
+      setActiveAnchorId(userAnchors[0]?.anchorId);
+    }
+  }, [activeAnchorId, userAnchors]);
 
   const scrollToBottom = () => {
     virtuosoRef.current?.scrollToIndex({
@@ -33,8 +86,34 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
     setAtBottom(true);
   };
 
+  const syncActiveFromRange = (range: ListRange) => {
+    const {startIndex} = range;
+    let resolved = userAnchors[0];
+    for (const anchor of userAnchors) {
+      if (anchor.messageIndex <= startIndex) {
+        resolved = anchor;
+      } else {
+        break;
+      }
+    }
+    setActiveAnchorId(resolved?.anchorId);
+  };
+
   return (
     <div className="relative h-full min-h-0 w-full">
+      <UserMessageRail
+        anchors={userAnchors}
+        activeAnchorId={activeAnchorId}
+        hoveredAnchorId={hoveredAnchorId}
+        onAnchorHover={setHoveredAnchorId}
+        onAnchorClick={(anchor) => {
+          virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start', behavior: 'smooth'});
+          if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', `#${anchor.anchorId}`);
+          }
+        }}
+      />
+
       <Virtuoso
         ref={virtuosoRef}
         data={items}
@@ -42,16 +121,22 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         followOutput={atBottom ? 'auto' : false}
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
         atBottomThreshold={80}
-        itemContent={(_, message) => (
-          <div className="mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
-            <MessageBubble
-              message={message}
-              onCopyMessage={onCopyMessage}
-              onEditMessage={onEditMessage}
-              onRegenerate={onRegenerate}
-            />
-          </div>
-        )}
+        rangeChanged={syncActiveFromRange}
+        itemContent={(index, message) => {
+          const anchorId = message.role === 'user' ? `msg-${message.id}` : undefined;
+          return (
+            <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+              <MessageBubble
+                message={message}
+                onCopyMessage={onCopyMessage}
+                onEditMessage={onEditMessage}
+                onRegenerate={onRegenerate}
+                isLastAssistant={message.role === 'assistant' && message.id === lastAssistantMessageId}
+                anchorId={anchorId}
+              />
+            </div>
+          );
+        }}
       />
 
       {!atBottom && items.length > 0 ? (

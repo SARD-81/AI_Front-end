@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -20,6 +21,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [value, setValue] = useState('');
   const [search, setSearch] = useState(false);
   const {thinkingLevel, setThinkingLevel} = useThinkingLevel('standard');
@@ -161,6 +163,17 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     setValue(content);
     setFocusTrigger((prev) => prev + 1);
   };
+
+
+  useEffect(() => {
+    const deletedChatId = actions.remove.variables;
+    if (!deletedChatId || !actions.remove.isSuccess || !chatId) return;
+    if (deletedChatId !== chatId) return;
+
+    queryClient.removeQueries({queryKey: ['chat', deletedChatId]});
+    queryClient.invalidateQueries({queryKey: ['chats']});
+    router.replace(`/${locale}/chat`);
+  }, [actions.remove.isSuccess, actions.remove.variables, chatId, locale, queryClient, router]);
 
   const handleRegenerate = async () => {
     const currentMessages = chat?.messages ?? [];

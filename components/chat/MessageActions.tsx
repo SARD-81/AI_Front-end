@@ -1,6 +1,6 @@
 'use client';
 
-import {Copy, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
+import {Copy, Link2, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
 
@@ -8,11 +8,12 @@ type MessageActionsProps = {
   role: 'user' | 'assistant';
   onCopy: () => void;
   onEdit?: () => void;
+  onCopyLink?: () => void;
   onRegenerate?: () => void;
   className?: string;
 };
 
-export function MessageActions({role, onCopy, onEdit, onRegenerate, className}: MessageActionsProps) {
+export function MessageActions({role, onCopy, onEdit, onCopyLink, onRegenerate, className}: MessageActionsProps) {
   const baseClass =
     'h-7 w-7 rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95';
 
@@ -23,9 +24,14 @@ export function MessageActions({role, onCopy, onEdit, onRegenerate, className}: 
       </Button>
 
       {role === 'user' ? (
-        <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label="ویرایش">
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
+        <>
+          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopyLink} aria-label="کپی لینک پیام">
+            <Link2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label="ویرایش">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </>
       ) : (
         <>
           <Button
