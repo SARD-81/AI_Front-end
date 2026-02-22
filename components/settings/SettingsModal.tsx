@@ -136,7 +136,7 @@ function SettingsDropdown({
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
-            className="justify-between"
+            className="justify-between gap-2"
           >
             <Check className={cn('h-4 w-4', value === option.value ? 'opacity-100' : 'opacity-0')} />
             <span>{option.label}</span>
@@ -177,8 +177,8 @@ export function SettingsModal({
         className="h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border p-0 text-right sm:h-[600px]"
       >
         <DialogTitle className="sr-only">تنظیمات</DialogTitle>
-        <div className="flex h-full flex-col sm:flex-row-reverse">
-          <aside className="w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:border-l sm:p-4">
+        <div className="flex h-full flex-col sm:flex-row">
+          <aside className="w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:border-r sm:p-4">
             <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">تنظیمات</h2>
             <nav className="space-y-1">
               <button

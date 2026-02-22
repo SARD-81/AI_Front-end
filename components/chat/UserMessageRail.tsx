@@ -87,7 +87,7 @@ export function UserMessageRail({
             isOpen ? 'opacity-100 shadow-sm ring-1 ring-ring/20' : 'opacity-85'
           )}
         >
-          <List className="mb-0.5 h-3.5 w-3.5 text-muted-foreground/75" aria-hidden />
+          {/*<List className="mb-0.5 h-3.5 w-3.5 text-muted-foreground/75" aria-hidden />*/}
           {anchors.map((anchor) => {
             const isActive = highlightedAnchorId === anchor.anchorId;
             return (

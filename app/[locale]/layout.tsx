@@ -1,11 +1,15 @@
 import {notFound} from 'next/navigation';
-import {Vazirmatn} from 'next/font/google';
+import localFont from 'next/font/local';
 import {getMessages} from 'next-intl/server';
 import {AppProviders} from '@/components/providers/app-providers';
 import {locales} from '@/lib/i18n/config';
 
-const vazirmatn = Vazirmatn({
-  subsets: ['arabic'],
+const vazirmatn = localFont({
+  src: '../fonts/vazirmatn/Vazirmatn-Regular.ttf',
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
+  preload: true,
   variable: '--font-vazirmatn'
 });
 

@@ -31,7 +31,7 @@ export function DropdownMenuItem({className, ...props}: Dropdown.DropdownMenuIte
   return (
     <Dropdown.Item
       className={cn(
-        'relative flex h-10 cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
+        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md mr-3 px-3 py-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
         className
       )}
       {...props}
@@ -43,7 +43,7 @@ export function DropdownMenuRadioItem({className, children, ...props}: Dropdown.
   return (
     <Dropdown.RadioItem
       className={cn(
-        'relative flex h-10 cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
+        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground',
         className
       )}
       {...props}
