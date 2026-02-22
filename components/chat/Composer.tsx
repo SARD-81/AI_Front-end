@@ -95,7 +95,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-40 w-full resize-none bg-transparent px-2 py-2 text-[15px] leading-7 outline-none placeholder:text-muted-foreground"
+        className="max-h-40 w-full resize-none bg-transparent px-2 py-2 text-[15px] leading-7 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -153,8 +153,8 @@ export function Composer({
                         value={option.value}
                         className={cn(
                           'w-full items-start rounded-xl border p-3 text-right focus:text-foreground',
-                          'hover:bg-accent/60',
-                          isSelected ? 'border-primary bg-primary/10' : 'border-border bg-background'
+                          'hover:bg-accent',
+                          isSelected ? 'border-primary/50 bg-accent' : 'border-border bg-background'
                         )}
                       >
                         <div className="w-full pr-5">

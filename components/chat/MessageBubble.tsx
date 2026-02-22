@@ -22,14 +22,14 @@ function CodeBlock({value}: {value: string}) {
   };
 
   return (
-    <div className="my-3 overflow-hidden rounded-md border border-border bg-surface-1">
+    <div className="my-3 overflow-hidden rounded-md border border-border bg-muted">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <span className="text-xs text-muted-foreground">code</span>
         <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </Button>
       </div>
-      <pre dir="ltr" className="overflow-x-auto bg-surface-1 p-3 text-sm leading-6 text-foreground">
+      <pre dir="ltr" className="overflow-x-auto bg-muted p-3 text-sm leading-6 text-foreground">
         <code dir="ltr">{value}</code>
       </pre>
     </div>
@@ -97,7 +97,7 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
             >
               {isUser ? (
                 <div className="group relative w-fit max-w-full">
-                  <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-surface-2 px-4 py-3 text-foreground shadow-card">
+                  <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-secondary px-4 py-3 text-foreground shadow-card">
                     {message.content}
                   </p>
                   <div className="absolute right-0 top-full h-2 w-full" aria-hidden />
@@ -123,7 +123,7 @@ function MessageBubbleComponent({message, onCopyMessage, onEditMessage, onRegene
                             return <CodeBlock value={text} />;
                           }
                           return (
-                            <code dir="ltr" className="rounded border border-border/80 bg-surface-1 px-1.5 py-0.5 text-sm" {...props}>
+                            <code dir="ltr" className="rounded border border-border/80 bg-muted px-1.5 py-0.5 text-sm" {...props}>
                               {text}
                             </code>
                           );
