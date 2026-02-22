@@ -25,6 +25,7 @@ import {
 import {Skeleton} from '@/components/ui/skeleton';
 import {Sidebar as SidebarRoot, SidebarContent, SidebarFooter, SidebarHeader} from '@/components/ui/sidebar';
 import {useChatActions, useChats, useGroupedChats} from '@/hooks/use-chat-data';
+import {SettingsModal, useAppSettings} from '@/components/settings/SettingsModal';
 import {cn} from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 76;
@@ -42,6 +43,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // keep row selected while menu stays open
   const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
   const [editingTitle, setEditingTitle] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const {settings, setSettings} = useAppSettings();
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-collapsed');
@@ -86,7 +90,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
         style={{width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}}
       >
         <SidebarRoot className="h-full w-full">
-          <SidebarHeader className={cn('space-y-2', collapsed && 'flex flex-col items-center space-y-2')}>
+          <SidebarHeader className={cn('space-y-3 px-4 py-4', collapsed && 'flex flex-col items-center space-y-3 px-2 py-4')}>
             <Link
               href={`/${locale}`}
               aria-label="خانه"
@@ -100,7 +104,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">دانشگاه شهید بهشتی</span> : null}
             </Link>
 
-            <motion.div layout className={cn('flex items-center gap-2', collapsed && 'flex-col')}>
+            <motion.div layout className={cn('flex items-center gap-3', collapsed && 'flex-col')}>
               <Button
                 type="button"
                 onClick={createNewChat}
@@ -268,7 +272,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               <DropdownMenuContent align="start" side="left">
                 <DropdownMenuItem
                   onClick={() => {
-                    router.push('/fa/settings');
+                    setSettingsOpen(true);
                     onNavigate?.();
                   }}
                 >
@@ -292,6 +296,8 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
           </SidebarFooter>
         </SidebarRoot>
       </motion.div>
+
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} setSettings={setSettings} />
     </LayoutGroup>
   );
 }

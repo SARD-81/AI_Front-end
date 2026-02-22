@@ -1,0 +1,21 @@
+{
+  "app": {
+    "newChat": "New chat",
+    "emptyTitle": "What would you like to talk about?",
+    "emptyDescription": "Choose a topic or start a fresh chat.",
+    "composerPlaceholder": "Type your message...",
+    "send": "Send",
+    "search": "Search",
+    "deepThink": "DeepThink",
+    "today": "Today",
+    "month": "Last 30 days",
+    "older": "Older",
+    "rename": "Rename",
+    "delete": "Delete",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "typing": "Typing..."
+  }
+}
