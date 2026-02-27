@@ -1,11 +1,16 @@
 export type AuthUserDTO = {
   studentId: string;
+  fullName?: string;
   firstName?: string;
   lastName?: string;
+  email?: string;
+  faculty?: string;
+  major?: string;
+  degreeLevel?: string;
 };
 
 export type LoginInputDTO = {
-  studentId: string;
+  identifier: string;
   password: string;
 };
 
@@ -14,36 +19,33 @@ export type SendOtpInputDTO = {
 };
 
 export type VerifyOtpInputDTO = {
-  requestId: string;
-  code: string;
+  email: string;
+  otpCode: string;
 };
 
 export type RegisterInputDTO = {
-  verificationToken: string;
-  profile: {
-    firstName: string;
-    lastName: string;
-    studentId: string;
-    degree: string;
-    faculty: string;
-    major: string;
-    specialization?: string;
-  };
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  studentId: string;
+  faculty: string;
+  major: string;
+  degreeLevel: string;
 };
 
 export type LoginResultDTO = {
-  user: AuthUserDTO;
+  user: Pick<AuthUserDTO, 'studentId' | 'fullName'>;
 };
 
 export type SendOtpResultDTO = {
-  requestId: string;
-  devCode?: string;
+  message: string;
 };
 
 export type VerifyOtpResultDTO = {
-  verificationToken: string;
+  message: string;
 };
 
 export type RegisterResultDTO = {
-  ok: true;
+  message: string;
 };

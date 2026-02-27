@@ -31,6 +31,21 @@ export function resolveApiUrl(path: string) {
   return joinUrl(getApiBaseUrl(), path);
 }
 
+function redirectToLogin() {
+  if (typeof window === 'undefined') return;
+
+  const {pathname, search} = window.location;
+  const locale = pathname.split('/').filter(Boolean)[0] || 'fa';
+  const isAuthPage = pathname.includes('/auth');
+
+  if (isAuthPage) return;
+
+  const next = `${pathname}${search}`;
+  const target = `/${locale}/auth?mode=login&next=${encodeURIComponent(next)}`;
+  if (window.location.href.includes(target)) return;
+  window.location.assign(target);
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => undefined);
   if (!response.ok) {
@@ -47,20 +62,21 @@ async function parseResponse<T>(response: Response): Promise<T> {
           ? data.error.message.trim()
           : '';
     const errorMessage = payloadMessage || 'API request failed';
-    throw new ApiError(errorMessage, response.status, data);
+    const error = new ApiError(errorMessage, response.status, data);
+
+    if (response.status === 401) {
+      redirectToLogin();
+    }
+
+    throw error;
   }
   return data as T;
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const requestUrl = resolveApiUrl(path);
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.debug('[apiFetch] request URL:', requestUrl);
-  }
-
-  const response = await fetch(requestUrl, {
+  const response = await fetch(resolveApiUrl(path), {
     ...init,
+    credentials: 'same-origin',
     headers: {
       ...DEFAULT_HEADERS,
       ...init?.headers

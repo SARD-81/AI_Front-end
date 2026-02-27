@@ -70,7 +70,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const scrollFromHash = (behavior: ScrollBehavior) => {
+    const scrollFromHash = (behavior: "auto" | "smooth") => {
       if (isAnchorNavRef.current) return;
       const hash = window.location.hash.slice(1);
       if (!hash || !anchorsById.has(hash)) return;

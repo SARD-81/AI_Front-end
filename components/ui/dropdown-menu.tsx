@@ -13,7 +13,6 @@ export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenu
   return (
     <Dropdown.Portal>
       <Dropdown.Content
-        dir="rtl"
         className={cn(
           'z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-right text-popover-foreground shadow-card outline-none',
           'origin-top-right transition duration-200 ease-out data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
