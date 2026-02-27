@@ -41,23 +41,23 @@ export function NotFoundView({locale: localeProp}: NotFoundViewProps) {
           >
             <p className="text-7xl font-black leading-none text-muted-foreground/40">404</p>
             <h1 className="text-2xl font-bold leading-relaxed text-foreground md:text-3xl">
-              متأسفانه، دانش‌نامه این مسیر را پیدا نکرد.
+              متأسفانه، این مسیر اشتباه است.
             </h1>
             <p className="text-sm leading-7 text-muted-foreground md:text-base">
               صفحه‌ای که به دنبال آن هستید ممکن است تغییر نام داده شده باشد، حذف شده باشد، یا آدرس آن را اشتباه وارد کرده باشید.
             </p>
 
-            <form onSubmit={onSubmit} className="w-full max-w-md">
-              <div className="relative">
-                <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="جستجو در دانش‌نامه یا چت‌های قبلی..."
-                  className="h-11 pr-10"
-                />
-              </div>
-            </form>
+            {/*<form onSubmit={onSubmit} className="w-full max-w-md">*/}
+            {/*  <div className="relative">*/}
+            {/*    <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />*/}
+            {/*    <Input*/}
+            {/*      value={query}*/}
+            {/*      onChange={(event) => setQuery(event.target.value)}*/}
+            {/*      placeholder="جستجو در دانش‌نامه یا چت‌های قبلی..."*/}
+            {/*      className="h-11 pr-10"*/}
+            {/*    />*/}
+            {/*  </div>*/}
+            {/*</form>*/}
 
             <div className="flex flex-wrap gap-3">
               <Button asChild>
@@ -66,12 +66,12 @@ export function NotFoundView({locale: localeProp}: NotFoundViewProps) {
                   بازگشت به صفحه اصلی / چت
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
-                <Link href="/#support" className="inline-flex items-center gap-2">
-                  <LifeBuoy className="size-4" />
-                  گزارش به پشتیبانی فنی دانشگاه
-                </Link>
-              </Button>
+              {/*<Button variant="outline" asChild>*/}
+              {/*  <Link href="/#support" className="inline-flex items-center gap-2">*/}
+              {/*    <LifeBuoy className="size-4" />*/}
+              {/*    گزارش به پشتیبانی فنی دانشگاه*/}
+              {/*  </Link>*/}
+              {/*</Button>*/}
             </div>
           </motion.div>
 
