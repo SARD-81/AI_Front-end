@@ -16,6 +16,236 @@
     "light": "روشن",
     "dark": "تیره",
     "system": "سیستم",
-    "typing": "در حال تایپ..."
+    "typing": "در حال تایپ...",
+
+    "sidebar": {
+      "homeAria": "خانه",
+      "universityLogoAlt": "لوگوی دانشگاه شهید بهشتی",
+      "universityName": "دانشگاه شهید بهشتی",
+      "openSidebarAria": "باز کردن نوار کناری",
+      "closeSidebarAria": "بستن نوار کناری",
+      "openTitle": "باز کردن",
+      "closeTitle": "بستن",
+      "renameConversationAria": "تغییر نام گفتگو",
+      "conversationOptionsAria": "گزینه‌های گفتگو",
+      "profileAria": "پروفایل",
+      "guestUser": "کاربر مهمان",
+      "demoLabel": "نسخهٔ نمایشی",
+      "settings": "تنظیمات",
+      "logout": "خروج از حساب"
+    },
+
+    "chat": {
+      "conversationFallbackTitle": "گفت‌وگو",
+      "openConversationsAria": "باز کردن گفتگوها",
+      "goToBottomAria": "رفتن به پایین",
+      "serverUnreachable": "ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.",
+      "copied": "کپی شد",
+      "copyFailed": "کپی پیام ممکن نبود",
+      "copyLinkSuccess": "لینک پیام کپی شد",
+      "copyLinkFailed": "کپی لینک ممکن نبود",
+      "responding": "در حال پاسخ…"
+    },
+
+    "composer": {
+      "thinkingLevelLabel": "سطح تفکر :",
+      "attachFileAria": "ضمیمه فایل",
+      "thinkingLevels": {
+        "standard": {
+          "title": "استاندارد",
+          "subtitle": "پاسخ سریع و مستقیم بدون تحلیل اضافی."
+        },
+        "low": {
+          "title": "تفکر ساده (Low)",
+          "subtitle": "پاسخ‌های سریع با حداقل تفکر داخلی."
+        },
+        "medium": {
+          "title": "تفکر متعادل (Medium)",
+          "subtitle": "تعادل بین سرعت و عمق."
+        },
+        "high": {
+          "title": "تفکر عمیق (High)",
+          "subtitle": "تحلیل دقیق و مفصل با صرف زمان بیشتر."
+        }
+      }
+    },
+
+    "emptyState": {
+      "logoAlt": "لوگو",
+      "welcomeLine1": "به دستیار هوشمند دانشگاه",
+      "welcomeLine2": "شهید بهشتی خوش آمدید",
+      "description": "یک گفتگو با دستیار پیشرفته هوش مصنوعی آغاز کنید. سؤال بپرسید، کمک بگیرید یا فقط یک گفتگوی دوستانه داشته باشید",
+      "suggestedPrompts": [
+        "شرایط استفاده از فرصت مطالعاتی کوتاه مدت",
+        "شرایط تغییر رشته",
+        "ترکیب اعضای شورای عالی انقلاب فرهنگی",
+        "راه اندازی یک رشته جدید در دانشگاه",
+        "تحصیل همزمان در دو رشته",
+        "تبدیل وضعیت از رسمی-آزمایشی به رسمی-قطعی",
+        "حداقل و حداکثر واحد قابل اخذ در هر نیمسال",
+        "سنوات مجاز تحصیل در مقطع دکتری"
+      ]
+    },
+
+    "messageActions": {
+      "copyAria": "کپی",
+      "copyLinkAria": "کپی لینک پیام",
+      "editAria": "ویرایش",
+      "regenerateAria": "تولید دوباره",
+      "likeAria": "پسندیدن",
+      "dislikeAria": "نپسندیدن"
+    },
+
+    "userRail": {
+      "jumpToUserMessageAria": "پرش به پیام کاربر",
+      "yourMessagesHint": "پرش به پیام‌های شما",
+      "emptyMessage": "پیام بدون متن",
+      "activeMessageSr": "پیام فعال {index}"
+    }
+  },
+
+  "auth": {
+    "brand": {
+      "logoAlt": "لوگوی دانشگاه",
+      "headline": "دستیار هوشمند دانشگاه شهید بهشتی",
+      "tagline": "درگاه احراز هویت یکپارچه برای دسترسی ایمن به خدمات هوشمند آموزشی و پژوهشی دانشگاه."
+    },
+    "card": {
+      "loginTitle": "ورود به حساب کاربری",
+      "signupTitle": "ایجاد حساب کاربری",
+      "loginDescription": "برای ورود، شماره دانشجویی یا ایمیل دانشگاهی و رمز عبور خود را وارد کنید.",
+      "signupDescription": "برای ثبت‌نام، ابتدا ایمیل دانشگاهی خود را تایید کنید."
+    },
+    "toggle": {
+      "toSignup": "حساب ندارید؟ ثبت‌نام",
+      "toLogin": "حساب دارید؟ ورود"
+    },
+    "login": {
+      "identifierLabel": "شماره دانشجویی یا ایمیل دانشگاهی",
+      "identifierPlaceholder": "401123456 یا user@sbu.ac.ir",
+      "passwordLabel": "رمز عبور",
+      "passwordPlaceholder": "رمز عبور",
+      "showPasswordAria": "نمایش رمز عبور",
+      "hidePasswordAria": "پنهان‌سازی رمز عبور",
+      "submit": "ورود به سامانه",
+      "successToast": "ورود با موفقیت انجام شد.",
+      "errorFallbackToast": "خطا در ورود به سامانه."
+    },
+    "signup": {
+      "step1": {
+        "emailLabel": "ایمیل دانشگاهی",
+        "otpLabel": "کد تایید",
+        "sendOtpButton": "ارسال کد",
+        "verifyNextButton": "تایید و ادامه",
+        "sendOtpErrorFallback": "ارسال کد تایید ناموفق بود.",
+        "verifyErrorFallback": "تایید کد ناموفق بود."
+      },
+      "step2": {
+        "verifiedEmailLabel": "ایمیل تاییدشده:",
+        "firstName": "نام",
+        "lastName": "نام خانوادگی",
+        "studentId": "شماره دانشجویی",
+        "degreeLevel": "مقطع تحصیلی",
+        "degreeSelectPlaceholder": "انتخاب کنید",
+        "faculty": "دانشکده",
+        "major": "رشته تحصیلی",
+        "specializationOptional": "گرایش (اختیاری)",
+        "password": "رمز عبور",
+        "confirmPassword": "تکرار رمز عبور",
+        "back": "بازگشت",
+        "submit": "تکمیل ثبت‌نام",
+        "registerErrorFallback": "ثبت‌نام ناموفق بود.",
+        "degreeOptions": ["کاردانی", "کارشناسی", "کارشناسی ارشد", "دکتری"]
+      }
+    },
+    "postSignup": {
+      "autoLoginSuccessToast": "حساب با موفقیت ایجاد شد و وارد شدید.",
+      "fallbackToast": "حساب ایجاد شد. لطفاً وارد شوید."
+    }
+  },
+
+  "settings": {
+    "title": "تنظیمات",
+    "tabs": {
+      "general": "عمومی",
+      "account": "حساب"
+    },
+    "rows": {
+      "appearance": "ظاهر",
+      "accent": "رنگ تاکیدی",
+      "language": "زبان",
+      "name": "نام",
+      "email": "ایمیل"
+    },
+    "appearanceOptions": {
+      "system": "سیستم",
+      "light": "روشن",
+      "dark": "تیره"
+    },
+    "accentOptions": {
+      "default": "پیش‌فرض",
+      "blue": "آبی",
+      "purple": "بنفش",
+      "green": "سبز"
+    },
+    "languageOptions": {
+      "auto": "تشخیص خودکار",
+      "fa": "فارسی",
+      "en": "English"
+    },
+    "guestUser": "کاربر مهمان"
+  },
+
+  "notFound": {
+    "title": "متأسفانه، این مسیر اشتباه است.",
+    "subtitle": "صفحه‌ای که به دنبال آن هستید ممکن است تغییر نام داده شده باشد، حذف شده باشد، یا آدرس آن را اشتباه وارد کرده باشید.",
+    "searchPlaceholder": "جستجو در دانش‌نامه یا چت‌های قبلی...",
+    "backToChat": "بازگشت به صفحه اصلی / چت",
+    "support": "گزارش به پشتیبانی فنی دانشگاه"
+  },
+
+  "validation": {
+    "studentIdRequired": "شماره دانشجویی الزامی است.",
+    "studentIdDigitsOnly": "شماره دانشجویی باید فقط شامل رقم باشد.",
+    "studentIdMin": "شماره دانشجویی باید حداقل ۵ رقم باشد.",
+    "studentIdMax": "شماره دانشجویی نباید بیشتر از ۱۲ رقم باشد.",
+    "identifierRequired": "ورود شماره دانشجویی یا ایمیل الزامی است.",
+    "identifierInvalid": "شناسه باید شماره دانشجویی معتبر یا ایمیل دانشگاهی مجاز باشد.",
+    "passwordRequired": "رمز عبور الزامی است.",
+    "universityEmailRequired": "ایمیل دانشگاهی الزامی است.",
+    "emailInvalidFormat": "فرمت ایمیل معتبر نیست.",
+    "emailNotAllowedDomain": "ایمیل باید در دامنه دانشگاهی مجاز باشد.",
+    "otpRequired": "کد تایید الزامی است.",
+    "otpInvalid": "کد تایید باید دقیقا ۶ رقم باشد.",
+    "firstNameMin": "نام باید حداقل ۲ کاراکتر باشد.",
+    "lastNameMin": "نام خانوادگی باید حداقل ۲ کاراکتر باشد.",
+    "degreeRequired": "مقطع تحصیلی الزامی است.",
+    "facultyRequired": "دانشکده الزامی است.",
+    "majorMin": "رشته تحصیلی باید حداقل ۲ کاراکتر باشد.",
+    "confirmPasswordRequired": "تکرار رمز عبور الزامی است.",
+    "passwordMin": "رمز عبور باید حداقل ۸ کاراکتر باشد.",
+    "passwordUpper": "رمز عبور باید حداقل یک حرف بزرگ داشته باشد.",
+    "passwordLower": "رمز عبور باید حداقل یک حرف کوچک داشته باشد.",
+    "passwordNumber": "رمز عبور باید حداقل یک عدد داشته باشد.",
+    "passwordSymbol": "رمز عبور باید حداقل یک نماد داشته باشد.",
+    "passwordMismatch": "تکرار رمز عبور با رمز عبور یکسان نیست."
+  },
+
+  "errors": {
+    "universityEmailHint": "فقط ایمیل‌های دانشگاه با دامنه sbu.ac.ir یا mail.sbu.ac.ir مجاز هستند.",
+    "rateLimit": "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.",
+    "internalServer": "خطای داخلی سرور رخ داد.",
+    "backendOriginMissing": "تنظیمات سرور ناقص است.",
+    "requestFailed": "درخواست ناموفق بود.",
+    "bffRequestFailed": "درخواست به BFF ناموفق بود.",
+    "openRouterRequestFailed": "درخواست به OpenRouter ناموفق بود.",
+    "emptyResponse": "پاسخ خالی دریافت شد.",
+    "emptyOpenRouterResponse": "پاسخ خالی از OpenRouter دریافت شد.",
+    "serviceUnexpected": "خطای غیرمنتظره رخ داد.",
+    "serviceNetwork": "در ارتباط با سرور خطایی رخ داد. لطفاً دوباره تلاش کنید."
+  },
+
+  "metadata": {
+    "appTitle": "دستیار دانشگاه شهید بهشتی"
   }
 }

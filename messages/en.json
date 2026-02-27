@@ -16,6 +16,236 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System",
-    "typing": "Typing..."
+    "typing": "Typing...",
+
+    "sidebar": {
+      "homeAria": "Home",
+      "universityLogoAlt": "Shahid Beheshti University logo",
+      "universityName": "Shahid Beheshti University",
+      "openSidebarAria": "Expand sidebar",
+      "closeSidebarAria": "Collapse sidebar",
+      "openTitle": "Expand",
+      "closeTitle": "Collapse",
+      "renameConversationAria": "Rename conversation",
+      "conversationOptionsAria": "Conversation options",
+      "profileAria": "Profile",
+      "guestUser": "Guest user",
+      "demoLabel": "Demo",
+      "settings": "Settings",
+      "logout": "Sign out"
+    },
+
+    "chat": {
+      "conversationFallbackTitle": "Conversation",
+      "openConversationsAria": "Open conversations",
+      "goToBottomAria": "Scroll to bottom",
+      "serverUnreachable": "Could not reach the response server. Please try again.",
+      "copied": "Copied",
+      "copyFailed": "Could not copy the message",
+      "copyLinkSuccess": "Message link copied",
+      "copyLinkFailed": "Could not copy the link",
+      "responding": "Responding…"
+    },
+
+    "composer": {
+      "thinkingLevelLabel": "Thinking level:",
+      "attachFileAria": "Attach a file",
+      "thinkingLevels": {
+        "standard": {
+          "title": "Standard",
+          "subtitle": "Fast, direct answers with no extra analysis."
+        },
+        "low": {
+          "title": "Light (Low)",
+          "subtitle": "Quick answers with minimal internal reasoning."
+        },
+        "medium": {
+          "title": "Balanced (Medium)",
+          "subtitle": "A balance between speed and depth."
+        },
+        "high": {
+          "title": "Deep (High)",
+          "subtitle": "More thorough analysis and a bit more time."
+        }
+      }
+    },
+
+    "emptyState": {
+      "logoAlt": "Logo",
+      "welcomeLine1": "Welcome to",
+      "welcomeLine2": "Shahid Beheshti University AI Assistant",
+      "description": "Start a conversation with an advanced AI assistant. Ask a question, get help, or just have a friendly chat.",
+      "suggestedPrompts": [
+        "Eligibility for short-term research leave",
+        "Requirements for changing major",
+        "Composition of the Supreme Council of the Cultural Revolution",
+        "How to launch a new academic program at the university",
+        "Studying two majors simultaneously",
+        "Transition from probationary to permanent appointment",
+        "Minimum and maximum credits per semester",
+        "Allowed duration of study in the PhD program"
+      ]
+    },
+
+    "messageActions": {
+      "copyAria": "Copy",
+      "copyLinkAria": "Copy message link",
+      "editAria": "Edit",
+      "regenerateAria": "Regenerate",
+      "likeAria": "Like",
+      "dislikeAria": "Dislike"
+    },
+
+    "userRail": {
+      "jumpToUserMessageAria": "Jump to your message",
+      "yourMessagesHint": "Jump to your messages",
+      "emptyMessage": "Empty message",
+      "activeMessageSr": "Active message {index}"
+    }
+  },
+
+  "auth": {
+    "brand": {
+      "logoAlt": "University logo",
+      "headline": "Shahid Beheshti University AI Assistant",
+      "tagline": "Unified authentication gateway for secure access to the university’s smart educational and research services."
+    },
+    "card": {
+      "loginTitle": "Sign in",
+      "signupTitle": "Create account",
+      "loginDescription": "To sign in, enter your student ID or university email and password.",
+      "signupDescription": "To sign up, first verify your university email."
+    },
+    "toggle": {
+      "toSignup": "Don’t have an account? Sign up",
+      "toLogin": "Already have an account? Sign in"
+    },
+    "login": {
+      "identifierLabel": "Student ID or university email",
+      "identifierPlaceholder": "Example: 401123456 or user@sbu.ac.ir",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Password",
+      "showPasswordAria": "Show password",
+      "hidePasswordAria": "Hide password",
+      "submit": "Sign in",
+      "successToast": "Signed in successfully.",
+      "errorFallbackToast": "Could not sign in."
+    },
+    "signup": {
+      "step1": {
+        "emailLabel": "University email",
+        "otpLabel": "Verification code",
+        "sendOtpButton": "Send code",
+        "verifyNextButton": "Verify & continue",
+        "sendOtpErrorFallback": "Failed to send verification code.",
+        "verifyErrorFallback": "Verification failed."
+      },
+      "step2": {
+        "verifiedEmailLabel": "Verified email:",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "studentId": "Student ID",
+        "degreeLevel": "Degree level",
+        "degreeSelectPlaceholder": "Select",
+        "faculty": "Faculty",
+        "major": "Major",
+        "specializationOptional": "Specialization (optional)",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "back": "Back",
+        "submit": "Complete registration",
+        "registerErrorFallback": "Registration failed.",
+        "degreeOptions": ["Associate", "Bachelor", "Master", "PhD"]
+      }
+    },
+    "postSignup": {
+      "autoLoginSuccessToast": "Account created and you are now signed in.",
+      "fallbackToast": "Account created. Please sign in."
+    }
+  },
+
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "account": "Account"
+    },
+    "rows": {
+      "appearance": "Appearance",
+      "accent": "Accent color",
+      "language": "Language",
+      "name": "Name",
+      "email": "Email"
+    },
+    "appearanceOptions": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "accentOptions": {
+      "default": "Default",
+      "blue": "Blue",
+      "purple": "Purple",
+      "green": "Green"
+    },
+    "languageOptions": {
+      "auto": "Auto detect",
+      "fa": "Persian",
+      "en": "English"
+    },
+    "guestUser": "Guest user"
+  },
+
+  "notFound": {
+    "title": "Sorry, this route is incorrect.",
+    "subtitle": "The page you are looking for might have been renamed, removed, or you entered the address incorrectly.",
+    "searchPlaceholder": "Search the knowledge base or previous chats...",
+    "backToChat": "Back to home / chat",
+    "support": "Report to university technical support"
+  },
+
+  "validation": {
+    "studentIdRequired": "Student ID is required.",
+    "studentIdDigitsOnly": "Student ID must contain digits only.",
+    "studentIdMin": "Student ID must be at least 5 digits.",
+    "studentIdMax": "Student ID must be at most 12 digits.",
+    "identifierRequired": "Student ID or email is required.",
+    "identifierInvalid": "Identifier must be a valid student ID or an allowed university email.",
+    "passwordRequired": "Password is required.",
+    "universityEmailRequired": "University email is required.",
+    "emailInvalidFormat": "Invalid email format.",
+    "emailNotAllowedDomain": "Email must be within an allowed university domain.",
+    "otpRequired": "Verification code is required.",
+    "otpInvalid": "Verification code must be exactly 6 digits.",
+    "firstNameMin": "First name must be at least 2 characters.",
+    "lastNameMin": "Last name must be at least 2 characters.",
+    "degreeRequired": "Degree level is required.",
+    "facultyRequired": "Faculty is required.",
+    "majorMin": "Major must be at least 2 characters.",
+    "confirmPasswordRequired": "Confirming password is required.",
+    "passwordMin": "Password must be at least 8 characters.",
+    "passwordUpper": "Password must include at least one uppercase letter.",
+    "passwordLower": "Password must include at least one lowercase letter.",
+    "passwordNumber": "Password must include at least one number.",
+    "passwordSymbol": "Password must include at least one symbol.",
+    "passwordMismatch": "Passwords do not match."
+  },
+
+  "errors": {
+    "universityEmailHint": "Only university emails under sbu.ac.ir or mail.sbu.ac.ir are allowed.",
+    "rateLimit": "Too many requests. Please try again later.",
+    "internalServer": "An internal server error occurred.",
+    "backendOriginMissing": "Server configuration is incomplete.",
+    "requestFailed": "Request failed.",
+    "bffRequestFailed": "Request to BFF failed.",
+    "openRouterRequestFailed": "Request to OpenRouter failed.",
+    "emptyResponse": "Received an empty response.",
+    "emptyOpenRouterResponse": "Received an empty response from OpenRouter.",
+    "serviceUnexpected": "An unexpected error occurred.",
+    "serviceNetwork": "A server communication error occurred. Please try again."
+  },
+
+  "metadata": {
+    "appTitle": "Shahid Beheshti University Assistant"
   }
 }
