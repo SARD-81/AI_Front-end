@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -21,8 +22,9 @@ import {
   ServiceError
 } from '@/lib/services/auth-service';
 import {
+  createLoginSchema,
+  type AuthSchemaTranslator,
   type LoginFormValues,
-  loginSchema
 } from '@/lib/validation/auth-schemas';
 
 type LoginFormProps = {
@@ -43,9 +45,11 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
+  const t = useTranslations('auth');
+  const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
 
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(createLoginSchema(schemaT)),
     defaultValues: {
       identifier: initialIdentifier ?? '',
       password: ''
@@ -73,14 +77,14 @@ export function LoginForm({
 
     try {
       await loginUser(values, { signal: controller.signal });
-      toast.success('ورود با موفقیت انجام شد.');
+      toast.success(t('login.success'));
       onSuccess();
     } catch (error) {
       if (isAbortError(error)) return;
       const message =
         error instanceof ServiceError
           ? error.message
-          : 'خطا در ورود به سامانه.';
+          : t('login.errorFallback');
       setFormError(message);
       toast.error(message);
     } finally {
@@ -97,11 +101,11 @@ export function LoginForm({
           name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>شماره دانشجویی یا ایمیل دانشگاهی</FormLabel>
+              <FormLabel>{t('login.identifierLabel')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="مثال: 401123456 یا user@student.sbu.ac.ir"
+                  placeholder={t('login.identifierPlaceholder')}
                   dir="ltr"
                 />
               </FormControl>
@@ -115,13 +119,13 @@ export function LoginForm({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>رمز عبور</FormLabel>
+              <FormLabel>{t('login.passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     {...field}
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="رمز عبور"
+                    placeholder={t('login.passwordPlaceholder')}
                     className="pl-10"
                   />
                   <button
@@ -129,7 +133,7 @@ export function LoginForm({
                     className="absolute inset-y-0 left-2 inline-flex items-center text-muted-foreground"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={
-                      showPassword ? 'پنهان‌سازی رمز عبور' : 'نمایش رمز عبور'
+                      showPassword ? t('login.hidePassword') : t('login.showPassword')
                     }
                   >
                     {showPassword ? (
@@ -157,7 +161,7 @@ export function LoginForm({
           {busy || form.formState.isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : null}
-          ورود به سامانه
+          {t('login.submit')}
         </Button>
       </form>
     </Form>

@@ -5,6 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {LayoutGroup} from 'motion/react';
 import {Menu} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
+import {useTranslations} from 'next-intl';
 import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
@@ -18,6 +19,7 @@ import {copyToClipboard} from '@/lib/utils/clipboard';
 import {toast} from 'sonner';
 
 export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
+  const t = useTranslations('app');
   const searchParams = useSearchParams();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -88,11 +90,11 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
   const headerTitle = useMemo(() => {
     const firstUserMessage = (chat?.messages ?? []).find((message) => message.role === 'user')?.content?.trim();
-    const rawTitle = firstUserMessage || chat?.title || 'گفت‌وگو';
+    const rawTitle = firstUserMessage || chat?.title || t('chat.defaultTitle');
     const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
     const maxLength = 72;
     return compactTitle.length > maxLength ? `${compactTitle.slice(0, maxLength)}…` : compactTitle;
-  }, [chat?.messages, chat?.title]);
+  }, [chat?.messages, chat?.title, t]);
 
 
   const submitMessage = async (nextValue: string) => {
@@ -141,7 +143,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
       }
     } catch (error) {
       clearStreamingState();
-      const fallback = 'ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.';
+      const fallback = t('chat.connectionError');
       setErrorMessage(error instanceof Error ? error.message : fallback);
     }
   };
@@ -152,11 +154,11 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     const copied = await copyToClipboard(content);
 
     if (copied) {
-      toast.success('کپی شد');
+      toast.success(t('chat.copySuccess'));
       return;
     }
 
-    toast.error('کپی پیام ممکن نبود');
+    toast.error(t('chat.copyError'));
   };
 
   const handleEditMessage = (content: string) => {
@@ -197,7 +199,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           <header className="relative flex h-14 items-center border-b border-border">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="باز کردن گفتگوها">
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('chat.openConversations')}>
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>

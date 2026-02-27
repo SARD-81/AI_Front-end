@@ -1,0 +1,632 @@
+{
+  "auth.login.success": {
+    "default_fa": "ورود با موفقیت انجام شد.",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.errorFallback": {
+    "default_fa": "خطا در ورود به سامانه.",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.identifierLabel": {
+    "default_fa": "شماره دانشجویی یا ایمیل دانشگاهی",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.identifierPlaceholder": {
+    "default_fa": "مثال: 401123456 یا user@student.sbu.ac.ir",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.passwordLabel": {
+    "default_fa": "رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.passwordPlaceholder": {
+    "default_fa": "رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.hidePassword": {
+    "default_fa": "پنهان‌سازی رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.showPassword": {
+    "default_fa": "نمایش رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.login.submit": {
+    "default_fa": "ورود به سامانه",
+    "default_en": "",
+    "notes": "components/auth/LoginForm.tsx"
+  },
+  "auth.signup.sendOtpErrorFallback": {
+    "default_fa": "ارسال کد تایید ناموفق بود.",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.verifyErrorFallback": {
+    "default_fa": "تایید کد ناموفق بود.",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.registerErrorFallback": {
+    "default_fa": "ثبت‌نام ناموفق بود.",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.emailLabel": {
+    "default_fa": "ایمیل دانشگاهی",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.otpLabel": {
+    "default_fa": "کد تایید",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.sendOtp": {
+    "default_fa": "ارسال کد",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.verifyAndContinue": {
+    "default_fa": "تایید و ادامه",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.verifiedEmail": {
+    "default_fa": "ایمیل تاییدشده",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.firstNameLabel": {
+    "default_fa": "نام",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.lastNameLabel": {
+    "default_fa": "نام خانوادگی",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.studentIdLabel": {
+    "default_fa": "شماره دانشجویی",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.degreeLevelLabel": {
+    "default_fa": "مقطع تحصیلی",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.selectOption": {
+    "default_fa": "انتخاب کنید",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.degreeOptions": {
+    "default_fa": "",
+    "default_en": "",
+    "notes": "string[] of degree options"
+  },
+  "auth.signup.facultyLabel": {
+    "default_fa": "دانشکده",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.majorLabel": {
+    "default_fa": "رشته تحصیلی",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.specializationLabel": {
+    "default_fa": "گرایش (اختیاری)",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.passwordLabel": {
+    "default_fa": "رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.confirmPasswordLabel": {
+    "default_fa": "تکرار رمز عبور",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.back": {
+    "default_fa": "بازگشت",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.complete": {
+    "default_fa": "تکمیل ثبت‌نام",
+    "default_en": "",
+    "notes": "components/auth/SignupWizard.tsx"
+  },
+  "auth.signup.autoLoginSuccess": {
+    "default_fa": "حساب با موفقیت ایجاد شد و وارد شدید.",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.signup.createdPleaseLogin": {
+    "default_fa": "حساب ایجاد شد. لطفاً وارد شوید.",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.hero.logoAlt": {
+    "default_fa": "لوگوی دانشگاه",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.hero.title": {
+    "default_fa": "دستیار هوشمند دانشگاه شهید بهشتی",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.hero.description": {
+    "default_fa": "درگاه احراز هویت یکپارچه برای دسترسی ایمن به خدمات هوشمند آموزشی و پژوهشی دانشگاه.",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.loginTitle": {
+    "default_fa": "ورود به حساب کاربری",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.signupTitle": {
+    "default_fa": "ایجاد حساب کاربری",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.loginDescription": {
+    "default_fa": "برای ورود، شماره دانشجویی یا ایمیل دانشگاهی و رمز عبور خود را وارد کنید.",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.signupDescription": {
+    "default_fa": "برای ثبت‌نام، ابتدا ایمیل دانشگاهی خود را تایید کنید.",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.switchToSignup": {
+    "default_fa": "حساب ندارید؟ ثبت‌نام",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "auth.card.switchToLogin": {
+    "default_fa": "حساب دارید؟ ورود",
+    "default_en": "",
+    "notes": "components/auth/AuthClient.tsx"
+  },
+  "app.messageActions.copy": {
+    "default_fa": "کپی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageActions.copyLink": {
+    "default_fa": "کپی لینک پیام",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageActions.edit": {
+    "default_fa": "ویرایش",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageActions.regenerate": {
+    "default_fa": "تولید دوباره",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageActions.like": {
+    "default_fa": "پسندیدن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageActions.dislike": {
+    "default_fa": "نپسندیدن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.message.codeLabel": {
+    "default_fa": "",
+    "default_en": "code",
+    "notes": "added from i18n refactor"
+  },
+  "app.message.thinking": {
+    "default_fa": "در حال پاسخ…",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.message.copyLinkSuccess": {
+    "default_fa": "لینک پیام کپی شد",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.message.copyLinkError": {
+    "default_fa": "کپی لینک ممکن نبود",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.emptyState.logoAlt": {
+    "default_fa": "لوگو",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.emptyState.title": {
+    "default_fa": "به دستیار هوشمند دانشگاه\nشهید بهشتی خوش آمدید",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.emptyState.description": {
+    "default_fa": "یک گفتگو با دستیار پیشرفته هوش مصنوعی آغاز کنید. سؤال بپرسید، کمک بگیرید یا فقط یک گفتگوی دوستانه داشته باشید",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.emptyState.suggestedPrompts": {
+    "default_fa": "",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageRail.jumpToUserMessage": {
+    "default_fa": "پرش به پیام کاربر",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageRail.jumpToYourMessages": {
+    "default_fa": "پرش به پیام‌های شما",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageRail.emptyMessage": {
+    "default_fa": "پیام بدون متن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.messageRail.activeMessage": {
+    "default_fa": "پیام فعال {index}",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.chat.defaultTitle": {
+    "default_fa": "گفت‌وگو",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.chat.connectionError": {
+    "default_fa": "ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.chat.copySuccess": {
+    "default_fa": "کپی شد",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.chat.copyError": {
+    "default_fa": "کپی پیام ممکن نبود",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.chat.openConversations": {
+    "default_fa": "باز کردن گفتگوها",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "notFound.title": {
+    "default_fa": "متأسفانه، این مسیر اشتباه است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "notFound.description": {
+    "default_fa": "صفحه‌ای که به دنبال آن هستید ممکن است تغییر نام داده شده باشد، حذف شده باشد، یا آدرس آن را اشتباه وارد کرده باشید.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "notFound.backHome": {
+    "default_fa": "بازگشت به صفحه اصلی / چت",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.title": {
+    "default_fa": "تنظیمات",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.demoPageDescription": {
+    "default_fa": "این صفحه به‌صورت نمایشی اضافه شده است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.tabs.general": {
+    "default_fa": "عمومی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.tabs.account": {
+    "default_fa": "حساب",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.general.appearance": {
+    "default_fa": "ظاهر",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.general.accentColor": {
+    "default_fa": "رنگ تاکیدی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.general.language": {
+    "default_fa": "زبان",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.account.name": {
+    "default_fa": "نام",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.account.email": {
+    "default_fa": "ایمیل",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.account.guestUser": {
+    "default_fa": "کاربر مهمان",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.appearance.system": {
+    "default_fa": "سیستم",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.appearance.light": {
+    "default_fa": "روشن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.appearance.dark": {
+    "default_fa": "تیره",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.accent.default": {
+    "default_fa": "پیش‌فرض",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.accent.blue": {
+    "default_fa": "آبی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.accent.purple": {
+    "default_fa": "بنفش",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.accent.green": {
+    "default_fa": "سبز",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.language.auto": {
+    "default_fa": "تشخیص خودکار",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.language.fa": {
+    "default_fa": "فارسی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "settings.options.language.en": {
+    "default_fa": "",
+    "default_en": "English",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.home": {
+    "default_fa": "خانه",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.logoAlt": {
+    "default_fa": "لوگوی دانشگاه شهید بهشتی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.universityName": {
+    "default_fa": "دانشگاه شهید بهشتی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.expand": {
+    "default_fa": "باز کردن نوار کناری",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.collapse": {
+    "default_fa": "بستن نوار کناری",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.expandShort": {
+    "default_fa": "باز کردن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.collapseShort": {
+    "default_fa": "بستن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.renameInput": {
+    "default_fa": "تغییر نام گفتگو",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.chatOptions": {
+    "default_fa": "گزینه‌های گفتگو",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.profile": {
+    "default_fa": "پروفایل",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.guestUser": {
+    "default_fa": "کاربر مهمان",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.demoVersion": {
+    "default_fa": "نسخهٔ نمایشی",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.settings": {
+    "default_fa": "تنظیمات",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.sidebar.logout": {
+    "default_fa": "خروج از حساب",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "app.dialog.close": {
+    "default_fa": "بستن",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.studentId.required": {
+    "default_fa": "شماره دانشجویی الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.studentId.numeric": {
+    "default_fa": "شماره دانشجویی باید فقط شامل رقم باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.studentId.min": {
+    "default_fa": "شماره دانشجویی باید حداقل ۵ رقم باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.studentId.max": {
+    "default_fa": "شماره دانشجویی نباید بیشتر از ۱۲ رقم باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.login.identifierRequired": {
+    "default_fa": "ورود شماره دانشجویی یا ایمیل الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.login.identifierInvalid": {
+    "default_fa": "شناسه باید شماره دانشجویی معتبر یا ایمیل دانشگاهی مجاز باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.login.passwordRequired": {
+    "default_fa": "رمز عبور الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.signup.emailRequired": {
+    "default_fa": "ایمیل دانشگاهی الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.signup.emailInvalidFormat": {
+    "default_fa": "فرمت ایمیل معتبر نیست.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.signup.emailDomainInvalid": {
+    "default_fa": "ایمیل باید در دامنه دانشگاهی مجاز باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.signup.otpRequired": {
+    "default_fa": "کد تایید الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.signup.otpInvalid": {
+    "default_fa": "کد تایید باید دقیقا ۶ رقم باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.password.min": {
+    "default_fa": "رمز عبور باید حداقل ۸ کاراکتر باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.password.uppercase": {
+    "default_fa": "رمز عبور باید حداقل یک حرف بزرگ داشته باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.password.lowercase": {
+    "default_fa": "رمز عبور باید حداقل یک حرف کوچک داشته باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.password.number": {
+    "default_fa": "رمز عبور باید حداقل یک عدد داشته باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.password.symbol": {
+    "default_fa": "رمز عبور باید حداقل یک نماد داشته باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.firstNameMin": {
+    "default_fa": "نام باید حداقل ۲ کاراکتر باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.lastNameMin": {
+    "default_fa": "نام خانوادگی باید حداقل ۲ کاراکتر باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.degreeLevelRequired": {
+    "default_fa": "مقطع تحصیلی الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.facultyRequired": {
+    "default_fa": "دانشکده الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.majorMin": {
+    "default_fa": "رشته تحصیلی باید حداقل ۲ کاراکتر باشد.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.confirmPasswordRequired": {
+    "default_fa": "تکرار رمز عبور الزامی است.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  },
+  "auth.validation.profile.confirmPasswordMismatch": {
+    "default_fa": "تکرار رمز عبور با رمز عبور یکسان نیست.",
+    "default_en": "",
+    "notes": "added from i18n refactor"
+  }
+}

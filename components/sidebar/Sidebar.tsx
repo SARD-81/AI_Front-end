@@ -109,15 +109,15 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
           <SidebarHeader className={cn('space-y-3 px-4 py-4', collapsed && 'flex flex-col items-center space-y-3 px-2 py-4')}>
             <Link
               href={`/${locale}`}
-              aria-label="خانه"
+              aria-label={t('sidebar.home')}
               className={cn(
                 'flex h-10 items-center rounded-lg border border-border bg-muted text-primary',
                 collapsed ? 'w-10 justify-center' : 'w-full gap-2 px-2'
               )}
               onClick={onNavigate}
             >
-              <Image src="/logo.png" alt="لوگوی دانشگاه شهید بهشتی" width={60} height={60} className="h-15 w-15" />
-              {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">دانشگاه شهید بهشتی</span> : null}
+              <Image src="/logo.png" alt={t('sidebar.logoAlt')} width={60} height={60} className="h-15 w-15" />
+              {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">{t('sidebar.universityName')}</span> : null}
             </Link>
 
             <motion.div layout className={cn('flex items-center gap-3', collapsed && 'flex-col')}>
@@ -153,9 +153,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   variant="ghost"
                   size="icon"
                   onClick={toggleCollapsed}
-                  aria-label={collapsed ? 'باز کردن نوار کناری' : 'بستن نوار کناری'}
+                  aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
                   className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
-                  title={collapsed ? 'باز کردن' : 'بستن'}
+                  title={collapsed ? t('sidebar.expandShort') : t('sidebar.collapseShort')}
                 >
                   <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
                 </Button>
@@ -221,7 +221,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                     }}
                                     className="h-7 w-full rounded-md border border-border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                     dir="rtl"
-                                    aria-label="تغییر نام گفتگو"
+                                    aria-label={t('sidebar.renameInput')}
                                   />
                                 ) : (
                                   <span className="truncate text-sm">{chat.title}</span>
@@ -239,7 +239,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                     collapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                                     isActive && 'opacity-100'
                                   )}
-                                  aria-label="گزینه‌های گفتگو"
+                                  aria-label={t('sidebar.chatOptions')}
                                 >
                                   <EllipsisVertical className="h-4 w-4" />
                                 </Button>
@@ -299,14 +299,14 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 <Button
                   variant="ghost"
                   className={cn('h-11 w-full justify-start gap-2 active:scale-[0.99]', collapsed && 'h-10 w-10 justify-center p-0')}
-                  aria-label="پروفایل"
-                  title={collapsed ? 'پروفایل' : undefined}
+                  aria-label={t('sidebar.profile')}
+                  title={collapsed ? t('sidebar.profile') : undefined}
                 >
                   <UserCircle2 className="h-5 w-5" />
                   {!collapsed ? (
                     <div className="flex min-w-0 flex-col items-start">
-                      <span className="truncate text-sm">کاربر مهمان</span>
-                      <span className="text-xs text-muted-foreground">نسخهٔ نمایشی</span>
+                      <span className="truncate text-sm">{t('sidebar.guestUser')}</span>
+                      <span className="text-xs text-muted-foreground">{t('sidebar.demoVersion')}</span>
                     </div>
                   ) : null}
                   {!collapsed ? <EllipsisVertical className="ms-auto h-4 w-4" /> : null}
@@ -320,7 +320,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   }}
                 >
                   <Settings className="ms-2 h-4 w-4" />
-                  تنظیمات
+                  {t('sidebar.settings')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
@@ -332,7 +332,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   }}
                 >
                   <LogOut className="ms-2 h-4 w-4" />
-                  خروج از حساب
+                  {t('sidebar.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -4,6 +4,7 @@ import {type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, 
 import {Check, ChevronDown, CircleUserRound, SlidersHorizontal} from 'lucide-react';
 import {useTheme} from 'next-themes';
 import {usePathname, useRouter} from 'next/navigation';
+import {useTranslations} from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -25,25 +26,6 @@ export type AppSettings = {
 
 const SETTINGS_KEY = 'app_settings';
 const DEFAULT_SETTINGS: AppSettings = {appearance: 'system', accent: 'default', language: 'auto'};
-
-const appearanceOptions = [
-  {value: 'system', label: 'سیستم'},
-  {value: 'light', label: 'روشن'},
-  {value: 'dark', label: 'تیره'}
-] as const;
-
-const accentOptions = [
-  {value: 'default', label: 'پیش‌فرض'},
-  {value: 'blue', label: 'آبی'},
-  {value: 'purple', label: 'بنفش'},
-  {value: 'green', label: 'سبز'}
-] as const;
-
-const languageOptions = [
-  {value: 'auto', label: 'تشخیص خودکار'},
-  {value: 'fa', label: 'فارسی'},
-  {value: 'en', label: 'English'}
-] as const;
 
 function safeParseSettings() {
   try {
@@ -161,13 +143,33 @@ export function SettingsModal({
   user?: {name?: string | null; email?: string | null};
 }) {
   const [tab, setTab] = useState<'general' | 'account'>('general');
+  const t = useTranslations('settings');
+
+  const appearanceOptions = [
+    {value: 'system', label: t('options.appearance.system')},
+    {value: 'light', label: t('options.appearance.light')},
+    {value: 'dark', label: t('options.appearance.dark')}
+  ] as const;
+
+  const accentOptions = [
+    {value: 'default', label: t('options.accent.default')},
+    {value: 'blue', label: t('options.accent.blue')},
+    {value: 'purple', label: t('options.accent.purple')},
+    {value: 'green', label: t('options.accent.green')}
+  ] as const;
+
+  const languageOptions = [
+    {value: 'auto', label: t('options.language.auto')},
+    {value: 'fa', label: t('options.language.fa')},
+    {value: 'en', label: t('options.language.en')}
+  ] as const;
 
   const profile = useMemo(
     () => ({
-      name: user?.name?.trim() || 'کاربر مهمان',
+      name: user?.name?.trim() || t('account.guestUser'),
       email: user?.email?.trim() || '—'
     }),
-    [user?.email, user?.name]
+    [t, user?.email, user?.name]
   );
 
   return (
@@ -176,10 +178,10 @@ export function SettingsModal({
         dir="rtl"
         className="h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border p-0 text-right sm:h-[600px]"
       >
-        <DialogTitle className="sr-only">تنظیمات</DialogTitle>
+        <DialogTitle className="sr-only">{t('title')}</DialogTitle>
         <div className="flex h-full flex-col sm:flex-row">
           <aside className="w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:border-r sm:p-4">
-            <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">تنظیمات</h2>
+            <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">{t('title')}</h2>
             <nav className="space-y-1">
               <button
                 type="button"
@@ -190,7 +192,7 @@ export function SettingsModal({
                 )}
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                عمومی
+                {t('tabs.general')}
               </button>
               <button
                 type="button"
@@ -201,33 +203,33 @@ export function SettingsModal({
                 )}
               >
                 <CircleUserRound className="h-4 w-4" />
-                حساب
+                {t('tabs.account')}
               </button>
             </nav>
           </aside>
 
           <section className="flex-1 p-6 sm:p-8">
-            <h3 className="text-2xl font-semibold">{tab === 'general' ? 'عمومی' : 'حساب'}</h3>
+            <h3 className="text-2xl font-semibold">{tab === 'general' ? t('tabs.general') : t('tabs.account')}</h3>
             <div className="mt-4 border-b border-border" />
 
             <div className="mt-2">
               {tab === 'general' ? (
                 <>
-                  <SettingRow label="ظاهر">
+                  <SettingRow label={t('general.appearance')}>
                     <SettingsDropdown
                       value={settings.appearance}
                       options={appearanceOptions}
                       onChange={(value) => setSettings((prev) => ({...prev, appearance: value as AppSettings['appearance']}))}
                     />
                   </SettingRow>
-                  <SettingRow label="رنگ تاکیدی">
+                  <SettingRow label={t('general.accentColor')}>
                     <SettingsDropdown
                       value={settings.accent}
                       options={accentOptions}
                       onChange={(value) => setSettings((prev) => ({...prev, accent: value as AppSettings['accent']}))}
                     />
                   </SettingRow>
-                  <SettingRow label="زبان">
+                  <SettingRow label={t('general.language')}>
                     <SettingsDropdown
                       value={settings.language}
                       options={languageOptions}
@@ -237,10 +239,10 @@ export function SettingsModal({
                 </>
               ) : (
                 <>
-                  <SettingRow label="نام">
+                  <SettingRow label={t('account.name')}>
                     <span className="text-sm text-muted-foreground">{profile.name}</span>
                   </SettingRow>
-                  <SettingRow label="ایمیل">
+                  <SettingRow label={t('account.email')}>
                     <span className="text-sm text-muted-foreground">{profile.email}</span>
                   </SettingRow>
                 </>

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignupWizard } from '@/components/auth/SignupWizard';
@@ -37,6 +38,7 @@ export function AuthClient({ locale }: { locale: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const t = useTranslations('auth');
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [busy, setBusy] = useState(false);
   const [postSignupAuthLoading, setPostSignupAuthLoading] = useState(false);
@@ -118,14 +120,14 @@ export function AuthClient({ locale }: { locale: string }) {
         { identifier: email, password },
         { signal: controller.signal }
       );
-      toast.success('حساب با موفقیت ایجاد شد و وارد شدید.');
+      toast.success(t('signup.autoLoginSuccess'));
       const destination = safeNextUrl(searchParams.get('next'), locale);
       router.push(destination);
     } catch (error) {
       if (isAbortError(error)) {
         return;
       }
-      toast.success('حساب ایجاد شد. لطفاً وارد شوید.');
+      toast.success(t('signup.createdPleaseLogin'));
       setLoginInitialIdentifier(email);
       setSignupResetToken((prev) => prev + 1);
       setAuthMode('login');
@@ -147,18 +149,17 @@ export function AuthClient({ locale }: { locale: string }) {
             <div className="space-y-4">
               <Image
                 src="/Logo.png"
-                alt="لوگوی دانشگاه"
+                alt={t('hero.logoAlt')}
                 width={96}
                 height={96}
                 className="rounded-xl"
                 priority
               />
               <h1 className="text-2xl font-bold leading-relaxed md:text-3xl">
-                دستیار هوشمند دانشگاه شهید بهشتی
+                {t('hero.title')}
               </h1>
               <p className="text-sm leading-7 text-muted-foreground">
-                درگاه احراز هویت یکپارچه برای دسترسی ایمن به خدمات هوشمند آموزشی
-                و پژوهشی دانشگاه.
+                {t('hero.description')}
               </p>
             </div>
             <div className="grid grid-cols-6 gap-3 opacity-30">
@@ -174,13 +175,13 @@ export function AuthClient({ locale }: { locale: string }) {
             <CardHeader>
               <CardTitle>
                 {authMode === 'login'
-                  ? 'ورود به حساب کاربری'
-                  : 'ایجاد حساب کاربری'}
+                  ? t('card.loginTitle')
+                  : t('card.signupTitle')}
               </CardTitle>
               <CardDescription>
                 {authMode === 'login'
-                  ? 'برای ورود، شماره دانشجویی یا ایمیل دانشگاهی و رمز عبور خود را وارد کنید.'
-                  : 'برای ثبت‌نام، ابتدا ایمیل دانشگاهی خود را تایید کنید.'}
+                  ? t('card.loginDescription')
+                  : t('card.signupDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -237,8 +238,8 @@ export function AuthClient({ locale }: { locale: string }) {
                 disabled={busy || postSignupAuthLoading}
               >
                 {authMode === 'login'
-                  ? 'حساب ندارید؟ ثبت‌نام'
-                  : 'حساب دارید؟ ورود'}
+                  ? t('card.switchToSignup')
+                  : t('card.switchToLogin')}
               </button>
             </CardContent>
           </Card>

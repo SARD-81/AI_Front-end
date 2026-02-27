@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,13 +26,13 @@ import {
   verifyOtp
 } from '@/lib/services/auth-service';
 import {
-  signupStep1Schema,
-  signupStep2Schema,
+  createSignupStep1Schema,
+  createSignupStep2Schema,
+  type AuthSchemaTranslator,
   type SignupStep1Values,
   type SignupStep2Values
 } from '@/lib/validation/auth-schemas';
 
-const degreeOptions = ['کاردانی', 'کارشناسی', 'کارشناسی ارشد', 'دکتری'];
 
 type SignupWizardProps = {
   onRegistered: (payload: {
@@ -57,14 +58,17 @@ export function SignupWizard({
 }: SignupWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
+  const t = useTranslations('auth');
+  const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
+  const degreeOptions = t.raw('signup.degreeOptions') as string[];
 
   const step1Form = useForm<SignupStep1Values>({
-    resolver: zodResolver(signupStep1Schema),
+    resolver: zodResolver(createSignupStep1Schema(schemaT)),
     defaultValues: { email: '', otpCode: '' }
   });
 
   const step2Form = useForm<SignupStep2Values>({
-    resolver: zodResolver(signupStep2Schema),
+    resolver: zodResolver(createSignupStep2Schema(schemaT)),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -103,7 +107,7 @@ export function SignupWizard({
       const message =
         error instanceof ServiceError
           ? error.message
-          : 'ارسال کد تایید ناموفق بود.';
+          : t('signup.sendOtpErrorFallback');
       toast.error(message);
     } finally {
       setBusy(false);
@@ -127,7 +131,7 @@ export function SignupWizard({
     } catch (error) {
       if (isAbortError(error)) return;
       const message =
-        error instanceof ServiceError ? error.message : 'تایید کد ناموفق بود.';
+        error instanceof ServiceError ? error.message : t('signup.verifyErrorFallback');
       toast.error(message);
     } finally {
       setBusy(false);
@@ -159,7 +163,7 @@ export function SignupWizard({
     } catch (error) {
       if (isAbortError(error)) return;
       const message =
-        error instanceof ServiceError ? error.message : 'ثبت‌نام ناموفق بود.';
+        error instanceof ServiceError ? error.message : t('signup.registerErrorFallback');
       toast.error(message);
     } finally {
       setBusy(false);
@@ -182,7 +186,7 @@ export function SignupWizard({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ایمیل دانشگاهی</FormLabel>
+                    <FormLabel>{t('signup.emailLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} dir="ltr" />
                     </FormControl>
@@ -195,7 +199,7 @@ export function SignupWizard({
                 name="otpCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>کد تایید</FormLabel>
+                    <FormLabel>{t('signup.otpLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} inputMode="numeric" dir="ltr" />
                     </FormControl>
@@ -211,7 +215,7 @@ export function SignupWizard({
                   disabled={busy || step1Form.formState.isSubmitting}
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  ارسال کد
+                  {t('signup.sendOtp')}
                 </Button>
                 <Button
                   type="submit"
@@ -219,7 +223,7 @@ export function SignupWizard({
                   disabled={busy || step1Form.formState.isSubmitting}
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  تایید و ادامه
+                  {t('signup.verifyAndContinue')}
                 </Button>
               </div>
             </form>
@@ -233,7 +237,7 @@ export function SignupWizard({
           exit={{ opacity: 0 }}
         >
           <div className="mb-4 rounded-md border border-border bg-muted/30 p-3 text-sm">
-            ایمیل تاییدشده: <span dir="ltr">{verifiedEmail}</span>
+            {t('signup.verifiedEmail')}: <span dir="ltr">{verifiedEmail}</span>
           </div>
           <Form {...step2Form}>
             <form onSubmit={onRegister} className="space-y-4">
@@ -243,7 +247,7 @@ export function SignupWizard({
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>نام</FormLabel>
+                      <FormLabel>{t('signup.firstNameLabel')}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -256,7 +260,7 @@ export function SignupWizard({
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>نام خانوادگی</FormLabel>
+                      <FormLabel>{t('signup.lastNameLabel')}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -270,7 +274,7 @@ export function SignupWizard({
                 name="studentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>شماره دانشجویی</FormLabel>
+                    <FormLabel>{t('signup.studentIdLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} dir="ltr" />
                     </FormControl>
@@ -283,13 +287,13 @@ export function SignupWizard({
                 name="degreeLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>مقطع تحصیلی</FormLabel>
+                    <FormLabel>{t('signup.degreeLevelLabel')}</FormLabel>
                     <FormControl>
                       <select
                         {...field}
                         className="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
                       >
-                        <option value="">انتخاب کنید</option>
+                        <option value="">{t('signup.selectOption')}</option>
                         {degreeOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -306,7 +310,7 @@ export function SignupWizard({
                 name="faculty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>دانشکده</FormLabel>
+                    <FormLabel>{t('signup.facultyLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -319,7 +323,7 @@ export function SignupWizard({
                 name="major"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>رشته تحصیلی</FormLabel>
+                    <FormLabel>{t('signup.majorLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -332,7 +336,7 @@ export function SignupWizard({
                 name="specialization"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>گرایش (اختیاری)</FormLabel>
+                    <FormLabel>{t('signup.specializationLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -346,7 +350,7 @@ export function SignupWizard({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>رمز عبور</FormLabel>
+                    <FormLabel>{t('signup.passwordLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="password" dir="ltr" />
                     </FormControl>
@@ -359,7 +363,7 @@ export function SignupWizard({
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>تکرار رمز عبور</FormLabel>
+                    <FormLabel>{t('signup.confirmPasswordLabel')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="password" dir="ltr" />
                     </FormControl>
@@ -374,7 +378,7 @@ export function SignupWizard({
                   onClick={() => setStep(1)}
                   disabled={busy || step2Form.formState.isSubmitting}
                 >
-                  بازگشت
+                  {t('signup.back')}
                 </Button>
                 <Button
                   type="submit"
@@ -382,7 +386,7 @@ export function SignupWizard({
                   disabled={busy || step2Form.formState.isSubmitting}
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  تکمیل ثبت‌نام
+                  {t('signup.complete')}
                 </Button>
               </div>
             </form>

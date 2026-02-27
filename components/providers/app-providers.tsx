@@ -41,7 +41,13 @@ export function AppProviders({
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Tehran">
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      timeZone="Asia/Tehran"
+      onError={() => {}}
+      getMessageFallback={({namespace, key}) => (namespace ? `${namespace}.${key}` : key)}
+    >
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
           {children}
