@@ -8,6 +8,10 @@ export default getRequestConfig(async ({requestLocale}) => {
   return {
     locale: activeLocale,
     messages: (await import(`../../messages/${activeLocale}.json`)).default,
-    timeZone: 'Asia/Tehran'
+    timeZone: 'Asia/Tehran',
+    onError() {},
+    getMessageFallback({namespace, key}) {
+      return namespace ? `${namespace}.${key}` : key;
+    }
   };
 });

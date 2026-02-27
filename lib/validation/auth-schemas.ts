@@ -1,68 +1,109 @@
 import {z} from 'zod';
 import {UNIVERSITY_EMAIL_REGEX} from '@/lib/config/university-email';
 
-const studentIdSchema = z
-  .string()
-  .min(1, 'شماره دانشجویی الزامی است.')
-  .regex(/^\d+$/, 'شماره دانشجویی باید فقط شامل رقم باشد.')
-  .min(5, 'شماره دانشجویی باید حداقل ۵ رقم باشد.')
-  .max(12, 'شماره دانشجویی نباید بیشتر از ۱۲ رقم باشد.');
+export type AuthSchemaMessageKey =
+  | 'studentId.required'
+  | 'studentId.numeric'
+  | 'studentId.min'
+  | 'studentId.max'
+  | 'login.identifierRequired'
+  | 'login.identifierInvalid'
+  | 'login.passwordRequired'
+  | 'signup.emailRequired'
+  | 'signup.emailInvalidFormat'
+  | 'signup.emailDomainInvalid'
+  | 'signup.otpRequired'
+  | 'signup.otpInvalid'
+  | 'password.min'
+  | 'password.uppercase'
+  | 'password.lowercase'
+  | 'password.number'
+  | 'password.symbol'
+  | 'profile.firstNameMin'
+  | 'profile.lastNameMin'
+  | 'profile.degreeLevelRequired'
+  | 'profile.facultyRequired'
+  | 'profile.majorMin'
+  | 'profile.confirmPasswordRequired'
+  | 'profile.confirmPasswordMismatch';
 
-export const loginSchema = z.object({
-  identifier: z
+export type AuthSchemaTranslator = (key: AuthSchemaMessageKey) => string;
+
+export const createStudentIdSchema = (t: AuthSchemaTranslator) =>
+  z
     .string()
-    .min(1, 'ورود شماره دانشجویی یا ایمیل الزامی است.')
-    .refine(
-      (value) => {
-        const trimmedValue = value.trim();
+    .min(1, t('studentId.required'))
+    .regex(/^\d+$/, t('studentId.numeric'))
+    .min(5, t('studentId.min'))
+    .max(12, t('studentId.max'));
 
-        if (trimmedValue.includes('@')) {
-          return UNIVERSITY_EMAIL_REGEX.test(trimmedValue);
-        }
+export const createLoginSchema = (t: AuthSchemaTranslator) =>
+  z.object({
+    identifier: z
+      .string()
+      .min(1, t('login.identifierRequired'))
+      .refine(
+        (value) => {
+          const trimmedValue = value.trim();
 
-        return /^\d{5,12}$/.test(trimmedValue);
-      },
-      {message: 'شناسه باید شماره دانشجویی معتبر یا ایمیل دانشگاهی مجاز باشد.'}
-    ),
-  password: z.string().min(1, 'رمز عبور الزامی است.')
-});
+          if (trimmedValue.includes('@')) {
+            return UNIVERSITY_EMAIL_REGEX.test(trimmedValue);
+          }
 
-export const signupStep1EmailSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'ایمیل دانشگاهی الزامی است.')
-    .email('فرمت ایمیل معتبر نیست.')
-    .refine((value) => UNIVERSITY_EMAIL_REGEX.test(value.trim()), 'ایمیل باید در دامنه دانشگاهی مجاز باشد.')
-});
-
-export const signupStep1Schema = signupStep1EmailSchema.extend({
-  otpCode: z.string().min(1, 'کد تایید الزامی است.').regex(/^\d{6}$/, 'کد تایید باید دقیقا ۶ رقم باشد.')
-});
-
-const passwordSchema = z
-  .string()
-  .min(8, 'رمز عبور باید حداقل ۸ کاراکتر باشد.')
-  .regex(/[A-Z]/, 'رمز عبور باید حداقل یک حرف بزرگ داشته باشد.')
-  .regex(/[a-z]/, 'رمز عبور باید حداقل یک حرف کوچک داشته باشد.')
-  .regex(/[0-9]/, 'رمز عبور باید حداقل یک عدد داشته باشد.')
-  .regex(/[^A-Za-z0-9]/, 'رمز عبور باید حداقل یک نماد داشته باشد.');
-
-export const signupStep2Schema = z
-  .object({
-    firstName: z.string().min(2, 'نام باید حداقل ۲ کاراکتر باشد.'),
-    lastName: z.string().min(2, 'نام خانوادگی باید حداقل ۲ کاراکتر باشد.'),
-    studentId: studentIdSchema,
-    degreeLevel: z.string().min(1, 'مقطع تحصیلی الزامی است.'),
-    faculty: z.string().min(1, 'دانشکده الزامی است.'),
-    major: z.string().min(2, 'رشته تحصیلی باید حداقل ۲ کاراکتر باشد.'),
-    specialization: z.string().optional(),
-    password: passwordSchema,
-    confirmPassword: z.string().min(1, 'تکرار رمز عبور الزامی است.')
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'تکرار رمز عبور با رمز عبور یکسان نیست.',
-    path: ['confirmPassword']
+          return /^\d{5,12}$/.test(trimmedValue);
+        },
+        {message: t('login.identifierInvalid')}
+      ),
+    password: z.string().min(1, t('login.passwordRequired'))
   });
+
+export const createSignupStep1EmailSchema = (t: AuthSchemaTranslator) =>
+  z.object({
+    email: z
+      .string()
+      .min(1, t('signup.emailRequired'))
+      .email(t('signup.emailInvalidFormat'))
+      .refine((value) => UNIVERSITY_EMAIL_REGEX.test(value.trim()), t('signup.emailDomainInvalid'))
+  });
+
+export const createSignupStep1Schema = (t: AuthSchemaTranslator) =>
+  createSignupStep1EmailSchema(t).extend({
+    otpCode: z.string().min(1, t('signup.otpRequired')).regex(/^\d{6}$/, t('signup.otpInvalid'))
+  });
+
+export const createPasswordSchema = (t: AuthSchemaTranslator) =>
+  z
+    .string()
+    .min(8, t('password.min'))
+    .regex(/[A-Z]/, t('password.uppercase'))
+    .regex(/[a-z]/, t('password.lowercase'))
+    .regex(/[0-9]/, t('password.number'))
+    .regex(/[^A-Za-z0-9]/, t('password.symbol'));
+
+export const createSignupStep2Schema = (t: AuthSchemaTranslator) =>
+  z
+    .object({
+      firstName: z.string().min(2, t('profile.firstNameMin')),
+      lastName: z.string().min(2, t('profile.lastNameMin')),
+      studentId: createStudentIdSchema(t),
+      degreeLevel: z.string().min(1, t('profile.degreeLevelRequired')),
+      faculty: z.string().min(1, t('profile.facultyRequired')),
+      major: z.string().min(2, t('profile.majorMin')),
+      specialization: z.string().optional(),
+      password: createPasswordSchema(t),
+      confirmPassword: z.string().min(1, t('profile.confirmPasswordRequired'))
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('profile.confirmPasswordMismatch'),
+      path: ['confirmPassword']
+    });
+
+const fallbackT: AuthSchemaTranslator = (key) => key;
+
+export const loginSchema = createLoginSchema(fallbackT);
+export const signupStep1EmailSchema = createSignupStep1EmailSchema(fallbackT);
+export const signupStep1Schema = createSignupStep1Schema(fallbackT);
+export const signupStep2Schema = createSignupStep2Schema(fallbackT);
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type SignupStep1EmailValues = z.infer<typeof signupStep1EmailSchema>;

@@ -1,6 +1,7 @@
 'use client';
 
 import {ButtonHTMLAttributes, useMemo, useState} from 'react';
+import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
 
 type UserAnchorItem = {
@@ -40,6 +41,7 @@ export function UserMessageRail({
   onAnchorClick,
   onAnchorHover
 }: UserMessageRailProps) {
+  const t = useTranslations('app');
   const [isOpen, setIsOpen] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [hintShown, setHintShown] = useState(false);
@@ -93,8 +95,8 @@ export function UserMessageRail({
               <RailTick
                 key={anchor.anchorId}
                 active={isActive}
-                aria-label="پرش به پیام کاربر"
-                title="پرش به پیام کاربر"
+                aria-label={t('messageRail.jumpToUserMessage')}
+                title={t('messageRail.jumpToUserMessage')}
                 onClick={() => onAnchorClick(anchor)}
                 onMouseEnter={() => onAnchorHover(anchor.anchorId)}
                 onMouseLeave={() => onAnchorHover(null)}
@@ -106,7 +108,7 @@ export function UserMessageRail({
 
         {showHint ? (
           <div className="pointer-events-none absolute left-full top-0 ml-2 rounded-md border border-border/60 bg-popover px-2 py-1 text-xs text-foreground shadow-sm">
-            پرش به پیام‌های شما
+            {t('messageRail.jumpToYourMessages')}
           </div>
         ) : null}
 
@@ -129,12 +131,12 @@ export function UserMessageRail({
                     title={anchor.snippet}
                   >
                     <span className="text-xs text-muted-foreground">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate">{anchor.snippet || 'پیام بدون متن'}</span>
+                    <span className="min-w-0 flex-1 truncate">{anchor.snippet || t('messageRail.emptyMessage')}</span>
                   </button>
                 );
               })}
             </div>
-            {activeIndex >= 0 ? <span className="sr-only">پیام فعال {activeIndex + 1}</span> : null}
+            {activeIndex >= 0 ? <span className="sr-only">{t('messageRail.activeMessage', {index: activeIndex + 1})}</span> : null}
           </div>
         ) : null}
       </div>

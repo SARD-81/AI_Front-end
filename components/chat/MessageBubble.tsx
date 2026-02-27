@@ -4,6 +4,7 @@ import {memo, useMemo, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {Check, Copy} from 'lucide-react';
+import {useTranslations} from 'next-intl';
 import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
@@ -12,6 +13,7 @@ import type {ChatMessage} from '@/lib/api/chat';
 import {MessageActions} from './MessageActions';
 
 function CodeBlock({value}: {value: string}) {
+  const t = useTranslations('app');
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     const copiedSuccessfully = await copyToClipboard(value);
@@ -25,7 +27,7 @@ function CodeBlock({value}: {value: string}) {
   return (
     <div className="my-3 overflow-hidden rounded-md border border-border bg-muted">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">code</span>
+        <span className="text-xs text-muted-foreground">{t('message.codeLabel')}</span>
         <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </Button>
@@ -38,9 +40,10 @@ function CodeBlock({value}: {value: string}) {
 }
 
 function ThinkingIndicator() {
+  const t = useTranslations('app');
   return (
     <div className="inline-flex min-h-10 items-center gap-2 py-1 text-sm text-muted-foreground transition-opacity duration-200">
-      <span>در حال پاسخ…</span>
+      <span>{t('message.thinking')}</span>
       <span className="flex items-center gap-1" aria-hidden>
         <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none" />
         <span
@@ -80,6 +83,7 @@ function MessageBubbleComponent({
   isLastAssistant,
   anchorId
 }: MessageBubbleProps) {
+  const t = useTranslations('app');
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
   const isStreaming = message.id === 'streaming';
@@ -93,11 +97,11 @@ function MessageBubbleComponent({
     const deepLink = `${window.location.origin}${window.location.pathname}#${anchorId}`;
     const copied = await copyToClipboard(deepLink);
     if (copied) {
-      toast.success('لینک پیام کپی شد');
+      toast.success(t('message.copyLinkSuccess'));
       window.history.replaceState(null, '', `#${anchorId}`);
       return;
     }
-    toast.error('کپی لینک ممکن نبود');
+    toast.error(t('message.copyLinkError'));
   };
 
   return (

@@ -1,12 +1,11 @@
 'use client';
 
-import * as React from 'react';
 import Link from 'next/link';
-import {useParams, useRouter} from 'next/navigation';
+import {useParams} from 'next/navigation';
 import {motion} from 'motion/react';
-import {Home, LifeBuoy, Search} from 'lucide-react';
+import {useTranslations} from 'next-intl';
+import {Home} from 'lucide-react';
 import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 
 type NotFoundViewProps = {
   locale?: string;
@@ -14,16 +13,9 @@ type NotFoundViewProps = {
 
 export function NotFoundView({locale: localeProp}: NotFoundViewProps) {
   const params = useParams<{locale?: string}>();
-  const router = useRouter();
-  const [query, setQuery] = React.useState('');
-
   const locale = localeProp ?? params?.locale ?? 'fa';
+  const t = useTranslations('notFound');
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = query.trim();
-    router.push(`/${locale}/chat?q=${encodeURIComponent(value)}`);
-  };
 
   return (
     <main dir="rtl" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-8">
@@ -41,10 +33,10 @@ export function NotFoundView({locale: localeProp}: NotFoundViewProps) {
           >
             <p className="text-7xl font-black leading-none text-muted-foreground/40">404</p>
             <h1 className="text-2xl font-bold leading-relaxed text-foreground md:text-3xl">
-              متأسفانه، این مسیر اشتباه است.
+              {t('title')}
             </h1>
             <p className="text-sm leading-7 text-muted-foreground md:text-base">
-              صفحه‌ای که به دنبال آن هستید ممکن است تغییر نام داده شده باشد، حذف شده باشد، یا آدرس آن را اشتباه وارد کرده باشید.
+              {t('description')}
             </p>
 
             {/*<form onSubmit={onSubmit} className="w-full max-w-md">*/}
@@ -63,7 +55,7 @@ export function NotFoundView({locale: localeProp}: NotFoundViewProps) {
               <Button asChild>
                 <Link href={`/${locale}/chat`} className="inline-flex items-center gap-2">
                   <Home className="size-4" />
-                  بازگشت به صفحه اصلی / چت
+                  {t('backHome')}
                 </Link>
               </Button>
               {/*<Button variant="outline" asChild>*/}
