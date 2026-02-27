@@ -2,71 +2,22 @@
 
 import {useMemo} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {toast} from 'sonner';
 import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
 import {
-  appendMessages,
-  createChat,
-  deleteChat,
-  getChatById,
-  getChats,
-  renameChat,
-  sendMessageStreaming
-} from '@/lib/api/chat-service';
+  createConversation,
+  deleteConversation,
+  getConversation,
+  listConversations,
+  renameConversation,
+  sendMessage
+} from '@/lib/services/chat-service';
 import {uid} from '@/lib/utils/uid';
-
-const IS_DEV = process.env.NODE_ENV !== 'production';
-const EMPTY_RESPONSE_MESSAGE = 'پاسخ خالی دریافت شد. لطفاً دوباره تلاش کنید.';
-
-function normalizeChatSummary(chat: (Partial<ChatSummary> & Record<string, unknown>) | undefined): ChatSummary | null {
-  if (!chat) return null;
-
-  const resolvedChat =
-    (typeof chat.data === 'object' && chat.data !== null ? (chat.data as Record<string, unknown>) : undefined) ??
-    (typeof chat.chat === 'object' && chat.chat !== null ? (chat.chat as Record<string, unknown>) : undefined) ??
-    chat;
-
-  const id =
-    (typeof resolvedChat.id === 'string' && resolvedChat.id) ||
-    (typeof resolvedChat.chatId === 'string' && resolvedChat.chatId) ||
-    (typeof resolvedChat.chat_id === 'string' && resolvedChat.chat_id) ||
-    null;
-
-  if (!id) return null;
-
-  const title =
-    (typeof resolvedChat.title === 'string' && resolvedChat.title) ||
-    (typeof resolvedChat.name === 'string' && resolvedChat.name) ||
-    (typeof resolvedChat.chatTitle === 'string' && resolvedChat.chatTitle) ||
-    'گفت‌وگو';
-
-  const updatedAt =
-    (typeof resolvedChat.updatedAt === 'string' && resolvedChat.updatedAt) ||
-    (typeof resolvedChat.updated_at === 'string' && resolvedChat.updated_at) ||
-    new Date().toISOString();
-
-  return {
-    id,
-    title,
-    updatedAt
-  };
-}
-
-function normalizeChats(chats: ChatSummary[] | undefined): ChatSummary[] {
-  if (!Array.isArray(chats)) return [];
-  return chats
-    .map((chat) => normalizeChatSummary(chat))
-    .filter((chat): chat is ChatSummary => chat !== null);
-}
 
 export function useChats() {
   return useQuery({
     queryKey: ['chats'],
     staleTime: 15_000,
-    queryFn: async () => {
-      const chats = await getChats();
-      return normalizeChats(chats);
-    }
+    queryFn: listConversations
   });
 }
 
@@ -76,10 +27,8 @@ export function useChat(chatId?: string) {
     enabled: Boolean(chatId),
     staleTime: 15_000,
     queryFn: async (): Promise<ChatDetail> => {
-      if (!chatId) {
-        throw new Error('chatId is required');
-      }
-      return getChatById(chatId);
+      if (!chatId) throw new Error('chatId is required');
+      return getConversation(chatId);
     }
   });
 }
@@ -91,9 +40,7 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
     const older: ChatSummary[] = [];
 
     const nowDate = new Date();
-
     chats?.forEach((chat) => {
-      if (!chat) return;
       const diffDays = Math.floor((nowDate.getTime() - new Date(chat.updatedAt).getTime()) / 86400000);
       if (diffDays < 1) today.push(chat);
       else if (diffDays <= 30) month.push(chat);
@@ -120,15 +67,7 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      chatId,
-      payload,
-      onToken
-    }: {
-      chatId: string;
-      payload: SendMessagePayload;
-      onToken: (chunk: string) => void;
-    }) => {
+    mutationFn: async ({chatId, payload}: {chatId: string; payload: SendMessagePayload; onToken?: (chunk: string) => void}) => {
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
         id: uid('user'),
@@ -139,66 +78,17 @@ export function useSendMessage() {
 
       queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
         const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
-        return {
-          ...base,
-          messages: [...base.messages, userMessage]
-        };
+        return {...base, messages: [...base.messages, userMessage]};
       });
       queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
 
-      await appendMessages(chatId, [{role: 'user', content: payload.content}]);
-      if (IS_DEV) console.debug('[chat-send] user message persisted', {chatId});
-
-      const chunks: string[] = [];
-      try {
-        if (IS_DEV) console.debug('[chat-send] streaming started', {chatId});
-        await sendMessageStreaming(
-          chatId,
-          payload,
-          (chunk) => {
-            chunks.push(chunk);
-            onToken(chunk);
-          },
-          () => {
-            if (IS_DEV) {
-              console.debug('[chat-send] streaming ended with length', {chatId, length: chunks.join('').length});
-            }
-          }
-        );
-      } catch (streamError) {
-        const message = streamError instanceof Error ? streamError.message : 'ارتباط با مدل برقرار نشد.';
-        toast.error(message);
-        throw new Error(message);
-      }
-
-      const assistantContent = chunks.join('').trim();
-
-      if (!assistantContent) {
-        toast.error(EMPTY_RESPONSE_MESSAGE);
-        throw new Error(EMPTY_RESPONSE_MESSAGE);
-      }
-
-      await appendMessages(chatId, [
-        {
-          role: 'assistant',
-          content: assistantContent
-        }
-      ]);
-
-      const assistantMessage: ChatMessage = {
-        id: uid('assistant'),
-        role: 'assistant',
-        content: assistantContent,
-        createdAt: new Date().toISOString()
-      };
+      const assistantMessage = await sendMessage(chatId, payload.content);
 
       queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
         const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
         return {...base, messages: [...base.messages, assistantMessage]};
       });
       queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
-
-      if (IS_DEV) console.debug('[chat-send] assistant committed', {chatId});
 
       return {assistantCommitted: true};
     }
@@ -208,28 +98,9 @@ export function useSendMessage() {
 export function useChatActions() {
   const queryClient = useQueryClient();
 
-  const createFallbackChat = (title?: string): ChatSummary => ({
-    id: uid(),
-    title: title ?? 'گفت‌وگوی جدید',
-    updatedAt: new Date().toISOString()
-  });
-
   return {
     create: useMutation({
-      mutationFn: async ({title}: {title?: string} = {}) => {
-        try {
-          const createdChat = (await createChat()) as Partial<ChatSummary> & Record<string, unknown>;
-          const normalizedChat = normalizeChatSummary(createdChat);
-
-          if (normalizedChat) {
-            return normalizedChat;
-          }
-        } catch {
-          // fallback below keeps chat UX working when chat CRUD backend is not fully wired.
-        }
-
-        return createFallbackChat(title);
-      },
+      mutationFn: async (_payload: {title?: string} = {}) => createConversation(),
       onSuccess: (chat) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => {
           const next = previous ?? [];
@@ -244,17 +115,16 @@ export function useChatActions() {
       }
     }),
     rename: useMutation({
-      mutationFn: ({chatId, title}: {chatId: string; title: string}) => renameChat(chatId, title).then(() => undefined),
+      mutationFn: ({chatId, title}: {chatId: string; title: string}) => renameConversation(chatId, title),
       onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
     }),
     remove: useMutation({
-      mutationFn: (chatId: string) => deleteChat(chatId),
+      mutationFn: (chatId: string) => deleteConversation(chatId),
       onSuccess: (_data, chatId) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
           (previous ?? []).filter((item) => item.id !== chatId)
         );
         queryClient.removeQueries({queryKey: ['chat', chatId]});
-        queryClient.invalidateQueries({queryKey: ['chats']});
       }
     })
   };

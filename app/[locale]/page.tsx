@@ -1,6 +1,13 @@
-import {ChatShell} from '@/components/chat/ChatShell';
+import {cookies} from 'next/headers';
+import {redirect} from 'next/navigation';
 
 export default async function LocalePage({params}: {params: Promise<{locale: string}>}) {
   const {locale} = await params;
-  return <ChatShell locale={locale} />;
+  const hasRefresh = (await cookies()).get('sbu_refresh');
+
+  if (hasRefresh) {
+    redirect(`/${locale}/chat`);
+  }
+
+  redirect(`/${locale}/auth?mode=login`);
 }

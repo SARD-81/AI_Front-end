@@ -1,7 +1,6 @@
 'use client';
 
 import {ButtonHTMLAttributes, useMemo, useState} from 'react';
-import {List} from 'lucide-react';
 import {cn} from '@/lib/utils';
 
 type UserAnchorItem = {

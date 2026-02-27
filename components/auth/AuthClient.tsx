@@ -85,7 +85,7 @@ export function AuthClient({locale}: {locale: string}) {
               <CardTitle>{authMode === 'login' ? 'ورود به حساب کاربری' : 'ایجاد حساب کاربری'}</CardTitle>
               <CardDescription>
                 {authMode === 'login'
-                  ? 'برای ورود، شماره دانشجویی و رمز عبور خود را وارد کنید.'
+                  ? 'برای ورود، شماره دانشجویی یا ایمیل دانشگاهی و رمز عبور خود را وارد کنید.'
                   : 'برای ثبت‌نام، ابتدا ایمیل دانشگاهی خود را تایید کنید.'}
               </CardDescription>
             </CardHeader>
@@ -104,7 +104,7 @@ export function AuthClient({locale}: {locale: string}) {
                       busy={busy}
                       setBusy={setBusy}
                       abortRef={controllersRef.login}
-                      onSuccess={() => router.push(`/${locale}/chat`)}
+                      onSuccess={() => { const next = searchParams.get("next"); router.push(next || `/${locale}/chat`); }}
                     />
                   </motion.div>
                 ) : (

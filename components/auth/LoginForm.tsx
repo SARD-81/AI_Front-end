@@ -6,8 +6,8 @@ import {Eye, EyeOff, Loader2} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
+import {Input} from '@/components/ui/input';
 import {isAbortError, loginUser, ServiceError} from '@/lib/services/auth-service';
 import {type LoginFormValues, loginSchema} from '@/lib/validation/auth-schemas';
 
@@ -26,16 +26,13 @@ export function LoginForm({onSuccess, busy = false, setBusy, abortRef}: LoginFor
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      studentId: '',
+      identifier: '',
       password: ''
     }
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (inFlightRef.current) {
-      return;
-    }
-
+    if (inFlightRef.current) return;
     inFlightRef.current = true;
     setBusy(true);
     setFormError(null);
@@ -49,11 +46,8 @@ export function LoginForm({onSuccess, busy = false, setBusy, abortRef}: LoginFor
       toast.success('ورود با موفقیت انجام شد.');
       onSuccess();
     } catch (error) {
-      if (isAbortError(error)) {
-        return;
-      }
-
-      const message = error instanceof ServiceError ? error.message : 'خطا در ورود به سامانه. لطفا دوباره تلاش کنید.';
+      if (isAbortError(error)) return;
+      const message = error instanceof ServiceError ? error.message : 'خطا در ورود به سامانه.';
       setFormError(message);
       toast.error(message);
     } finally {
@@ -67,12 +61,12 @@ export function LoginForm({onSuccess, busy = false, setBusy, abortRef}: LoginFor
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormField
           control={form.control}
-          name="studentId"
+          name="identifier"
           render={({field}) => (
             <FormItem>
-              <FormLabel>شماره دانشجویی</FormLabel>
+              <FormLabel>شماره دانشجویی یا ایمیل دانشگاهی</FormLabel>
               <FormControl>
-                <Input {...field} inputMode="numeric" placeholder="مثال: 401123456" />
+                <Input {...field} placeholder="مثال: 401123456 یا user@student.sbu.ac.ir" dir="ltr" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -87,18 +81,12 @@ export function LoginForm({onSuccess, busy = false, setBusy, abortRef}: LoginFor
               <FormLabel>رمز عبور</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input
-                    {...field}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="رمز عبور"
-                    className="pl-10"
-                  />
+                  <Input {...field} type={showPassword ? 'text' : 'password'} placeholder="رمز عبور" className="pl-10" />
                   <button
                     type="button"
                     className="absolute inset-y-0 left-2 inline-flex items-center text-muted-foreground"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? 'پنهان‌سازی رمز عبور' : 'نمایش رمز عبور'}
-                    tabIndex={0}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -112,7 +100,7 @@ export function LoginForm({onSuccess, busy = false, setBusy, abortRef}: LoginFor
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 
         <Button type="submit" className="w-full" disabled={busy || form.formState.isSubmitting}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {busy || form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           ورود به سامانه
         </Button>
       </form>
