@@ -1,22 +1,25 @@
-const domains = (process.env.UNIVERSITY_EMAIL_DOMAINS ?? 'sbu.ac.ir,student.sbu.ac.ir,mail.sbu.ac.ir')
-  .split(',')
-  .map((d) => d.trim().toLowerCase())
-  .filter(Boolean);
+import {isUniversityEmail} from '@/lib/config/university-email';
 
-const studentTemplate = process.env.STUDENT_ID_EMAIL_TEMPLATE?.trim() || '{id}@student.sbu.ac.ir';
+const defaultStudentTemplate = '{id}@sbu.ac.ir';
+const configuredStudentTemplate = process.env.STUDENT_ID_EMAIL_TEMPLATE?.trim();
 
 export function isLikelyEmail(identifier: string): boolean {
   return identifier.includes('@');
 }
 
-export function studentIdToEmail(studentId: string): string {
-  return studentTemplate.replace('{id}', studentId.trim());
+export function isValidUniversityEmail(email: string): boolean {
+  return isUniversityEmail(email);
 }
 
-export function isValidUniversityEmail(email: string): boolean {
-  const parts = email.trim().toLowerCase().split('@');
-  if (parts.length !== 2) {
-    return false;
+export function studentIdToEmail(studentId: string): string {
+  const normalizedId = studentId.trim();
+
+  if (configuredStudentTemplate) {
+    const configuredEmail = configuredStudentTemplate.replace('{id}', normalizedId);
+    if (isValidUniversityEmail(configuredEmail)) {
+      return configuredEmail;
+    }
   }
-  return domains.includes(parts[1]);
+
+  return defaultStudentTemplate.replace('{id}', normalizedId);
 }
