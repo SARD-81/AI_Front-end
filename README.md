@@ -1,90 +1,153 @@
-# DeepSeek-Style Persian Chat UI
+```markdown
+# 🎓 University AI Assistant (SBU Smart Assistant)
 
-اپلیکیشن حاضر یک کلون فرانت‌اندی از تجربه‌ی `chat.deepseek.com` با تمرکز روی RTL و زبان فارسی است.
+![Project Status](https://img.shields.io/badge/Status-Development-blue?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css)
 
-## 1) نصب و اجرا
+A highly advanced, Enterprise-grade AI Assistant designed for **Shahid Beheshti University (SBU)**. This project features a modern, RTL-optimized interface with a robust architecture ready for production scaling.
+
+---
+
+## ✨ Key Features
+
+### 🔐 Authentication & Security
+- **Dual-Mode Auth:** Seamless switching between Login and Signup modes.
+- **University Verification:** Strict email validation (`@mail.sbu.ac.ir` / `@student.sbu.ac.ir`).
+- **OTP System:** 2-Step verification process with countdown timer and rate limiting.
+- **Secure Validation:** Enterprise-grade form validation using `Zod` and `React Hook Form`.
+
+### 💬 Chat Interface (DeepSeek Style)
+- **Streaming Responses:** Real-time token streaming for a fluid AI experience.
+- **Markdown Support:** Full rendering of code blocks, tables, and rich text.
+- **Message History:** Virtualized message list handling 2000+ messages efficiently.
+- **Feedback System:** Granular feedback (Like/Dislike) with detailed reasoning options (Inaccurate, Tone, etc.).
+- **User Message Rail:** Quick navigation to previous user queries.
+
+### ⚙️ User Experience (UX)
+- **Settings Modal:** Centralized control for Theme (Light/Dark/System) and Language (Persian/English).
+- **Responsive Sidebar:** Collapsible history sidebar with grouped chats (Today, Yesterday, Last 30 Days).
+- **RTL Optimization:** Native support for Persian layouts and typography (Vazirmatn Font).
+- **Animated Interactions:** Smooth transitions using `Framer Motion`.
+
+### 🏗️ Architecture
+- **BFF Pattern (Backend for Frontend):** Service layer abstraction to switch between **Mock** and **Real** backend effortlessly.
+- **Type-Safe:** Fully typed with TypeScript strict mode.
+- **Modular Components:** Built with `shadcn/ui` and atomic design principles.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **UI Components:** shadcn/ui + Radix UI
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
+- **Form Handling:** React Hook Form + Zod
+- **Internationalization:** next-intl
+- **State Management:** React Query (TanStack Query) + Nuqs (URL State)
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to set up the project locally.
+
+### Prerequisites
+- Node.js 18.17 or later
+- npm or pnpm or yarn
+
+### 1. Clone the repository
+```bash
+git clone [https://github.com/your-username/ai-front-end.git](https://github.com/your-username/ai-front-end.git)
+cd ai-front-end
+
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
-npm run dev
+# or
+pnpm install
+
 ```
 
-برای بیلد تولید:
+### 3. Environment Variables
+
+Create a `.env.local` file in the root directory and add the following:
+
+```env
+# Backend Connection
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_AUTH_MODE=mock  # Set to 'real' to use actual backend
+
+# AI Configuration (OpenRouter/DeepSeek)
+NEXT_PUBLIC_OPENROUTER_API_KEY=your_api_key_here
+NEXT_PUBLIC_OPENROUTER_DEFAULT_MODEL=deepseek/deepseek-chat
+
+```
+
+### 4. Run the development server
 
 ```bash
-npm run build
-npm run start
+npm run dev
+
 ```
 
-## 2) معماری
+Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) with your browser to see the result.
 
-- **Next.js App Router + TypeScript**
-- **Tailwind + CSS variables tokens** در `styles/tokens.css`
-- **Theme system** با `next-themes` در `components/providers/app-providers.tsx`
-- **i18n** با `next-intl` و پیام‌های فارسی در `messages/fa.json`
-- **Server-state** با `@tanstack/react-query`
-- **Markdown rendering** با `react-markdown + remark-gfm`
-- **Virtualized messages** با `react-virtuoso`
+---
 
-ساختار اصلی:
+## 📂 Project Structure
 
-- `app/[locale]/page.tsx` صفحه‌ی خالی
-- `app/[locale]/chat/[chatId]/page.tsx` صفحه‌ی چت
-- `components/sidebar/Sidebar.tsx` سایدبار
-- `components/chat/*` لیست پیام، پیام، کامپوزر
-- `lib/api/*` لایه‌ی API و DTO
+```bash
+.
+├── app/                  # Next.js App Router pages & layouts
+│   ├── [locale]/         # i18n routes (fa/en)
+│   │   ├── auth/         # Authentication pages
+│   │   ├── chat/         # Chat interface pages
+│   │   └── settings/     # Settings modal routes
+│   └── api/              # Local API routes (BFF)
+├── components/           # React Components
+│   ├── auth/             # Login/Signup forms
+│   ├── chat/             # Chat bubbles, composer, message list
+│   ├── settings/         # Settings modal components
+│   ├── sidebar/          # History sidebar
+│   └── ui/               # Reusable shadcn/ui components
+├── lib/                  # Utilities & Logic
+│   ├── api/              # API Client & Interceptors
+│   ├── services/         # Service Layer (Auth, Chat)
+│   ├── hooks/            # Custom React Hooks
+│   └── types/            # TypeScript Interfaces
+├── messages/             # i18n JSON files (fa.json, en.json)
+└── public/               # Static assets (fonts, images)
 
-## 3) متغیرهای محیطی
+```
 
-- `OPENROUTER_API_KEY` (**الزامی** برای پروکسی سرور)
-- `OPENROUTER_BASE_URL` (اختیاری، پیش‌فرض: `https://openrouter.ai/api/v1`)
-- `OPENROUTER_DEFAULT_MODEL` (اختیاری، پیش‌فرض: `openai/gpt-4o-mini`)
-- `OPENROUTER_SITE_URL` (اختیاری، برای هدر `HTTP-Referer`)
-- `OPENROUTER_APP_NAME` (اختیاری، برای هدر `X-Title`)
-- `NEXT_PUBLIC_API_BASE_URL` (اختیاری؛ اگر خالی باشد CRUD چت روی same-origin BFF کار می‌کند)
-- `NEXT_PUBLIC_DEMO_MODE=true` (اختیاری، فقط برای دمو ناامن مستقیم از مرورگر)
+---
 
-نمونه کامل در `.env.example` آمده است.
+## 🤝 Contributing
 
-## 4) Local BFF (داخل Next.js)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-برای رفع `Failed to fetch` در توسعه محلی، پروژه اکنون یک BFF داخلی دارد:
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- CRUD چت (in-memory):
-  - `GET/POST /api/app/chats`
-  - `GET/PATCH/DELETE /api/app/chats/:id`
-  - `POST /api/app/chats/:id/messages`
-- پروکسی LLM به OpenRouter (فقط سمت سرور):
-  - `POST /api/chat/stream` (SSE)
-  - `POST /api/chat/complete` (fallback غیر استریم)
+---
 
-کلید OpenRouter فقط از env سرور خوانده می‌شود و به مرورگر ارسال نمی‌شود.
+## 📄 License
 
-## 5) محل دقیق TODOهای اتصال بک‌اند
+This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
 
-- `lib/api/client.ts`
-  - TODO برای استراتژی auth (token/cookie)
-- `lib/config/api-endpoints.ts`
-  - TODO برای تنظیم مسیرها در صورت تفاوت قرارداد بک‌اند
-- `lib/api/chat-service.ts`
-  - TODO برای map کردن `thinkingLevel` به پارامترهای واقعی بک‌اند
-  - TODO برای CORS در بک‌اند
-- `components/chat/Composer.tsx`
-  - TODO برای اتصال آپلود فایل
-- `lib/api/chat.ts`
-  - TODO برای metadata ضمیمه‌ها
+---
 
-## 6) تغییر توکن‌های رنگ/تم
+Developed with ❤️ by **Amir Reza Davarzani**
 
-- توکن‌های رنگ، spacing، radius در `styles/tokens.css` تعریف شده‌اند.
-- نگاشت Tailwind به variables در `tailwind.config.ts` انجام شده است.
-- برای شخصی‌سازی تم:
-  1. متغیرهای `:root` و `.dark` را تغییر دهید.
-  2. در صورت نیاز shadow/border radius را در Tailwind extend تنظیم کنید.
-
-## 7) RTL و LTR برای code blocks
-
-- جهت کل اپ در `app/[locale]/layout.tsx` روی `dir="rtl"` تنظیم شده.
-- برای جلوگیری از بهم‌ریختگی کد:
-  - در `MessageBubble` روی `<pre dir="ltr">` و `<code dir="ltr">` اعمال شده.
-  - در `app/globals.css` هم کلاس `prose-chat` برای code ها `direction: ltr` دارد.
+```
