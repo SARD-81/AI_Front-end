@@ -3,21 +3,44 @@ import {setAuthCookies} from '@/lib/server/auth-cookies';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {isLikelyEmail, isValidUniversityEmail, studentIdToEmail} from '@/lib/server/university-config';
+import {UNIVERSITY_EMAIL_HINT} from '@/lib/config/university-email';
+
+type LoginBody = {
+  identifier?: string;
+  email?: string;
+  password?: string;
+};
+
+function resolveLoginEmail(body: LoginBody): string {
+  const explicitEmail = body.email?.trim();
+  if (explicitEmail) {
+    return explicitEmail;
+  }
+
+  const identifier = body.identifier?.trim() ?? '';
+  if (!identifier) {
+    return '';
+  }
+
+  if (isLikelyEmail(identifier)) {
+    return identifier;
+  }
+
+  if (/^\d+$/.test(identifier)) {
+    return studentIdToEmail(identifier);
+  }
+
+  return '';
+}
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as {identifier?: string; password?: string};
-    const identifier = body.identifier?.trim() ?? '';
+    const body = (await request.json()) as LoginBody;
     const password = body.password ?? '';
-
-    const email = /^\d+$/.test(identifier)
-      ? studentIdToEmail(identifier)
-      : isLikelyEmail(identifier)
-        ? identifier.toLowerCase()
-        : '';
+    const email = resolveLoginEmail(body);
 
     if (!email || !isValidUniversityEmail(email)) {
-      return NextResponse.json({message: 'ایمیل دانشگاهی معتبر نیست.'}, {status: 400});
+      return NextResponse.json({message: UNIVERSITY_EMAIL_HINT}, {status: 400});
     }
 
     const data = await backendFetch<{access: string; refresh?: string; student_id?: string; full_name?: string}>('/login/', {
