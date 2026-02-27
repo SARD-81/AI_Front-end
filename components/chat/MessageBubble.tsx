@@ -4,12 +4,15 @@ import {memo, useMemo, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {Check, Copy} from 'lucide-react';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useTranslations} from 'next-intl';
 import {toast} from 'sonner';
+import {FeedbackDialog, type FeedbackReasonCategory} from '@/components/feedback/FeedbackDialog';
 import {Button} from '@/components/ui/button';
+import {putMessageFeedback} from '@/lib/services/chat-service';
 import {cn} from '@/lib/utils';
 import {copyToClipboard} from '@/lib/utils/clipboard';
-import type {ChatMessage} from '@/lib/api/chat';
+import type {ChatDetail, ChatMessage} from '@/lib/api/chat';
 import {MessageActions} from './MessageActions';
 
 function CodeBlock({value}: {value: string}) {
@@ -84,6 +87,8 @@ function MessageBubbleComponent({
   anchorId
 }: MessageBubbleProps) {
   const t = useTranslations('app');
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
   const isStreaming = message.id === 'streaming';
@@ -91,6 +96,37 @@ function MessageBubbleComponent({
     () => message.role === 'assistant' && isMostlyEnglish(message.content),
     [message.role, message.content]
   );
+
+  const feedbackMutation = useMutation({
+    mutationFn: ({
+      messageId,
+      payload
+    }: {
+      messageId: string;
+      payload:
+        | {is_liked: true}
+        | {is_liked: null}
+        | {is_liked: false; reason_category: FeedbackReasonCategory; text_comment?: string};
+    }) => putMessageFeedback(messageId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.setQueriesData<ChatDetail>({queryKey: ['chat']}, (previous) => {
+        if (!previous) return previous;
+        return {
+          ...previous,
+          messages: previous.messages.map((item) =>
+            item.id === variables.messageId
+              ? {
+                  ...item,
+                  is_liked: variables.payload.is_liked
+                }
+              : item
+          )
+        };
+      });
+    }
+  });
+
+  const feedbackState = message.is_liked ?? null;
 
   const handleCopyLink = async () => {
     if (!anchorId || typeof window === 'undefined') return;
@@ -103,6 +139,21 @@ function MessageBubbleComponent({
     }
     toast.error(t('message.copyLinkError'));
   };
+
+  const handleLike = async () => {
+    if (!message.id || isTyping || isStreaming || feedbackMutation.isPending) return;
+    try {
+      await feedbackMutation.mutateAsync({
+        messageId: message.id,
+        payload: feedbackState === true ? {is_liked: null} : {is_liked: true}
+      });
+      toast.success('بازخورد ثبت شد.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.');
+    }
+  };
+
+  const feedbackDisabled = !message.id || isTyping || isStreaming || feedbackMutation.isPending;
 
   return (
     <article className="w-full" aria-live="polite">
@@ -172,15 +223,57 @@ function MessageBubbleComponent({
             </div>
 
             {!isUser ? (
-              <MessageActions
-                role={message.role}
-                onCopy={() => onCopyMessage(message.content)}
-                onRegenerate={onRegenerate}
-                className={cn(
-                  'mr-auto justify-start transition-all duration-150',
-                  isLastAssistant ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
-                )}
-              />
+              <>
+                <MessageActions
+                  role={message.role}
+                  onCopy={() => onCopyMessage(message.content)}
+                  onRegenerate={onRegenerate}
+                  onLike={handleLike}
+                  onDislike={() => setDialogOpen(true)}
+                  feedbackState={feedbackState}
+                  feedbackDisabled={feedbackDisabled}
+                  className={cn(
+                    'mr-auto justify-start transition-all duration-150',
+                    isLastAssistant ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                  )}
+                />
+                <FeedbackDialog
+                  open={dialogOpen}
+                  onOpenChange={setDialogOpen}
+                  initialValue={{isLiked: feedbackState}}
+                  isSubmitting={feedbackMutation.isPending}
+                  onSubmit={async ({reason_category, text_comment}) => {
+                    if (!message.id) return;
+                    try {
+                      await feedbackMutation.mutateAsync({
+                        messageId: message.id,
+                        payload: {
+                          is_liked: false,
+                          reason_category,
+                          ...(text_comment ? {text_comment} : {})
+                        }
+                      });
+                      toast.success('بازخورد ثبت شد.');
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.');
+                      throw error;
+                    }
+                  }}
+                  onClear={async () => {
+                    if (!message.id) return;
+                    try {
+                      await feedbackMutation.mutateAsync({
+                        messageId: message.id,
+                        payload: {is_liked: null}
+                      });
+                      setDialogOpen(false);
+                      toast.success('بازخورد حذف شد.');
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : 'حذف بازخورد ناموفق بود.');
+                    }
+                  }}
+                />
+              </>
             ) : null}
           </>
         )}
@@ -195,6 +288,7 @@ export const MessageBubble = memo(
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.role === nextProps.message.role &&
     prevProps.message.content === nextProps.message.content &&
+    prevProps.message.is_liked === nextProps.message.is_liked &&
     prevProps.isLastAssistant === nextProps.isLastAssistant &&
     prevProps.anchorId === nextProps.anchorId
 );
