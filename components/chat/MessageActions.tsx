@@ -11,10 +11,25 @@ type MessageActionsProps = {
   onEdit?: () => void;
   onCopyLink?: () => void;
   onRegenerate?: () => void;
+  onLike?: () => void;
+  onDislike?: () => void;
+  feedbackState?: boolean | null;
+  feedbackDisabled?: boolean;
   className?: string;
 };
 
-export function MessageActions({role, onCopy, onEdit, onCopyLink, onRegenerate, className}: MessageActionsProps) {
+export function MessageActions({
+  role,
+  onCopy,
+  onEdit,
+  onCopyLink,
+  onRegenerate,
+  onLike,
+  onDislike,
+  feedbackState,
+  feedbackDisabled,
+  className
+}: MessageActionsProps) {
   const t = useTranslations('app');
   const baseClass =
     'h-7 w-7 rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95';
@@ -51,22 +66,22 @@ export function MessageActions({role, onCopy, onEdit, onCopyLink, onRegenerate, 
             type="button"
             variant="ghost"
             size="icon"
-            className={baseClass}
+            className={cn(baseClass, feedbackState === true ? 'text-emerald-600 hover:text-emerald-700' : undefined)}
             aria-label={t('messageActions.like')}
-            disabled
+            disabled={feedbackDisabled}
+            onClick={onLike}
           >
-            {/* TODO(BACKEND): wire assistant message feedback endpoint for like/dislike actions. */}
             <ThumbsUp className="h-3.5 w-3.5" />
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className={baseClass}
+            className={cn(baseClass, feedbackState === false ? 'text-destructive hover:text-destructive' : undefined)}
             aria-label={t('messageActions.dislike')}
-            disabled
+            disabled={feedbackDisabled}
+            onClick={onDislike}
           >
-            {/* TODO(BACKEND): wire assistant message feedback endpoint for like/dislike actions. */}
             <ThumbsDown className="h-3.5 w-3.5" />
           </Button>
         </>

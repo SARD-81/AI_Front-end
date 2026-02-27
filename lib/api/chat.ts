@@ -12,6 +12,7 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
   isStreaming?: boolean;
+  is_liked?: boolean | null;
 };
 
 export type ChatDetail = {
