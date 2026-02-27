@@ -1,9 +1,5 @@
 import {z} from 'zod';
-
-const domains = (process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAINS ?? 'sbu.ac.ir,student.sbu.ac.ir,mail.sbu.ac.ir')
-  .split(',')
-  .map((domain) => domain.trim().toLowerCase())
-  .filter(Boolean);
+import {UNIVERSITY_EMAIL_HINT, UNIVERSITY_EMAIL_REGEX} from '@/lib/config/university-email';
 
 const studentIdSchema = z
   .string()
@@ -12,11 +8,6 @@ const studentIdSchema = z
   .min(5, 'شماره دانشجویی باید حداقل ۵ رقم باشد.')
   .max(12, 'شماره دانشجویی نباید بیشتر از ۱۲ رقم باشد.');
 
-function isAllowedDomain(email: string) {
-  const [, domain = ''] = email.toLowerCase().split('@');
-  return domains.includes(domain);
-}
-
 export const loginSchema = z.object({
   identifier: z
     .string()
@@ -24,7 +15,7 @@ export const loginSchema = z.object({
     .refine(
       (value) => {
         if (value.includes('@')) {
-          return z.string().email().safeParse(value).success && isAllowedDomain(value);
+          return z.string().email().safeParse(value).success && UNIVERSITY_EMAIL_REGEX.test(value.trim());
         }
 
         return /^\d{5,12}$/.test(value);
@@ -39,7 +30,7 @@ export const signupStep1EmailSchema = z.object({
     .string()
     .min(1, 'ایمیل دانشگاهی الزامی است.')
     .email('فرمت ایمیل معتبر نیست.')
-    .refine((value) => isAllowedDomain(value), 'ایمیل باید در دامنه‌های دانشگاهی مجاز باشد.')
+    .refine((value) => UNIVERSITY_EMAIL_REGEX.test(value.trim()), UNIVERSITY_EMAIL_HINT)
 });
 
 export const signupStep1Schema = signupStep1EmailSchema.extend({
