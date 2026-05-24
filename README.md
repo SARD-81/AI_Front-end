@@ -1,153 +1,62 @@
-```markdown
-# 🎓 University AI Assistant (SBU Smart Assistant)
+# 🎓 پوسته و فرانت‌اند هوش مصنوعی دانشگاه شهید بهشتی
 
-![Project Status](https://img.shields.io/badge/Status-Development-blue?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css)
+این مخزن (Repository) شامل سورس‌کد کامل **پوسته کاربری (UI Shell)** و **بخش فرانت‌اند (Front-end)** سامانه هوش مصنوعی اختصاصی **دانشگاه شهید بهشتی** است. این پروژه با هدف ارائه یک تجربه کاربری مدرن، واکنش‌گرا و سریع برای تعامل یکپارچه دانشجویان، اساتید و پژوهشگران با مدل‌های زبانی بزرگ (LLMs) طراحی و پیاده‌سازی شده است.
 
-A highly advanced, Enterprise-grade AI Assistant designed for **Shahid Beheshti University (SBU)**. This project features a modern, RTL-optimized interface with a robust architecture ready for production scaling.
+## 🛠 معماری فنی و ویژگی‌های کلیدی
 
----
+این سیستم بر پایه جدیدترین تکنولوژی‌های توسعه وب و با رعایت اصول معماری تمیز (Clean Architecture) توسعه یافته است تا مقیاس‌پذیری و نگهداری آن در سطح سازمانی تضمین شود.
 
-## ✨ Key Features
+* **فریم‌ورک اصلی:** Next.js (با استفاده از App Router برای رندرینگ بهینه سمت سرور SSR و کلاینت CSR).
+* **زبان برنامه‌نویسی:** TypeScript (جهت حفظ ایمنی نوع داده‌ها و کاهش خطاهای زمان اجرا).
+* **رابط کاربری و استایل‌دهی:** ترکیب Tailwind CSS به همراه کامپوننت‌های سفارشی‌سازی شده Shadcn/UI برای ایجاد ظاهری مینیمال، خوانا و حرفه‌ای.
+* **مدیریت تعاملات هوش مصنوعی:** یکپارچگی مستقیم با سرویس‌های LLM (شامل زیرساخت OpenRouter و استریم بلادرنگ پاسخ‌ها) در مسیر `lib/llm`.
+* **احراز هویت یکپارچه:** پیاده‌سازی سیستم ورود و ثبت‌نام امن مبتنی بر رمز یکبار مصرف (OTP) و مدیریت توکن‌ها/کوکی‌ها در سمت سرور.
+* **پشتیبانی از چندزبانگی (i18n):** سیستم مسیردهی پویا برای زبان‌های مختلف (انگلیسی و فارسی) با استفاده از ساختار `[locale]` و دیکشنری‌های مجزا در پوشه `messages/`.
+* **مدیریت نشست‌های چت:** سیستم پیشرفته ذخیره‌سازی، بازیابی تاریخچه مکالمات، بازخورد روی پیام‌ها و مدیریت State‌های پیچیده.
 
-### 🔐 Authentication & Security
-- **Dual-Mode Auth:** Seamless switching between Login and Signup modes.
-- **University Verification:** Strict email validation (`@mail.sbu.ac.ir` / `@student.sbu.ac.ir`).
-- **OTP System:** 2-Step verification process with countdown timer and rate limiting.
-- **Secure Validation:** Enterprise-grade form validation using `Zod` and `React Hook Form`.
+## 📁 ساختار پوشه‌ها (Folder Structure)
 
-### 💬 Chat Interface (DeepSeek Style)
-- **Streaming Responses:** Real-time token streaming for a fluid AI experience.
-- **Markdown Support:** Full rendering of code blocks, tables, and rich text.
-- **Message History:** Virtualized message list handling 2000+ messages efficiently.
-- **Feedback System:** Granular feedback (Like/Dislike) with detailed reasoning options (Inaccurate, Tone, etc.).
-- **User Message Rail:** Quick navigation to previous user queries.
+پروژه به گونه‌ای سازمان‌دهی شده که تفکیک وظایف (Separation of Concerns) به خوبی در آن رعایت شود:
 
-### ⚙️ User Experience (UX)
-- **Settings Modal:** Centralized control for Theme (Light/Dark/System) and Language (Persian/English).
-- **Responsive Sidebar:** Collapsible history sidebar with grouped chats (Today, Yesterday, Last 30 Days).
-- **RTL Optimization:** Native support for Persian layouts and typography (Vazirmatn Font).
-- **Animated Interactions:** Smooth transitions using `Framer Motion`.
+* `app/`: هسته اصلی مسیردهی پروژه شامل صفحات چت، تنظیمات، صفحات احراز هویت و مسیرهای API واسط (BFF).
+* `components/`: کامپوننت‌های قابل استفاده مجدد:
+    * `ui/`: کامپوننت‌های پایه و Atomic (مانند دکمه‌ها، ورودی‌ها، مدال‌ها).
+    * `chat/`: کامپوننت‌های اختصاصی محیط مکالمه (حباب پیام، لیست پیام‌ها، ورودی متنی و اکشن‌ها).
+    * `auth/`: کامپوننت‌ها و فرم‌های مربوط به ورود و ثبت‌نام.
+* `lib/`: توابع کاربردی و سرویس‌های ارتباطی:
+    * `api/` و `services/`: مدیریت درخواست‌های شبکه و ارتباط با بک‌اند.
+    * `llm/`: کلاینت‌ها و پیکربندی‌های مربوط به پردازش و دریافت پاسخ از مدل‌های هوش مصنوعی.
+* `hooks/`: هوک‌های سفارشی ری‌اکت برای کپسوله‌سازی منطق (مانند `use-chat-data`).
+* `messages/`: فایل‌های JSON شامل رشته‌های متنی برای پشتیبانی از چندزبانگی.
 
-### 🏗️ Architecture
-- **BFF Pattern (Backend for Frontend):** Service layer abstraction to switch between **Mock** and **Real** backend effortlessly.
-- **Type-Safe:** Fully typed with TypeScript strict mode.
-- **Modular Components:** Built with `shadcn/ui` and atomic design principles.
+## 🚀 راه‌اندازی و اجرای پروژه در محیط توسعه
 
----
+برای اجرای این پروژه در محیط محلی (Local)، مراحل زیر را به ترتیب دنبال کنید:
 
-## 🛠️ Tech Stack
+### ۱. پیش‌نیازها
+* Node.js (نسخه 18.x به بالا توصیه می‌شود)
+* مدیریت پکیج `npm`
 
-- **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Components:** shadcn/ui + Radix UI
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
-- **Form Handling:** React Hook Form + Zod
-- **Internationalization:** next-intl
-- **State Management:** React Query (TanStack Query) + Nuqs (URL State)
-
----
-
-## 🚀 Getting Started
-
-Follow these steps to set up the project locally.
-
-### Prerequisites
-- Node.js 18.17 or later
-- npm or pnpm or yarn
-
-### 1. Clone the repository
-```bash
-git clone [https://github.com/your-username/ai-front-end.git](https://github.com/your-username/ai-front-end.git)
-cd ai-front-end
-
-```
-
-### 2. Install dependencies
-
+### ۲. نصب وابستگی‌ها
+پس از کلون کردن مخزن، ترمینال را در مسیر ریشه پروژه باز کرده و دستور زیر را اجرا کنید:
 ```bash
 npm install
-# or
-pnpm install
-
 ```
 
-### 3. Environment Variables
-
-Create a `.env.local` file in the root directory and add the following:
-
-```env
-# Backend Connection
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-NEXT_PUBLIC_AUTH_MODE=mock  # Set to 'real' to use actual backend
-
-# AI Configuration (OpenRouter/DeepSeek)
-NEXT_PUBLIC_OPENROUTER_API_KEY=your_api_key_here
-NEXT_PUBLIC_OPENROUTER_DEFAULT_MODEL=deepseek/deepseek-chat
-
+### ۳. تنظیم متغیرهای محیطی (Environment Variables)
+یک کپی از فایل `.env.example` تهیه کرده و نام آن را به `.env` یا `.env.local` تغییر دهید. سپس مقادیر مورد نیاز (مانند آدرس پایه APIهای بک‌اند و کلیدهای مورد نیاز هوش مصنوعی) را در آن وارد کنید:
+```bash
+cp .env.example .env.local
 ```
 
-### 4. Run the development server
-
+### ۴. اجرای سرور توسعه
+برای اجرای نسخه توسعه (Development Server)، از دستور زیر استفاده کنید:
 ```bash
 npm run dev
-
 ```
 
-Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) with your browser to see the result.
+اکنون پروژه روی آدرس `http://localhost:3000` در دسترس خواهد بود.
 
----
+## 📜 مجوز و حقوق اثر
 
-## 📂 Project Structure
-
-```bash
-.
-├── app/                  # Next.js App Router pages & layouts
-│   ├── [locale]/         # i18n routes (fa/en)
-│   │   ├── auth/         # Authentication pages
-│   │   ├── chat/         # Chat interface pages
-│   │   └── settings/     # Settings modal routes
-│   └── api/              # Local API routes (BFF)
-├── components/           # React Components
-│   ├── auth/             # Login/Signup forms
-│   ├── chat/             # Chat bubbles, composer, message list
-│   ├── settings/         # Settings modal components
-│   ├── sidebar/          # History sidebar
-│   └── ui/               # Reusable shadcn/ui components
-├── lib/                  # Utilities & Logic
-│   ├── api/              # API Client & Interceptors
-│   ├── services/         # Service Layer (Auth, Chat)
-│   ├── hooks/            # Custom React Hooks
-│   └── types/            # TypeScript Interfaces
-├── messages/             # i18n JSON files (fa.json, en.json)
-└── public/               # Static assets (fonts, images)
-
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
-
----
-
-Developed with ❤️ by **Amir Reza Davarzani**
-
-```
+این سامانه به عنوان رابط فرانت‌اند هوش مصنوعی دانشگاه شهید بهشتی توسعه یافته است. تمامی حقوق مادی و معنوی سورس‌کد، طراحی و منطق پیاده‌سازی شده متعلق به **دانشگاه شهید بهشتی** می‌باشد و هرگونه استفاده، کپی‌برداری یا توسعه خارج از چارچوب دانشگاه نیازمند مجوز رسمی است.
