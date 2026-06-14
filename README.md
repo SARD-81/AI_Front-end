@@ -14,6 +14,16 @@
 * **پشتیبانی از چندزبانگی (i18n):** سیستم مسیردهی پویا برای زبان‌های مختلف (انگلیسی و فارسی) با استفاده از ساختار `[locale]` و دیکشنری‌های مجزا در پوشه `messages/`.
 * **مدیریت نشست‌های چت:** سیستم پیشرفته ذخیره‌سازی، بازیابی تاریخچه مکالمات، بازخورد روی پیام‌ها و مدیریت State‌های پیچیده.
 
+
+## 🔌 قرارداد فعلی بک‌اند (Backend Contract)
+
+فرانت‌اند در مرورگر به صورت مستقیم با سرویس بک‌اند اصلی صحبت نمی‌کند؛ مسیرهای داخلی BFF در همین برنامه با الگوی `/api/app/*` نقطه ورود درخواست‌های کلاینت هستند. این مسیرهای BFF درخواست‌ها را به مقدار `BACKEND_ORIGIN` و یکی از دو پایه زیر فوروارد می‌کنند:
+
+* **احراز هویت:** پایه بک‌اند `/api/auth` شامل مسیرهای `POST /login/`، `POST /refresh/`، `POST /register/request-otp/`، `POST /register/verify-otp/`، `POST /register/complete/`، `POST /password-reset/request-otp/`، `POST /password-reset/verify-otp/`، `POST /password-reset/complete/` و `GET /profile/`.
+* **چت و مکالمات:** پایه بک‌اند `/api` شامل مسیرهای `GET /conversations/`، `POST /conversations/`، `GET /conversations/{conversation_id}/`، `PATCH /conversations/{conversation_id}/`، `DELETE /conversations/{conversation_id}/`، `GET /conversations/{conversation_id}/messages/`، `POST /chat/send/` و `PUT /messages/{message_id}/feedback/`.
+
+کدها و متغیرهای مربوط به OpenRouter/حالت دمو برای سناریوهای نمایشی یا آینده حفظ شده‌اند و مسیر اصلی فعلی ارسال چت در قرارداد بک‌اند محسوب نمی‌شوند. همچنین UI مربوط به جست‌وجو، نمایش سطح تفکر مدل و پیوست‌ها برای پشتیبانی آینده بک‌اند نگه داشته شده است و نباید به عنوان قابلیت تولیدی کامل در قرارداد فعلی برداشت شود.
+
 ## 📁 ساختار پوشه‌ها (Folder Structure)
 
 پروژه به گونه‌ای سازمان‌دهی شده که تفکیک وظایف (Separation of Concerns) به خوبی در آن رعایت شود:
