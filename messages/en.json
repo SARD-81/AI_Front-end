@@ -166,7 +166,8 @@
       "complete": "Complete registration",
       "autoLoginSuccess": "Account created successfully and you are now signed in.",
       "createdPleaseLogin": "Account created. Please sign in.",
-      "profileFieldsFutureNote": "These fields are kept for profile completion; in the current version only core signup data is sent to the server."
+      "profileFieldsFutureNote": "These fields are kept for profile completion; in the current version only core signup data is sent to the server.",
+      "verifyFirstStepRequired": "Please verify your email and verification code again first."
     },
 
     "validation": {
@@ -237,16 +238,16 @@
         "green": "Green"
       },
       "language": {
-        "auto": "Auto detect",
-        "fa": "Persian",
+        "auto": "Auto-detect",
+        "fa": "فارسی",
         "en": "English"
       }
     }
   },
 
   "notFound": {
-    "title": "Sorry, this route is incorrect.",
-    "description": "The page you are looking for might have been renamed, removed, or you entered the address incorrectly.",
+    "title": "Sorry, this route is wrong.",
+    "description": "The page you are looking for may have been renamed, removed, or you may have typed the address incorrectly.",
     "backHome": "Back to home / chat"
   }
 }
