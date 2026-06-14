@@ -107,6 +107,8 @@ export function Composer({
             variant="ghost"
             size="sm"
             onClick={onToggleSearch}
+            aria-pressed={search}
+            title={search ? t('searchEnabledHint') : t('searchDisabledHint')}
             className={cn('transition-all duration-200 active:scale-[0.98]', search && 'bg-accent')}
           >
             {t('search')}
@@ -114,7 +116,13 @@ export function Composer({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="sm" className="transition-all duration-200 active:scale-[0.98]">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title={t('thinkingLevel.futureHint')}
+                className="transition-all duration-200 active:scale-[0.98]"
+              >
                 <span>{t('thinkingLevel.label')} :</span>
                 <span className="text-muted-foreground mr-3">{selectedLevel.title}</span>
               </Button>
@@ -158,6 +166,8 @@ export function Composer({
             variant="ghost"
             size="icon"
             aria-label={t('attachment.label')}
+            title={t('attachment.notAvailableYet')}
+            disabled={true}
             className="transition-all duration-200 active:scale-[0.98]"
           >
             {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}

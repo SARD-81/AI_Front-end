@@ -101,13 +101,16 @@
           "title": "High thinking",
           "subtitle": "Deeper analysis with more processing time."
         }
-      }
+      },
+      "futureHint": "This option is kept for future backend support."
     },
 
     "attachment": {
       "label": "Attach file",
       "notAvailableYet": "File attachments are not enabled yet."
-    }
+    },
+    "searchEnabledHint": "Search is enabled; it takes full effect when backend support is available.",
+    "searchDisabledHint": "Search is disabled."
   },
 
   "auth": {
