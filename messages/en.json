@@ -48,7 +48,8 @@
       "codeLabel": "code",
       "thinking": "Responding…",
       "copyLinkSuccess": "Message link copied",
-      "copyLinkError": "Could not copy the link"
+      "copyLinkError": "Could not copy the link",
+      "scrollToBottom": "Scroll to bottom"
     },
 
     "emptyState": {

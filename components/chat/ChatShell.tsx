@@ -199,7 +199,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           <header className="relative flex h-14 items-center border-b border-border">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('chat.openConversations')}>
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('chat.openConversations')} title={t('chat.openConversations')}>
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -211,7 +211,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           </header>
 
           {errorMessage ? (
-            <div className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
+            <div role="alert" className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
           ) : null}
 
           <LayoutGroup>
