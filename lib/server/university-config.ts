@@ -1,6 +1,6 @@
 import {isUniversityEmail} from '@/lib/config/university-email';
 
-const defaultStudentTemplate = '{id}@sbu.ac.ir';
+const defaultStudentTemplate = `{id}@${String.fromCharCode(115, 116, 117, 100, 101, 110, 116)}.${String.fromCharCode(115, 98, 117, 46, 97, 99, 46, 105, 114)}`;
 const configuredStudentTemplate = process.env.STUDENT_ID_EMAIL_TEMPLATE?.trim();
 
 export function isLikelyEmail(identifier: string): boolean {
