@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {UNIVERSITY_EMAIL_REGEX} from '@/lib/config/university-email';
+import {isUniversityEmail} from '@/lib/config/university-email';
 
 export type AuthSchemaMessageKey =
   | 'studentId.required'
@@ -47,7 +47,7 @@ export const createLoginSchema = (t: AuthSchemaTranslator) =>
           const trimmedValue = value.trim();
 
           if (trimmedValue.includes('@')) {
-            return UNIVERSITY_EMAIL_REGEX.test(trimmedValue);
+            return isUniversityEmail(trimmedValue);
           }
 
           return /^\d{5,12}$/.test(trimmedValue);
@@ -63,7 +63,7 @@ export const createSignupStep1EmailSchema = (t: AuthSchemaTranslator) =>
       .string()
       .min(1, t('signup.emailRequired'))
       .email(t('signup.emailInvalidFormat'))
-      .refine((value) => UNIVERSITY_EMAIL_REGEX.test(value.trim()), t('signup.emailDomainInvalid'))
+      .refine((value) => isUniversityEmail(value.trim()), t('signup.emailDomainInvalid'))
   });
 
 export const createSignupStep1Schema = (t: AuthSchemaTranslator) =>
