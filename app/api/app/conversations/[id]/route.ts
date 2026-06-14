@@ -3,6 +3,24 @@ import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
 
+export async function GET(_request: Request, context: {params: Promise<{id: string}>}) {
+  try {
+    const {id} = await context.params;
+
+    const data = await callWithAutoRefresh((access) =>
+      backendFetch(`/conversations/${id}/`, {
+        base: 'api',
+        accessToken: access,
+        method: 'GET'
+      })
+    );
+
+    return NextResponse.json(data);
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
 export async function PATCH(request: Request, context: {params: Promise<{id: string}>}) {
   try {
     const {id} = await context.params;
