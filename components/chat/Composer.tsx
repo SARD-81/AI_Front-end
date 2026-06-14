@@ -2,7 +2,7 @@
 
 import {motion} from 'motion/react';
 import {Paperclip, SendHorizontal} from 'lucide-react';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {useEffect, useRef} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {Button} from '@/components/ui/button';
@@ -46,6 +46,8 @@ export function Composer({
   focusTrigger
 }: ComposerProps) {
   const t = useTranslations('app');
+  const locale = useLocale();
+  const isRtl = locale === 'fa';
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -124,7 +126,7 @@ export function Composer({
                 className="transition-all duration-200 active:scale-[0.98]"
               >
                 <span>{t('thinkingLevel.label')} :</span>
-                <span className="text-muted-foreground mr-3">{selectedLevel.title}</span>
+                <span className={cn('text-muted-foreground', isRtl ? 'mr-3' : 'ml-3')}>{selectedLevel.title}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -136,7 +138,7 @@ export function Composer({
                 value={thinkingLevel}
                 onValueChange={(nextValue) => onThinkingLevelChange(nextValue as ThinkingLevel)}
               >
-                <div className="space-y-1" dir="rtl">
+                <div className="space-y-1" dir={isRtl ? 'rtl' : 'ltr'}>
                   {thinkingLevelOptions.map((option) => {
                     const isSelected = option.value === thinkingLevel;
                     return (
@@ -144,12 +146,13 @@ export function Composer({
                         key={option.value}
                         value={option.value}
                         className={cn(
-                          'w-full items-start rounded-xl border p-3 text-right focus:text-foreground',
+                          'w-full items-start rounded-xl border p-3 focus:text-foreground',
+                          isRtl ? 'text-right' : 'text-left',
                           'hover:bg-accent',
                           isSelected ? 'border-primary/50 bg-accent' : 'border-border bg-background'
                         )}
                       >
-                        <div className="w-full pr-5">
+                        <div className={cn('w-full', isRtl ? 'pr-5' : 'pl-5')}>
                           <p className="text-sm font-semibold text-foreground">{option.title}</p>
                           <p className="mt-1 text-xs leading-6 text-muted-foreground">{option.subtitle}</p>
                         </div>
