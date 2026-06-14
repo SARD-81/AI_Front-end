@@ -4,6 +4,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {Virtuoso, type ListRange, type VirtuosoHandle} from 'react-virtuoso';
 import {ArrowDown} from 'lucide-react';
 import type {ChatMessage} from '@/lib/api/chat';
+import {useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
 import {MessageBubble} from './MessageBubble';
 import {UserMessageRail} from './UserMessageRail';
@@ -24,6 +25,7 @@ type UserAnchor = {
 };
 
 export function MessageList({messages, typing, onCopyMessage, onEditMessage, onRegenerate}: MessageListProps) {
+  const t = useTranslations('app');
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isAnchorNavRef = useRef(false);
   const anchorNavTimeoutRef = useRef<number | null>(null);
@@ -182,7 +184,8 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
           size="icon"
           className="absolute bottom-5 mt-10 right-5 z-10 h-10 w-10 rounded-full shadow-lg"
           onClick={scrollToBottom}
-          aria-label="رفتن به پایین"
+          aria-label={t('message.scrollToBottom')}
+          title={t('message.scrollToBottom')}
         >
           <ArrowDown className="h-4 w-4" />
         </Button>

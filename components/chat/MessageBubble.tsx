@@ -31,7 +31,7 @@ function CodeBlock({value}: {value: string}) {
     <div className="my-3 overflow-hidden rounded-md border border-border bg-muted">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <span className="text-xs text-muted-foreground">{t('message.codeLabel')}</span>
-        <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2">
+        <Button variant="ghost" size="sm" onClick={handleCopy} aria-label={t('messageActions.copy')} title={t('messageActions.copy')} className="h-7 px-2">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </Button>
       </div>
@@ -156,7 +156,7 @@ function MessageBubbleComponent({
   const feedbackDisabled = !message.id || isTyping || isStreaming || feedbackMutation.isPending;
 
   return (
-    <article className="w-full" aria-live="polite">
+    <article className="w-full" aria-live={isTyping ? 'polite' : 'off'}>
       <div className="flex w-full flex-col">
         {isTyping ? (
           <div className="mr-auto w-full max-w-[min(40rem,92%)]">

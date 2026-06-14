@@ -96,7 +96,7 @@ export function Composer({
           aria-live="polite"
           className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
         >
-          {MAX_MESSAGE_LENGTH} / {value.length}
+          {value.length} / {MAX_MESSAGE_LENGTH}
         </div>
       </div>
 
@@ -180,6 +180,7 @@ export function Composer({
           onClick={onSubmit}
           disabled={disabled || !value.trim()}
           aria-label={t('send')}
+          title={t('send')}
           className="transition-all duration-200 active:scale-[0.98]"
         >
           <SendHorizontal className="h-4 w-4" />

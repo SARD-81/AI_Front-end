@@ -48,7 +48,8 @@
       "codeLabel": "کد",
       "thinking": "در حال پاسخ…",
       "copyLinkSuccess": "لینک پیام کپی شد",
-      "copyLinkError": "کپی لینک ممکن نبود"
+      "copyLinkError": "کپی لینک ممکن نبود",
+      "scrollToBottom": "رفتن به پایین"
     },
 
     "emptyState": {
