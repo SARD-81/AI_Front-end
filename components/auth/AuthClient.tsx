@@ -18,6 +18,12 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { isAbortError, loginUser } from '@/lib/services/auth-service';
 
+const FEATURE_STRIPS = [
+  'from-primary/70 via-primary/25 to-transparent',
+  'from-sky-300/60 via-primary/25 to-transparent',
+  'from-white/45 via-primary/20 to-transparent'
+];
+
 type AuthMode = 'login' | 'signup';
 
 function safeNextUrl(next: string | null, locale: string): string {
@@ -141,109 +147,182 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto grid min-h-screen max-w-7xl items-stretch gap-6 px-4 py-6 md:grid-cols-2 md:px-6">
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-8">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,hsl(var(--primary)/0.08),transparent_45%),radial-gradient(circle_at_90%_80%,hsl(var(--primary)/0.12),transparent_45%)]" />
-          <div className="relative z-10 flex h-full flex-col justify-between gap-10">
-            <div className="space-y-4">
-              <Image
-                src="/Logo.png"
-                alt={t('hero.logoAlt')}
-                width={96}
-                height={96}
-                className="rounded-xl"
-                priority
-              />
-              <h1 className="text-2xl font-bold leading-relaxed md:text-3xl">
-                {t('hero.title')}
-              </h1>
-              <p className="text-sm leading-7 text-muted-foreground">
-                {t('hero.description')}
-              </p>
-            </div>
-            <div className="grid grid-cols-6 gap-3 opacity-30">
-              {Array.from({ length: 24 }).map((_, idx) => (
-                <span key={idx} className="h-2 rounded-full bg-primary/70" />
-              ))}
-            </div>
-          </div>
-        </section>
+    <main className="relative min-h-screen overflow-hidden bg-[#060a13] text-white">
+      <Image
+        src="/Uni.png"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="pointer-events-none select-none object-cover opacity-45 blur-[2px] scale-[1.03] saturate-125 contrast-110"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-slate-950/60" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.94)_0%,rgba(15,23,42,0.74)_48%,rgba(2,6,23,0.92)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
+      <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-28 bottom-12 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl" />
 
-        <section className="flex items-center justify-center">
-          <Card className="w-full max-w-xl">
-            <CardHeader>
-              <CardTitle>
-                {authMode === 'login'
-                  ? t('card.loginTitle')
-                  : t('card.signupTitle')}
-              </CardTitle>
-              <CardDescription>
-                {authMode === 'login'
-                  ? t('card.loginDescription')
-                  : t('card.signupDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AnimatePresence mode="wait" initial={false}>
-                {authMode === 'login' ? (
-                  <motion.div
-                    key="login"
-                    initial={{ opacity: 0, y: 8, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                    exit={{ opacity: 0, y: -8, height: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="overflow-hidden"
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-6 md:px-8 lg:py-10">
+        <div className="grid w-full items-center gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 xl:gap-12">
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] p-6 shadow-2xl shadow-slate-950/40 backdrop-blur-xl md:p-8 lg:min-h-[640px]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_32%,rgba(59,130,246,0.14)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+            <div className="pointer-events-none absolute -bottom-28 -right-20 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
+
+            <div className="relative z-10 flex h-full flex-col justify-between gap-12">
+              <div className="space-y-8">
+                <div className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-slate-950/35 px-4 py-3 shadow-lg shadow-black/20 backdrop-blur-md">
+                  <Image
+                    src="/Logo.png"
+                    alt={t('hero.logoAlt')}
+                    width={64}
+                    height={64}
+                    className="h-12 w-12 rounded-xl object-contain ring-1 ring-white/10"
+                    priority
+                  />
+                  <div className="h-8 w-px bg-white/15" />
+                  <div className="space-y-1 text-right">
+                    <span className="block text-[11px] font-medium text-sky-100/80">SBU AI Assistant</span>
+                    <span className="block h-1.5 w-24 rounded-full bg-gradient-to-l from-primary via-sky-300/70 to-transparent" />
+                  </div>
+                </div>
+
+                <div className="max-w-2xl space-y-5">
+                  <motion.h1
+                    initial={{opacity: 0, y: 10}}
+                    animate={{opacity: 1, y: 0}}
+                    transition={{duration: 0.35, ease: 'easeOut'}}
+                    className="text-3xl font-black leading-[1.8] tracking-tight text-white drop-shadow-lg md:text-4xl xl:text-5xl"
                   >
-                    <LoginForm
-                      busy={busy || postSignupAuthLoading}
-                      setBusy={setBusy}
-                      abortRef={controllersRef.login}
-                      initialIdentifier={loginInitialIdentifier}
-                      onSuccess={handleLoginSuccess}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="signup"
-                    initial={{ opacity: 0, y: 8, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                    exit={{ opacity: 0, y: -8, height: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="overflow-hidden"
+                    {t('hero.title')}
+                  </motion.h1>
+                  <motion.p
+                    initial={{opacity: 0, y: 8}}
+                    animate={{opacity: 1, y: 0}}
+                    transition={{duration: 0.4, ease: 'easeOut', delay: 0.06}}
+                    className="max-w-xl text-sm leading-8 text-slate-200/82 md:text-base"
                   >
-                    <SignupWizard
-                      busy={busy || postSignupAuthLoading}
-                      setBusy={setBusy}
-                      resetToken={signupResetToken}
-                      controllerRefs={{
-                        sendOtp: controllersRef.sendOtp,
-                        verifyOtp: controllersRef.verifyOtp,
-                        register: controllersRef.register
-                      }}
-                      onRegistered={handleRegistered}
+                    {t('hero.description')}
+                  </motion.p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="grid grid-cols-3 gap-3 text-xs text-slate-200/80 sm:max-w-xl">
+                  {FEATURE_STRIPS.map((strip, index) => (
+                    <div key={strip} className="rounded-2xl border border-white/10 bg-slate-950/25 p-3 backdrop-blur-sm">
+                      <span className={`mb-3 block h-1.5 rounded-full bg-gradient-to-l ${strip}`} />
+                      <span className="block h-1.5 w-2/3 rounded-full bg-white/15" />
+                      <span className="mt-2 block h-1.5 w-1/2 rounded-full bg-white/10" />
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-slate-950/25 p-4 backdrop-blur-md">
+                  <div className="grid grid-cols-6 gap-2 opacity-70">
+                    {Array.from({ length: 24 }).map((_, idx) => (
+                      <span key={idx} className="h-1.5 rounded-full bg-gradient-to-l from-white/45 to-primary/35" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="flex items-center justify-center lg:justify-start">
+            <Card className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border-white/16 bg-slate-950/58 text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.18),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.10),transparent_34%)]" />
+              <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+              <div className="relative z-10">
+                <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="rounded-2xl border border-white/12 bg-white/10 px-3 py-2 text-xs text-slate-200/80 backdrop-blur-md">
+                      {authMode === 'login' ? t('card.loginTitle') : t('card.signupTitle')}
+                    </div>
+                    <Image
+                      src="/Logo.png"
+                      alt={t('hero.logoAlt')}
+                      width={44}
+                      height={44}
+                      className="h-11 w-11 rounded-xl object-contain opacity-90 ring-1 ring-white/10"
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+                  <div className="space-y-3 text-right">
+                    <CardTitle className="text-2xl font-black leading-relaxed text-white md:text-3xl">
+                      {authMode === 'login'
+                        ? t('card.loginTitle')
+                        : t('card.signupTitle')}
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-7 text-slate-300/85">
+                      {authMode === 'login'
+                        ? t('card.loginDescription')
+                        : t('card.signupDescription')}
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 pt-2 md:p-8 md:pt-3">
+                  <div className="rounded-3xl border border-white/10 bg-slate-950/32 p-4 shadow-inner shadow-black/25 backdrop-blur-md md:p-5">
+                    <AnimatePresence mode="wait" initial={false}>
+                      {authMode === 'login' ? (
+                        <motion.div
+                          key="login"
+                          initial={{ opacity: 0, y: 8, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: 'auto' }}
+                          exit={{ opacity: 0, y: -8, height: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className="overflow-hidden"
+                        >
+                          <LoginForm
+                            busy={busy || postSignupAuthLoading}
+                            setBusy={setBusy}
+                            abortRef={controllersRef.login}
+                            initialIdentifier={loginInitialIdentifier}
+                            onSuccess={handleLoginSuccess}
+                          />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="signup"
+                          initial={{ opacity: 0, y: 8, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: 'auto' }}
+                          exit={{ opacity: 0, y: -8, height: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className="overflow-hidden"
+                        >
+                          <SignupWizard
+                            busy={busy || postSignupAuthLoading}
+                            setBusy={setBusy}
+                            resetToken={signupResetToken}
+                            controllerRefs={{
+                              sendOtp: controllersRef.sendOtp,
+                              verifyOtp: controllersRef.verifyOtp,
+                              register: controllersRef.register
+                            }}
+                            onRegistered={handleRegistered}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-              <Separator className="my-6" />
+                  <Separator className="my-6 bg-white/10" />
 
-              <button
-                type="button"
-                className="text-sm text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() =>
-                  updateMode(authMode === 'login' ? 'signup' : 'login')
-                }
-                disabled={busy || postSignupAuthLoading}
-              >
-                {authMode === 'login'
-                  ? t('card.switchToSignup')
-                  : t('card.switchToLogin')}
-              </button>
-            </CardContent>
-          </Card>
-        </section>
+                  <button
+                    type="button"
+                    className="inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-white/[0.11] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() =>
+                      updateMode(authMode === 'login' ? 'signup' : 'login')
+                    }
+                    disabled={busy || postSignupAuthLoading}
+                  >
+                    {authMode === 'login'
+                      ? t('card.switchToSignup')
+                      : t('card.switchToLogin')}
+                  </button>
+                </CardContent>
+              </div>
+            </Card>
+          </section>
+        </div>
       </div>
     </main>
   );
