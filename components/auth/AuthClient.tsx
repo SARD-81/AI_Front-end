@@ -209,7 +209,7 @@ export function AuthClient({ locale }: { locale: string }) {
 
               <div className="space-y-5">
                 <div className="grid grid-cols-3 gap-3 text-xs text-slate-200/80 sm:max-w-xl">
-                  {FEATURE_STRIPS.map((strip, index) => (
+                  {FEATURE_STRIPS.map((strip) => (
                     <div key={strip} className="rounded-2xl border border-white/10 bg-slate-950/25 p-3 backdrop-blur-sm">
                       <span className={`mb-3 block h-1.5 rounded-full bg-gradient-to-l ${strip}`} />
                       <span className="block h-1.5 w-2/3 rounded-full bg-white/15" />
