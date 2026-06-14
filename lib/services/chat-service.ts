@@ -8,51 +8,104 @@ type PaginatedMessages = {
   results: ChatMessage[];
 };
 
-type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';
-
-type FeedbackBody = {
-  is_liked: true | false | null;
-  reason_category?: FeedbackReasonCategory;
-  text_comment?: string;
+type BackendConversation = {
+  id: string;
+  title?: string | null;
+  updatedAt?: string | null;
+  updated_at?: string | null;
+  createdAt?: string | null;
+  created_at?: string | null;
 };
 
-function shapeFeedbackPayload(body: FeedbackBody):
-  | {is_liked: true}
-  | {is_liked: null}
-  | {is_liked: false; reason_category: FeedbackReasonCategory; text_comment?: string} {
+type BackendMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content?: string | null;
+  message?: string | null;
+  text?: string | null;
+  createdAt?: string | null;
+  created_at?: string | null;
+  is_liked?: boolean | null;
+  feedback?: 'like' | 'dislike' | null;
+};
+
+type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';
+
+type FeedbackBody =
+  | {feedback: 'like' | 'dislike' | null}
+  | {is_liked: true | false | null; reason_category?: FeedbackReasonCategory; text_comment?: string};
+
+function normalizeDate(value?: string | null) {
+  return value ?? new Date().toISOString();
+}
+
+function normalizeConversation(item: BackendConversation): ChatSummary {
+  return {
+    id: item.id,
+    title: item.title?.trim() || 'گفت‌وگو',
+    updatedAt: normalizeDate(item.updatedAt ?? item.updated_at ?? item.createdAt ?? item.created_at)
+  };
+}
+
+function normalizeConversationList(data: BackendConversation[] | {results?: BackendConversation[]}) {
+  const list = Array.isArray(data) ? data : data.results ?? [];
+  return list.map(normalizeConversation);
+}
+
+function normalizeMessage(message: BackendMessage): ChatMessage {
+  const isLiked =
+    message.is_liked !== undefined
+      ? message.is_liked
+      : message.feedback === 'like'
+        ? true
+        : message.feedback === 'dislike'
+          ? false
+          : null;
+
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content ?? message.message ?? message.text ?? '',
+    createdAt: normalizeDate(message.createdAt ?? message.created_at),
+    is_liked: isLiked
+  };
+}
+
+function shapeFeedbackPayload(body: FeedbackBody): {feedback: 'like' | 'dislike' | null} {
+  if ('feedback' in body) {
+    return {feedback: body.feedback};
+  }
+
   if (body.is_liked === true) {
-    return {is_liked: true};
+    return {feedback: 'like'};
   }
 
-  if (body.is_liked === null) {
-    return {is_liked: null};
+  if (body.is_liked === false) {
+    return {feedback: 'dislike'};
   }
 
-  if (!body.reason_category) {
-    throw new Error('دلیل بازخورد نامعتبر است.');
-  }
-
-  return body.text_comment?.trim()
-    ? {is_liked: false, reason_category: body.reason_category, text_comment: body.text_comment.trim()}
-    : {is_liked: false, reason_category: body.reason_category};
+  return {feedback: null};
 }
 
 export async function listConversations() {
-  return apiFetch<ChatSummary[]>(API_ENDPOINTS.conversations.list);
+  const data = await apiFetch<BackendConversation[] | {results?: BackendConversation[]}>(API_ENDPOINTS.conversations.list);
+  return normalizeConversationList(data);
 }
 
 export async function createConversation() {
-  return apiFetch<ChatSummary>(API_ENDPOINTS.conversations.list, {
+  const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.list, {
     method: 'POST',
     body: JSON.stringify({})
   });
+  return normalizeConversation(data);
 }
 
 export async function renameConversation(id: string, title: string) {
-  return apiFetch<ChatSummary>(API_ENDPOINTS.conversations.byId(id), {
+  const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {
     method: 'PATCH',
     body: JSON.stringify({title})
   });
+  return normalizeConversation(data);
 }
 
 export async function deleteConversation(id: string) {
@@ -60,21 +113,36 @@ export async function deleteConversation(id: string) {
 }
 
 export async function getConversation(id: string) {
-  const messagePage = await listMessages(id);
+  const [detail, messagePage] = await Promise.all([
+    apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id)),
+    listMessages(id)
+  ]);
+
+  const summary = normalizeConversation({...detail, id: detail.id ?? id});
   return {
-    id,
-    title: 'گفت‌وگو',
+    id: summary.id,
+    title: summary.title,
     messages: messagePage.results
   } as ChatDetail;
 }
 
 export async function listMessages(conversationId: string, cursor?: string) {
   const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-  return apiFetch<PaginatedMessages>(`${API_ENDPOINTS.conversations.messages(conversationId)}${query}`);
+  const data = await apiFetch<{
+    nextCursor?: string | null;
+    previousCursor?: string | null;
+    results?: BackendMessage[];
+  }>(`${API_ENDPOINTS.conversations.messages(conversationId)}${query}`);
+
+  return {
+    nextCursor: data.nextCursor ?? null,
+    previousCursor: data.previousCursor ?? null,
+    results: (data.results ?? []).map(normalizeMessage)
+  } satisfies PaginatedMessages;
 }
 
 export async function sendMessage(conversationId: string, message: string) {
-  return apiFetch<ChatMessage>(API_ENDPOINTS.chat.send, {
+  const data = await apiFetch<BackendMessage>(API_ENDPOINTS.chat.send, {
     method: 'POST',
     body: JSON.stringify({
       conversation_id: conversationId,
@@ -82,6 +150,8 @@ export async function sendMessage(conversationId: string, message: string) {
       client_message_id: crypto.randomUUID()
     })
   });
+
+  return normalizeMessage(data);
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {
