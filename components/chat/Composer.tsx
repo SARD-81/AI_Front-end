@@ -18,28 +18,7 @@ import {cn} from '@/lib/utils';
 
 const MAX_MESSAGE_LENGTH = 2500;
 
-const THINKING_LEVEL_OPTIONS: Array<{value: ThinkingLevel; title: string; subtitle: string}> = [
-  {
-    value: 'standard',
-    title: 'استاندارد',
-    subtitle: 'پاسخ سریع و مستقیم بدون تحلیل اضافی.'
-  },
-  {
-    value: 'low',
-    title: 'تفکر ساده (Low)',
-    subtitle: 'پاسخ‌های سریع با حداقل تفکر داخلی.'
-  },
-  {
-    value: 'medium',
-    title: 'تفکر متعادل (Medium)',
-    subtitle: 'تعادل بین سرعت و عمق.'
-  },
-  {
-    value: 'high',
-    title: 'تفکر عمیق (High)',
-    subtitle: 'تحلیل دقیق و مفصل با صرف زمان بیشتر و بر اساس زنجیره تفکر کامل‌تر.'
-  }
-];
+const THINKING_LEVEL_VALUES: ThinkingLevel[] = ['standard', 'low', 'medium', 'high'];
 
 type ComposerProps = {
   value: string;
@@ -78,7 +57,12 @@ export function Composer({
     textareaRef.current?.focus();
   }, [focusTrigger]);
 
-  const selectedLevel = THINKING_LEVEL_OPTIONS.find((option) => option.value === thinkingLevel) ?? THINKING_LEVEL_OPTIONS[0];
+  const thinkingLevelOptions = THINKING_LEVEL_VALUES.map((level) => ({
+    value: level,
+    title: t(`thinkingLevel.options.${level}.title`),
+    subtitle: t(`thinkingLevel.options.${level}.subtitle`)
+  }));
+  const selectedLevel = thinkingLevelOptions.find((option) => option.value === thinkingLevel) ?? thinkingLevelOptions[0];
 
   return (
     <motion.div
@@ -131,7 +115,7 @@ export function Composer({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" size="sm" className="transition-all duration-200 active:scale-[0.98]">
-                <span>سطح تفکر :</span>
+                <span>{t('thinkingLevel.label')} :</span>
                 <span className="text-muted-foreground mr-3">{selectedLevel.title}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -145,7 +129,7 @@ export function Composer({
                 onValueChange={(nextValue) => onThinkingLevelChange(nextValue as ThinkingLevel)}
               >
                 <div className="space-y-1" dir="rtl">
-                  {THINKING_LEVEL_OPTIONS.map((option) => {
+                  {thinkingLevelOptions.map((option) => {
                     const isSelected = option.value === thinkingLevel;
                     return (
                       <DropdownMenuRadioItem
@@ -173,7 +157,7 @@ export function Composer({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="ضمیمه فایل"
+            aria-label={t('attachment.label')}
             className="transition-all duration-200 active:scale-[0.98]"
           >
             {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}

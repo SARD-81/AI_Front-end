@@ -80,6 +80,33 @@
       "copySuccess": "Copied",
       "copyError": "Could not copy the message",
       "openConversations": "Open conversations"
+    },
+
+    "thinkingLevel": {
+      "label": "Thinking level",
+      "options": {
+        "standard": {
+          "title": "Standard",
+          "subtitle": "Fast, direct answers without extra reasoning."
+        },
+        "low": {
+          "title": "Low thinking",
+          "subtitle": "Quick answers with minimal internal reasoning."
+        },
+        "medium": {
+          "title": "Medium thinking",
+          "subtitle": "Balanced speed and depth."
+        },
+        "high": {
+          "title": "High thinking",
+          "subtitle": "Deeper analysis with more processing time."
+        }
+      }
+    },
+
+    "attachment": {
+      "label": "Attach file",
+      "notAvailableYet": "File attachments are not enabled yet."
     }
   },
 
