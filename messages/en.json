@@ -164,7 +164,8 @@
       "back": "Back",
       "complete": "Complete registration",
       "autoLoginSuccess": "Account created successfully and you are now signed in.",
-      "createdPleaseLogin": "Account created. Please sign in."
+      "createdPleaseLogin": "Account created. Please sign in.",
+      "profileFieldsFutureNote": "These fields are kept for profile completion; in the current version only core signup data is sent to the server."
     },
 
     "validation": {

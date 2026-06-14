@@ -161,11 +161,7 @@ export function SignupWizard({
           password: values.password,
           firstName: values.firstName,
           lastName: values.lastName,
-          studentId: values.studentId,
-          faculty: values.faculty,
-          major: values.major,
-          degreeLevel: values.degreeLevel,
-          specialization: values.specialization
+          studentId: values.studentId
         },
         { signal: controller.signal }
       );
@@ -293,6 +289,9 @@ export function SignupWizard({
                   </FormItem>
                 )}
               />
+              <p className="text-xs text-muted-foreground">
+                {t('signup.profileFieldsFutureNote')}
+              </p>
               <FormField
                 control={step2Form.control}
                 name="degreeLevel"
