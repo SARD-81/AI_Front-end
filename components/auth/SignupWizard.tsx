@@ -143,7 +143,7 @@ export function SignupWizard({
 
   const onRegister = step2Form.handleSubmit(async (values) => {
     if (!verifiedEmail || !otpToken) {
-      toast.error('ابتدا ایمیل و کد تأیید را دوباره بررسی کنید.');
+      toast.error(t('signup.verifyFirstStepRequired'));
       setStep(1);
       return;
     }
