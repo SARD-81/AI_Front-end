@@ -80,6 +80,33 @@
       "copySuccess": "کپی شد",
       "copyError": "کپی پیام ممکن نبود",
       "openConversations": "باز کردن گفتگوها"
+    },
+
+    "thinkingLevel": {
+      "label": "سطح تفکر",
+      "options": {
+        "standard": {
+          "title": "استاندارد",
+          "subtitle": "پاسخ سریع و مستقیم بدون تحلیل اضافی."
+        },
+        "low": {
+          "title": "تفکر ساده (Low)",
+          "subtitle": "پاسخ‌های سریع با حداقل تفکر داخلی."
+        },
+        "medium": {
+          "title": "تفکر متعادل (Medium)",
+          "subtitle": "تعادل بین سرعت و عمق."
+        },
+        "high": {
+          "title": "تفکر عمیق (High)",
+          "subtitle": "تحلیل دقیق‌تر با زمان پردازش بیشتر."
+        }
+      }
+    },
+
+    "attachment": {
+      "label": "ضمیمه فایل",
+      "notAvailableYet": "امکان ضمیمه فایل هنوز فعال نشده است."
     }
   },
 
