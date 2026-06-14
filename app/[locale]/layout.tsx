@@ -2,6 +2,7 @@ import {notFound} from 'next/navigation';
 import localFont from 'next/font/local';
 import {getMessages} from 'next-intl/server';
 import {AppProviders} from '@/components/providers/app-providers';
+import {DocumentLocaleEffect} from '@/components/providers/document-locale-effect';
 import {locales} from '@/lib/i18n/config';
 
 const vazirmatn = localFont({
@@ -29,8 +30,9 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <div className={`${vazirmatn.variable} font-sans`}>
+    <div className={`${vazirmatn.variable} font-sans`} lang={locale} dir={locale === 'fa' ? 'rtl' : 'ltr'}>
       <AppProviders locale={locale} messages={messages}>
+        <DocumentLocaleEffect locale={locale} />
         {children}
       </AppProviders>
     </div>
