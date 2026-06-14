@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {usePathname, useRouter} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {
   ChevronsRight,
   EllipsisVertical,
@@ -27,6 +27,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {Sidebar as SidebarRoot, SidebarContent, SidebarFooter, SidebarHeader} from '@/components/ui/sidebar';
 import {useChatActions, useChats, useGroupedChats} from '@/hooks/use-chat-data';
 import {SettingsModal, useAppSettings} from '@/components/settings/SettingsModal';
+import {getMe, logout} from '@/lib/services/auth-service';
 import {useMediaQuery} from '@/hooks/use-media-query';
 import {cn} from '@/lib/utils';
 
@@ -38,6 +39,12 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const profileQuery = useQuery({
+    queryKey: ['auth', 'profile'],
+    queryFn: getMe,
+    staleTime: 60_000,
+    retry: false
+  });
   const chatsQuery = useChats();
   const groups = useGroupedChats(chatsQuery.data);
   const actions = useChatActions();
@@ -96,6 +103,25 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     const entries = (chatsQuery.data ?? []).map((chat) => [chat.id, chat] as const);
     return new Map(entries);
   }, [chatsQuery.data]);
+
+  const user = profileQuery.data?.user;
+  const fullName = user?.fullName?.trim();
+  const firstLastName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+  const profileName = fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
+  const profileSubtitle = user?.studentId || user?.email || t('sidebar.demoVersion');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Continue local logout cleanup even if the backend request fails.
+    } finally {
+      localStorage.removeItem('sidebar-collapsed');
+      queryClient.clear();
+      router.replace(`/${locale}/auth?mode=login`);
+      onNavigate?.();
+    }
+  };
 
   return (
     <LayoutGroup>
@@ -305,8 +331,8 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   <UserCircle2 className="h-5 w-5" />
                   {!collapsed ? (
                     <div className="flex min-w-0 flex-col items-start">
-                      <span className="truncate text-sm">{t('sidebar.guestUser')}</span>
-                      <span className="text-xs text-muted-foreground">{t('sidebar.demoVersion')}</span>
+                      <span className="truncate text-sm">{profileName}</span>
+                      <span className="text-xs text-muted-foreground">{profileSubtitle}</span>
                     </div>
                   ) : null}
                   {!collapsed ? <EllipsisVertical className="ms-auto h-4 w-4" /> : null}
@@ -324,12 +350,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => {
-                    // TODO(BACKEND): logout
-                    localStorage.removeItem('sidebar-collapsed');
-                    router.push('/fa');
-                    onNavigate?.();
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="ms-2 h-4 w-4" />
                   {t('sidebar.logout')}
