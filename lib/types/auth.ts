@@ -25,13 +25,22 @@ export type VerifyOtpInputDTO = {
 
 export type RegisterInputDTO = {
   email: string;
+  otpToken: string;
   password: string;
   firstName: string;
   lastName: string;
   studentId: string;
-  faculty: string;
-  major: string;
-  degreeLevel: string;
+  // Kept for the UI/future backend contract. These fields are not sent to the current backend contract.
+  faculty?: string;
+  major?: string;
+  degreeLevel?: string;
+  specialization?: string;
+};
+
+export type PasswordResetCompleteInputDTO = {
+  email: string;
+  otpToken: string;
+  newPassword: string;
 };
 
 export type LoginResultDTO = {
@@ -44,8 +53,13 @@ export type SendOtpResultDTO = {
 
 export type VerifyOtpResultDTO = {
   message: string;
+  otpToken: string;
 };
 
 export type RegisterResultDTO = {
+  message: string;
+};
+
+export type PasswordResetResultDTO = {
   message: string;
 };
