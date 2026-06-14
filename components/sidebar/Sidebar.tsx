@@ -85,7 +85,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
 
   const createNewChat = async () => {
     const created = await actions.create.mutateAsync({title: t('newChat')});
-    // TODO(BACKEND): replace local UUID fallback with backend created chat id from POST /chats.
+    // TODO(BACKEND): confirm created chat id shape from POST /conversations/.
     router.push(`/${locale}/chat/${created.id}?focus=1`);
     onNavigate?.();
   };
