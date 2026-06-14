@@ -27,6 +27,9 @@ import {
   type LoginFormValues,
 } from '@/lib/validation/auth-schemas';
 
+const authInputClassName =
+  'h-12 rounded-2xl border-white/10 bg-white/[0.08] text-white shadow-inner shadow-black/15 outline-none placeholder:text-slate-400/75 focus-visible:ring-primary/60 focus-visible:ring-offset-0';
+
 type LoginFormProps = {
   onSuccess: () => void;
   busy?: boolean;
@@ -95,18 +98,19 @@ export function LoginForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      <form onSubmit={onSubmit} className="space-y-5" noValidate>
         <FormField
           control={form.control}
           name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('login.identifierLabel')}</FormLabel>
+              <FormLabel className="text-slate-200/90">{t('login.identifierLabel')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   placeholder={t('login.identifierPlaceholder')}
                   dir="ltr"
+                  className={authInputClassName}
                 />
               </FormControl>
               <FormMessage />
@@ -119,18 +123,18 @@ export function LoginForm({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('login.passwordLabel')}</FormLabel>
+              <FormLabel className="text-slate-200/90">{t('login.passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     {...field}
                     type={showPassword ? 'text' : 'password'}
                     placeholder={t('login.passwordPlaceholder')}
-                    className="pl-10"
+                    className={`${authInputClassName} pl-11`}
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 left-2 inline-flex items-center text-muted-foreground"
+                    className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-slate-300/75 transition hover:text-white"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={
                       showPassword ? t('login.hidePassword') : t('login.showPassword')
@@ -150,12 +154,12 @@ export function LoginForm({
         />
 
         {formError ? (
-          <p className="text-sm text-destructive">{formError}</p>
+          <p className="rounded-2xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">{formError}</p>
         ) : null}
 
         <Button
           type="submit"
-          className="w-full"
+          className="h-12 w-full rounded-2xl bg-primary text-sm font-bold shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99]"
           disabled={busy || form.formState.isSubmitting}
         >
           {busy || form.formState.isSubmitting ? (
