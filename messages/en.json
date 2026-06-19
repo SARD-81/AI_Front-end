@@ -170,7 +170,23 @@
       "autoLoginSuccess": "Account created successfully and you are now signed in.",
       "createdPleaseLogin": "Account created. Please sign in.",
       "profileFieldsFutureNote": "These fields complete your profile and are sent during registration according to the backend requirements.",
-      "verifyFirstStepRequired": "Please verify your email and verification code again first."
+      "verifyFirstStepRequired": "Please verify your email and verification code again first.",
+      "editEmail": "Edit email",
+      "sendingOtp": "Sending code...",
+      "resendCode": "Resend code",
+      "resendCountdown": "Resend in {seconds}s",
+      "otpSentHint": "Enter the verification code sent to your email.",
+      "verifyingOtp": "Verifying code...",
+      "completingRegistration": "Completing registration...",
+      "progress": {
+        "emailVerification": "Email verification",
+        "completeProfile": "Complete profile"
+      },
+      "groups": {
+        "personalInfo": "Personal info",
+        "academicInfo": "Academic info",
+        "password": "Password"
+      }
     },
     "validation": {
       "studentId": {
