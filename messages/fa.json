@@ -28,7 +28,16 @@
       "guestUser": "کاربر مهمان",
       "demoVersion": "نسخهٔ نمایشی",
       "settings": "تنظیمات",
-      "logout": "خروج از حساب"
+      "logout": "خروج از حساب",
+      "emptyHistory": "هنوز گفت‌وگویی وجود ندارد.",
+      "loadError": "بارگذاری گفتگوها ممکن نبود.",
+      "retry": "تلاش دوباره",
+      "deleteConfirmTitle": "گفتگو حذف شود؟",
+      "deleteConfirmDescription": "\"{title}\" برای همیشه حذف می‌شود.",
+      "cancelDelete": "انصراف",
+      "confirmDelete": "حذف",
+      "deleting": "در حال حذف...",
+      "deleteError": "حذف گفتگو ممکن نبود."
     },
 
     "dialog": {
