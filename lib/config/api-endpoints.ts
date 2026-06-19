@@ -2,7 +2,7 @@ export const API_ENDPOINTS = {
   auth: {
     login: '/api/app/auth/login',
     me: '/api/app/auth/me',
-    profile: '/api/app/auth/me',
+    profile: '/api/app/auth/profile',
     logout: '/api/app/auth/logout',
     register: {
       requestOtp: '/api/app/auth/register/request-otp',
