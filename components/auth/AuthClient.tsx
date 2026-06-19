@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { isAbortError, loginUser } from '@/lib/services/auth-service';
+import type { LoginResultDTO } from '@/lib/types/auth';
 
 const FEATURE_STRIPS = [
   'from-primary/70 via-primary/25 to-transparent',
@@ -98,9 +99,16 @@ export function AuthClient({ locale }: { locale: string }) {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const handleLoginSuccess = () => {
-    const destination = safeNextUrl(searchParams.get('next'), locale);
-    router.push(destination);
+  const getPostLoginDestination = (result: LoginResultDTO) => {
+    if (result.isProfileCompleted === false || result.user.isProfileCompleted === false) {
+      return `/${locale}/profile`;
+    }
+
+    return safeNextUrl(searchParams.get('next'), locale);
+  };
+
+  const handleLoginSuccess = (result: LoginResultDTO) => {
+    router.push(getPostLoginDestination(result));
   };
 
   const handleRegistered = async ({
@@ -122,13 +130,12 @@ export function AuthClient({ locale }: { locale: string }) {
     postSignupAuthRef.current = controller;
 
     try {
-      await loginUser(
-        { identifier: email, password },
+      const result = await loginUser(
+        { email, password },
         { signal: controller.signal }
       );
       toast.success(t('signup.autoLoginSuccess'));
-      const destination = safeNextUrl(searchParams.get('next'), locale);
-      router.push(destination);
+      router.push(getPostLoginDestination(result));
     } catch (error) {
       if (isAbortError(error)) {
         return;

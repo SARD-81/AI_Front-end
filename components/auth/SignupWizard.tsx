@@ -161,7 +161,10 @@ export function SignupWizard({
           password: values.password,
           firstName: values.firstName,
           lastName: values.lastName,
-          studentId: values.studentId
+          studentId: values.studentId,
+          faculty: values.faculty,
+          major: values.major,
+          degreeLevel: values.degreeLevel
         },
         { signal: controller.signal }
       );

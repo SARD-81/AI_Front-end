@@ -14,7 +14,8 @@ export type AuthUserDTO = {
 };
 
 export type LoginInputDTO = {
-  identifier: string;
+  email?: string;
+  identifier?: string;
   password: string;
 };
 
@@ -67,7 +68,7 @@ export type RegisterCompleteBodyDTO = {
 
 export type PasswordResetCompleteInputDTO = {
   email: string;
-  otpToken: string;
+  otpToken?: string;
   newPassword: string;
 };
 
@@ -78,6 +79,7 @@ export type PasswordResetCompleteBodyDTO = {
 
 export type LoginResultDTO = {
   user: Pick<AuthUserDTO, 'studentId' | 'fullName' | 'role' | 'isProfileCompleted'>;
+  isProfileCompleted?: boolean;
 };
 
 export type SendOtpResultDTO = {

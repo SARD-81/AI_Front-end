@@ -21,6 +21,7 @@ import {
   loginUser,
   ServiceError
 } from '@/lib/services/auth-service';
+import type { LoginResultDTO } from '@/lib/types/auth';
 import {
   createLoginSchema,
   type AuthSchemaTranslator,
@@ -31,7 +32,7 @@ const authInputClassName =
   'h-12 rounded-2xl border-white/10 bg-white/[0.08] text-white shadow-inner shadow-black/15 outline-none placeholder:text-slate-400/75 focus-visible:ring-primary/60 focus-visible:ring-offset-0';
 
 type LoginFormProps = {
-  onSuccess: () => void;
+  onSuccess: (result: LoginResultDTO) => void;
   busy?: boolean;
   setBusy: (busy: boolean) => void;
   abortRef: React.MutableRefObject<AbortController | null>;
@@ -79,9 +80,9 @@ export function LoginForm({
     abortRef.current = controller;
 
     try {
-      await loginUser(values, { signal: controller.signal });
+      const result = await loginUser(values, { signal: controller.signal });
       toast.success(t('login.success'));
-      onSuccess();
+      onSuccess(result);
     } catch (error) {
       if (isAbortError(error)) return;
       const message =
