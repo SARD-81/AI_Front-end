@@ -1,17 +1,29 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
-import {useMutation, useQuery} from '@tanstack/react-query';
-import {Loader2} from 'lucide-react';
-import {useTranslations} from 'next-intl';
-import {useRouter} from 'next/navigation';
-import {toast} from 'sonner';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {getProfile, isAbortError, ServiceError, updateProfile} from '@/lib/services/auth-service';
-import type {ProfileUpdateDTO} from '@/lib/types/auth';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Loader2, LogOut } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  getProfile,
+  isAbortError,
+  logout,
+  ServiceError,
+  updateProfile
+} from '@/lib/services/auth-service';
+import type { AuthRoleDTO, ProfileUpdateDTO } from '@/lib/types/auth';
 
 type ProfileFormProps = {
   locale: string;
@@ -19,16 +31,29 @@ type ProfileFormProps = {
 
 type FieldName = keyof ProfileUpdateDTO;
 
-const requiredFields: FieldName[] = [
+const baseFields: FieldName[] = [
   'firstName',
   'lastName',
   'faculty',
   'major',
-  'degreeLevel',
-  'studentId'
+  'degreeLevel'
 ];
+const allFields: FieldName[] = [...baseFields, 'studentId'];
 
-function getInitialValues(profile?: Partial<ProfileUpdateDTO>): ProfileUpdateDTO {
+function getRequiredFields(role?: AuthRoleDTO): FieldName[] {
+  if (role === 'student') return [...baseFields, 'studentId'];
+  return baseFields;
+}
+
+function getVisibleFields(role?: AuthRoleDTO): FieldName[] {
+  if (role === 'student') return [...baseFields, 'studentId'];
+  if (role === 'professor' || role === 'staff') return baseFields;
+  return allFields;
+}
+
+function getInitialValues(
+  profile?: Partial<ProfileUpdateDTO>
+): ProfileUpdateDTO {
   return {
     firstName: profile?.firstName ?? '',
     lastName: profile?.lastName ?? '',
@@ -50,18 +75,23 @@ function trimValues(values: ProfileUpdateDTO): ProfileUpdateDTO {
   };
 }
 
-export function ProfileForm({locale}: ProfileFormProps) {
+export function ProfileForm({ locale }: ProfileFormProps) {
   const router = useRouter();
   const t = useTranslations('profile');
   const [values, setValues] = useState<ProfileUpdateDTO>(getInitialValues());
   const [formError, setFormError] = useState<string | null>(null);
+  const [touchedFields, setTouchedFields] = useState<Set<FieldName>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['auth', 'profile', 'completion'],
-    queryFn: ({signal}) => getProfile({signal})
+    queryFn: ({ signal }) => getProfile({ signal })
   });
 
   const profile = profileQuery.data?.user;
+  const role = profile?.role;
+  const requiredFields = useMemo(() => getRequiredFields(role), [role]);
+  const visibleFields = useMemo(() => getVisibleFields(role), [role]);
 
   useEffect(() => {
     if (profile) {
@@ -71,25 +101,40 @@ export function ProfileForm({locale}: ProfileFormProps) {
 
   const missingFields = useMemo(
     () => requiredFields.filter((field) => !values[field]?.trim()),
-    [values]
+    [requiredFields, values]
   );
 
   const mutation = useMutation({
     mutationFn: (input: ProfileUpdateDTO) => updateProfile(input),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const completed = result.user.isProfileCompleted;
+
+      if (completed === false) {
+        const message = t('stillIncomplete');
+        setFormError(message);
+        toast.error(message);
+        return;
+      }
+
       toast.success(t('saveSuccess'));
       router.replace(`/${locale}/chat`);
     },
     onError: (error) => {
       if (isAbortError(error)) return;
-      const message = error instanceof ServiceError ? error.message : t('saveError');
+      const message =
+        error instanceof ServiceError ? error.message : t('saveError');
       setFormError(message);
       toast.error(message);
     }
   });
 
+  const logoutMutation = useMutation({
+    mutationFn: () => logout(),
+    onSettled: () => router.replace(`/${locale}/auth?mode=login`)
+  });
+
   const setFieldValue = (field: FieldName, value: string) => {
-    setValues((current) => ({...current, [field]: value}));
+    setValues((current) => ({ ...current, [field]: value }));
   };
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -97,6 +142,7 @@ export function ProfileForm({locale}: ProfileFormProps) {
     const trimmed = trimValues(values);
     const missing = requiredFields.filter((field) => !trimmed[field]);
 
+    setSubmitted(true);
     setFormError(null);
 
     if (missing.length > 0) {
@@ -122,7 +168,12 @@ export function ProfileForm({locale}: ProfileFormProps) {
 
   if (profileQuery.isError) {
     const message =
-      profileQuery.error instanceof ServiceError ? profileQuery.error.message : t('loadError');
+      profileQuery.error instanceof ServiceError
+        ? profileQuery.error.message
+        : t('loadError');
+    const isAuthError =
+      profileQuery.error instanceof ServiceError &&
+      [401, 403].includes(profileQuery.error.status);
 
     return (
       <Card className="w-full max-w-xl border-border/70 bg-card/95 shadow-card">
@@ -130,9 +181,18 @@ export function ProfileForm({locale}: ProfileFormProps) {
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button type="button" onClick={() => profileQuery.refetch()}>
-            {t('retry')}
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          {!isAuthError ? (
+            <Button type="button" onClick={() => profileQuery.refetch()}>
+              {t('retry')}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.replace(`/${locale}/auth?mode=login`)}
+          >
+            {t('backToLogin')}
           </Button>
         </CardContent>
       </Card>
@@ -141,24 +201,63 @@ export function ProfileForm({locale}: ProfileFormProps) {
 
   return (
     <Card className="w-full max-w-xl border-border/70 bg-card/95 shadow-card">
-      <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
+      <CardHeader className="space-y-4">
+        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
+          <p className="font-semibold">{t('bannerTitle')}</p>
+          <p className="mt-1 text-primary/80">{t('bannerDescription')}</p>
+        </div>
+        <div>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription className="mt-2">{t('description')}</CardDescription>
+        </div>
+        {role ? (
+          <p className="inline-flex w-fit rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+            {t('roleLabel')}: {t(`roles.${role}`)}
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {requiredFields.map((field) => (
-            <div key={field} className="space-y-2">
-              <Label htmlFor={field}>{t(`fields.${field}`)}</Label>
-              <Input
-                id={field}
-                value={values[field]}
-                onChange={(event) => setFieldValue(field, event.target.value)}
-                aria-invalid={missingFields.includes(field)}
-                dir={field === 'studentId' ? 'ltr' : undefined}
-              />
-            </div>
-          ))}
+          {visibleFields.map((field) => {
+            const isMissing = missingFields.includes(field);
+            const showFieldError =
+              isMissing && (submitted || touchedFields.has(field));
+
+            return (
+              <div key={field} className="space-y-2">
+                <Label
+                  htmlFor={field}
+                  className={showFieldError ? 'text-destructive' : undefined}
+                >
+                  {t(`fields.${field}`)}
+                  {requiredFields.includes(field) ? ' *' : ''}
+                </Label>
+                <Input
+                  id={field}
+                  value={values[field]}
+                  onBlur={() =>
+                    setTouchedFields((current) => new Set(current).add(field))
+                  }
+                  onChange={(event) => setFieldValue(field, event.target.value)}
+                  aria-invalid={showFieldError}
+                  aria-describedby={
+                    showFieldError ? `${field}-error` : undefined
+                  }
+                  className={
+                    showFieldError
+                      ? 'border-destructive focus-visible:ring-destructive/40'
+                      : undefined
+                  }
+                  dir={field === 'studentId' ? 'ltr' : undefined}
+                />
+                {showFieldError ? (
+                  <p id={`${field}-error`} className="text-xs text-destructive">
+                    {t('fieldRequired', { field: t(`fields.${field}`) })}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
 
           {formError ? (
             <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -166,10 +265,31 @@ export function ProfileForm({locale}: ProfileFormProps) {
             </p>
           ) : null}
 
-          <Button type="submit" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {t('save')}
-          </Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending || mutation.isPending}
+            >
+              {logoutMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+              {t('logout')}
+            </Button>
+            <Button
+              type="submit"
+              className="sm:min-w-44"
+              disabled={mutation.isPending || logoutMutation.isPending}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              {t('save')}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
