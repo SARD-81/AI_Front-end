@@ -46,6 +46,17 @@ function redirectToLogin() {
   window.location.assign(target);
 }
 
+function redirectToProfile() {
+  if (typeof window === 'undefined') return;
+
+  const {pathname} = window.location;
+  const locale = pathname.split('/').filter(Boolean)[0] || 'fa';
+  const target = `/${locale}/profile`;
+
+  if (pathname === target) return;
+  window.location.assign(target);
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => undefined);
   if (!response.ok) {
@@ -66,6 +77,8 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
     if (response.status === 401) {
       redirectToLogin();
+    } else if (response.status === 403) {
+      redirectToProfile();
     }
 
     throw error;
