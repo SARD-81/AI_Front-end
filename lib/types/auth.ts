@@ -103,3 +103,16 @@ export type RegisterResultDTO = {
 export type PasswordResetResultDTO = {
   message: string;
 };
+
+export type ProfileResponseDTO = {
+  user: AuthUserDTO;
+};
+
+export type ProfileUpdateDTO = {
+  firstName: string;
+  lastName: string;
+  studentId: string;
+  faculty: string;
+  major: string;
+  degreeLevel: string;
+};
