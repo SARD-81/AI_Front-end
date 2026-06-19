@@ -36,7 +36,13 @@
       "cancelDelete": "انصراف",
       "confirmDelete": "حذف",
       "deleting": "در حال حذف...",
-      "deleteError": "حذف گفتگو ممکن نبود."
+      "deleteError": "حذف گفتگو ممکن نبود.",
+      "editProfile": "ویرایش پروفایل",
+      "logoutNow": "خروج فوری از حساب",
+      "logoutConfirmTitle": "از حساب خارج می‌شوید؟",
+      "logoutConfirmDescription": "بلافاصله از حساب خارج می‌شوید و به صفحه ورود بازمی‌گردید.",
+      "cancelLogout": "ماندن در حساب",
+      "confirmLogout": "خروج"
     },
     "dialog": {
       "close": "بستن"
@@ -182,7 +188,11 @@
       "studentIdLabel": "شماره دانشجویی",
       "degreeLevelLabel": "مقطع تحصیلی",
       "selectOption": "انتخاب کنید",
-      "degreeOptions": ["کارشناسی", "کارشناسی ارشد", "دکتری"],
+      "degreeOptions": [
+        "کارشناسی",
+        "کارشناسی ارشد",
+        "دکتری"
+      ],
       "facultyLabel": "دانشکده",
       "majorLabel": "رشته تحصیلی",
       "specializationLabel": "گرایش (اختیاری)",
@@ -313,7 +323,15 @@
     "account": {
       "name": "نام",
       "email": "ایمیل",
-      "guestUser": "کاربر مهمان"
+      "fullName": "نام کامل",
+      "studentId": "شماره دانشجویی",
+      "role": "نقش",
+      "loading": "در حال بارگذاری پروفایل حساب...",
+      "roles": {
+        "student": "دانشجو",
+        "professor": "استاد",
+        "staff": "کارمند"
+      }
     },
     "options": {
       "appearance": {

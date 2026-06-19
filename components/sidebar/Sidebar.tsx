@@ -13,7 +13,8 @@ import {
   MessageCircle,
   MessageSquarePlus,
   Settings,
-  UserCircle2
+  UserCircle2,
+  UserPen
 } from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {toast} from 'sonner';
@@ -62,6 +63,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
   const [editingTitle, setEditingTitle] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
@@ -387,11 +389,20 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   {t('sidebar.settings')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  onClick={() => {
+                    router.push(`/${locale}/profile`);
+                    onNavigate?.();
+                  }}
+                >
+                  <UserPen className="ms-2 h-4 w-4" />
+                  {t('sidebar.editProfile')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   className="text-destructive"
-                  onClick={handleLogout}
+                  onClick={() => setLogoutConfirmOpen(true)}
                 >
                   <LogOut className="ms-2 h-4 w-4" />
-                  {t('sidebar.logout')}
+                  {t('sidebar.logoutNow')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -399,7 +410,29 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
         </SidebarRoot>
       </motion.div>
 
-      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} setSettings={setSettings} />
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={settings}
+        setSettings={setSettings}
+        user={user}
+        isUserLoading={profileQuery.isLoading}
+      />
+
+      <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+          <DialogTitle className="text-base font-semibold">{t('sidebar.logoutConfirmTitle')}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{t('sidebar.logoutConfirmDescription')}</p>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setLogoutConfirmOpen(false)}>
+              {t('sidebar.cancelLogout')}
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleLogout}>
+              {t('sidebar.confirmLogout')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(deleteChatId)} onOpenChange={(open) => !actions.remove.isPending && setDeleteChatId(open ? deleteChatId : null)}>
         <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
