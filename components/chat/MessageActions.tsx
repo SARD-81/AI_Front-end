@@ -36,16 +36,16 @@ export function MessageActions({
 
   return (
     <div className={cn('mt-1.5 flex items-center gap-1', className)}>
-      <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopy} aria-label={t('messageActions.copy')}>
+      <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopy} aria-label={t('messageActions.copy')} title={t('messageActions.copy')}>
         <Copy className="h-3.5 w-3.5" />
       </Button>
 
       {role === 'user' ? (
         <>
-          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopyLink} aria-label={t('messageActions.copyLink')}>
+          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopyLink} aria-label={t('messageActions.copyLink')} title={t('messageActions.copyLink')}>
             <Link2 className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label={t('messageActions.edit')}>
+          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label={t('messageActions.edit')} title={t('messageActions.edit')}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         </>
@@ -58,6 +58,7 @@ export function MessageActions({
             className={baseClass}
             onClick={onRegenerate}
             aria-label={t('messageActions.regenerate')}
+            title={t('messageActions.regenerate')}
             disabled={!onRegenerate}
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -68,6 +69,8 @@ export function MessageActions({
             size="icon"
             className={cn(baseClass, feedbackState === true ? 'text-emerald-600 hover:text-emerald-700' : undefined)}
             aria-label={t('messageActions.like')}
+            title={t('messageActions.like')}
+            aria-pressed={feedbackState === true}
             disabled={feedbackDisabled}
             onClick={onLike}
           >
@@ -79,6 +82,8 @@ export function MessageActions({
             size="icon"
             className={cn(baseClass, feedbackState === false ? 'text-destructive hover:text-destructive' : undefined)}
             aria-label={t('messageActions.dislike')}
+            title={t('messageActions.dislike')}
+            aria-pressed={feedbackState === false}
             disabled={feedbackDisabled}
             onClick={onDislike}
           >

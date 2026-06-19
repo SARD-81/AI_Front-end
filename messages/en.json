@@ -115,7 +115,30 @@
       "notAvailableYet": "File attachments are coming soon and cannot be uploaded yet."
     },
     "searchEnabledHint": "Search is not available yet.",
-    "searchDisabledHint": "Search is coming soon and is not active in this chat yet."
+    "searchDisabledHint": "Search is coming soon and is not active in this chat yet.",
+    "feedback": {
+      "title": "Send feedback",
+      "description": "Selecting a reason helps us improve responses. Add a short note if you want to share more context.",
+      "commentPrefix": "Selected reason: {reason}",
+      "commentLabel": "Details (optional)",
+      "placeholder": "Add more detail if needed",
+      "cancel": "Cancel",
+      "submit": "Submit feedback",
+      "clear": "Clear feedback",
+      "toastSaved": "Feedback submitted.",
+      "toastSaveError": "Could not submit feedback.",
+      "toastCleared": "Feedback cleared.",
+      "toastClearError": "Could not clear feedback.",
+      "chips": {
+        "off_topic": "The answer was off topic",
+        "incomplete": "It was incomplete",
+        "wrong": "It was incorrect",
+        "hallucination": "It included fabricated information",
+        "unclear": "It was unclear",
+        "length_issue": "It was too short / too long",
+        "source_issue": "There was a source issue"
+      }
+    }
   },
   "auth": {
     "hero": {

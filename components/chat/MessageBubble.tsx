@@ -170,10 +170,10 @@ function MessageBubbleComponent({
         payload:
           feedbackState === true ? { is_liked: null } : { is_liked: true }
       });
-      toast.success('بازخورد ثبت شد.');
+      toast.success(t('feedback.toastSaved'));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.'
+        error instanceof Error ? error.message : t('feedback.toastSaveError')
       );
     }
   };
@@ -182,7 +182,7 @@ function MessageBubbleComponent({
     !message.id || isTyping || isStreaming || feedbackMutation.isPending;
 
   return (
-    <article className="w-full" aria-live={isTyping ? 'polite' : 'off'}>
+    <article className="group/message w-full" aria-live={isTyping ? 'polite' : 'off'}>
       <div className="flex w-full flex-col">
         {isTyping ? (
           <div className="mr-auto w-full max-w-[min(40rem,92%)]">
@@ -260,7 +260,7 @@ function MessageBubbleComponent({
                     onCopy={() => onCopyMessage(message.content)}
                     onCopyLink={handleCopyLink}
                     onEdit={() => onEditMessage?.(message)}
-                    className="pointer-events-none absolute right-0 top-full z-10 mt-2 translate-y-1 opacity-0 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100"
+                    className="pointer-events-none absolute right-0 top-full z-10 mt-2 translate-y-1 opacity-0 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
                   />
                 </div>
               ) : (
@@ -326,7 +326,7 @@ function MessageBubbleComponent({
                     'mr-auto justify-start transition-all duration-150',
                     isLastAssistant
                       ? 'pointer-events-auto opacity-100'
-                      : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
+                      : 'pointer-events-none opacity-0 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100 max-sm:pointer-events-auto max-sm:opacity-100'
                   )}
                 />
                 <FeedbackDialog
@@ -334,24 +334,22 @@ function MessageBubbleComponent({
                   onOpenChange={setDialogOpen}
                   initialValue={{ isLiked: feedbackState }}
                   isSubmitting={feedbackMutation.isPending}
-                  onSubmit={async ({ reason_category, text_comment }) => {
+                  onSubmit={async ({ text_comment }) => {
                     if (!message.id) return;
                     try {
                       await feedbackMutation.mutateAsync({
                         messageId: message.id,
                         payload: {
                           is_liked: false,
-                          comment: [reason_category, text_comment]
-                            .filter(Boolean)
-                            .join(': ')
+                          comment: text_comment
                         }
                       });
-                      toast.success('بازخورد ثبت شد.');
+                      toast.success(t('feedback.toastSaved'));
                     } catch (error) {
                       toast.error(
                         error instanceof Error
                           ? error.message
-                          : 'ارسال بازخورد ناموفق بود.'
+                          : t('feedback.toastSaveError')
                       );
                       throw error;
                     }
@@ -364,12 +362,12 @@ function MessageBubbleComponent({
                         payload: { is_liked: null }
                       });
                       setDialogOpen(false);
-                      toast.success('بازخورد حذف شد.');
+                      toast.success(t('feedback.toastCleared'));
                     } catch (error) {
                       toast.error(
                         error instanceof Error
                           ? error.message
-                          : 'حذف بازخورد ناموفق بود.'
+                          : t('feedback.toastClearError')
                       );
                     }
                   }}
