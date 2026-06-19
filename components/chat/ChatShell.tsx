@@ -1,23 +1,30 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
-import {LayoutGroup} from 'motion/react';
-import {Menu} from 'lucide-react';
-import {useRouter, useSearchParams} from 'next/navigation';
-import {useTranslations} from 'next-intl';
-import {Sidebar} from '@/components/sidebar/Sidebar';
-import {Button} from '@/components/ui/button';
-import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Composer} from './Composer';
-import {MessageList} from './MessageList';
-import {ChatEmptyState} from './ChatEmptyState';
-import {useChat, useChatActions, useSendMessage} from '@/hooks/use-chat-data';
-import {copyToClipboard} from '@/lib/utils/clipboard';
-import {toast} from 'sonner';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { LayoutGroup } from 'motion/react';
+import { Menu } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Sidebar } from '@/components/sidebar/Sidebar';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Composer } from './Composer';
+import { MessageList } from './MessageList';
+import { ChatEmptyState } from './ChatEmptyState';
+import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
+import { copyToClipboard } from '@/lib/utils/clipboard';
+import { toast } from 'sonner';
+import type { ChatMessage } from '@/lib/api/chat';
 
-export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
+export function ChatShell({
+  locale,
+  chatId
+}: {
+  locale: string;
+  chatId?: string;
+}) {
   const t = useTranslations('app');
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -83,23 +90,42 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const shouldAutoFocus = searchParams.get('focus') === '1';
   const isChatLoading = Boolean(chatId) && !chat && chatQuery.isFetching;
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
+  const failedMessage = useMemo(
+    () =>
+      [...messages]
+        .reverse()
+        .find(
+          (message): message is ChatMessage =>
+            message.role === 'user' && message.sendStatus === 'failed'
+        ),
+    [messages]
+  );
   const hasMessages = messages.length > 0;
-  const shouldShowEmptyState = !isChatLoading && !isSendingOrStreaming && !hasMessages && !hasSubmittedMessage;
+  const shouldShowEmptyState =
+    !isChatLoading &&
+    !isSendingOrStreaming &&
+    !hasMessages &&
+    !hasSubmittedMessage;
   const headerTitle = useMemo(() => {
-    const firstUserMessage = (chat?.messages ?? []).find((message) => message.role === 'user')?.content?.trim();
+    const firstUserMessage = (chat?.messages ?? [])
+      .find((message) => message.role === 'user')
+      ?.content?.trim();
     const rawTitle = firstUserMessage || chat?.title || t('chat.defaultTitle');
     const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
     const maxLength = 72;
-    return compactTitle.length > maxLength ? `${compactTitle.slice(0, maxLength)}…` : compactTitle;
+    return compactTitle.length > maxLength
+      ? `${compactTitle.slice(0, maxLength)}…`
+      : compactTitle;
   }, [chat?.messages, chat?.title, t]);
 
-  const submitMessage = async (nextValue: string) => {
-    if (!nextValue.trim() || sendMutation.isPending || actions.create.isPending) return;
+  const submitMessage = async (nextValue: string, clientMessageId?: string) => {
+    const trimmedValue = nextValue.trim();
+    if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
+      return;
 
-    const payload = {content: nextValue};
+    const payload = { content: nextValue };
 
     setErrorMessage('');
-    setValue('');
     streamChunksRef.current = [];
     streamCreatedAtRef.current = new Date().toISOString();
     setStreamContent('');
@@ -117,6 +143,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
       const result = await sendMutation.mutateAsync({
         chatId: activeChatId,
         payload,
+        clientMessageId,
         onToken: (chunk) => {
           streamChunksRef.current.push(chunk);
           scheduleStreamFlush();
@@ -131,6 +158,7 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
       if (result?.assistantCommitted) {
         clearStreamingState();
       }
+      setValue('');
     } catch (error) {
       clearStreamingState();
       const fallback = t('chat.connectionError');
@@ -139,6 +167,17 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   };
 
   const submit = async () => submitMessage(value);
+
+  const handleRetryFailedMessage = async () => {
+    if (!failedMessage) return;
+    await submitMessage(failedMessage.content, failedMessage.id);
+  };
+
+  const handleRestoreFailedMessage = () => {
+    if (!failedMessage) return;
+    setValue(failedMessage.content);
+    setFocusTrigger((prev) => prev + 1);
+  };
 
   const handleCopyMessage = async (content: string) => {
     const copied = await copyToClipboard(content);
@@ -161,14 +200,23 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     if (!deletedChatId || !actions.remove.isSuccess || !chatId) return;
     if (deletedChatId !== chatId) return;
 
-    queryClient.removeQueries({queryKey: ['chat', deletedChatId]});
-    queryClient.invalidateQueries({queryKey: ['chats']});
+    queryClient.removeQueries({ queryKey: ['chat', deletedChatId] });
+    queryClient.invalidateQueries({ queryKey: ['chats'] });
     router.replace(`/${locale}/chat`);
-  }, [actions.remove.isSuccess, actions.remove.variables, chatId, locale, queryClient, router]);
+  }, [
+    actions.remove.isSuccess,
+    actions.remove.variables,
+    chatId,
+    locale,
+    queryClient,
+    router
+  ]);
 
   const handleRegenerate = async () => {
     const currentMessages = chat?.messages ?? [];
-    const lastUserMessage = [...currentMessages].reverse().find((message) => message.role === 'user');
+    const lastUserMessage = [...currentMessages]
+      .reverse()
+      .find((message) => message.role === 'user');
     if (!lastUserMessage) return;
     await submitMessage(lastUserMessage.content);
   };
@@ -188,19 +236,55 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
           <header className="relative flex h-14 items-center border-b border-border">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('chat.openConversations')} title={t('chat.openConversations')}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  aria-label={t('chat.openConversations')}
+                  title={t('chat.openConversations')}
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
             </div>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="w-full max-w-3xl truncate px-14 text-center text-sm font-medium sm:px-6 md:text-base">{headerTitle}</h1>
+              <h1 className="w-full max-w-3xl truncate px-14 text-center text-sm font-medium sm:px-6 md:text-base">
+                {headerTitle}
+              </h1>
             </div>
           </header>
 
           {errorMessage ? (
-            <div role="alert" className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive">{errorMessage}</div>
+            <div
+              role="alert"
+              className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive"
+            >
+              <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span>{errorMessage}</span>
+                {failedMessage ? (
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleRetryFailedMessage}
+                      disabled={sendMutation.isPending}
+                    >
+                      {t('chat.retryFailed')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRestoreFailedMessage}
+                    >
+                      {t('chat.restoreToInput')}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           ) : null}
 
           <LayoutGroup>
@@ -231,8 +315,17 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                     messages={messages}
                     typing={sendMutation.isPending && !streamContent}
                     onCopyMessage={handleCopyMessage}
-                    onEditMessage={(message) => handleEditMessage(message.content)}
+                    onEditMessage={(message) =>
+                      handleEditMessage(message.content)
+                    }
                     onRegenerate={handleRegenerate}
+                    onRetryMessage={(message) =>
+                      submitMessage(message.content, message.id)
+                    }
+                    onRestoreMessage={(message) => {
+                      setValue(message.content);
+                      setFocusTrigger((prev) => prev + 1);
+                    }}
                   />
                 </div>
               )}
@@ -245,7 +338,9 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                     value={value}
                     onChange={setValue}
                     onSubmit={submit}
-                    disabled={sendMutation.isPending || actions.create.isPending}
+                    disabled={
+                      sendMutation.isPending || actions.create.isPending
+                    }
                     focusTrigger={focusTrigger}
                   />
                 </div>

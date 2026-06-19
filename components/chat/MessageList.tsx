@@ -1,13 +1,13 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {Virtuoso, type ListRange, type VirtuosoHandle} from 'react-virtuoso';
-import {ArrowDown} from 'lucide-react';
-import type {ChatMessage} from '@/lib/api/chat';
-import {useTranslations} from 'next-intl';
-import {Button} from '@/components/ui/button';
-import {MessageBubble} from './MessageBubble';
-import {UserMessageRail} from './UserMessageRail';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Virtuoso, type ListRange, type VirtuosoHandle } from 'react-virtuoso';
+import { ArrowDown } from 'lucide-react';
+import type { ChatMessage } from '@/lib/api/chat';
+import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { MessageBubble } from './MessageBubble';
+import { UserMessageRail } from './UserMessageRail';
 
 type MessageListProps = {
   messages: ChatMessage[];
@@ -15,6 +15,8 @@ type MessageListProps = {
   onCopyMessage: (content: string) => void;
   onEditMessage: (message: ChatMessage) => void;
   onRegenerate: () => void;
+  onRetryMessage: (message: ChatMessage) => void;
+  onRestoreMessage: (message: ChatMessage) => void;
 };
 
 type UserAnchor = {
@@ -24,26 +26,44 @@ type UserAnchor = {
   snippet: string;
 };
 
-export function MessageList({messages, typing, onCopyMessage, onEditMessage, onRegenerate}: MessageListProps) {
+export function MessageList({
+  messages,
+  typing,
+  onCopyMessage,
+  onEditMessage,
+  onRegenerate,
+  onRetryMessage,
+  onRestoreMessage
+}: MessageListProps) {
   const t = useTranslations('app');
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isAnchorNavRef = useRef(false);
   const anchorNavTimeoutRef = useRef<number | null>(null);
   const initializedHashScrollRef = useRef(false);
   const [atBottom, setAtBottom] = useState(true);
-  const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(undefined);
+  const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(
+    undefined
+  );
   const [hoveredAnchorId, setHoveredAnchorId] = useState<string | null>(null);
 
   const items = useMemo(() => {
     if (!typing) return messages;
-    return [...messages, {id: 'typing', role: 'assistant' as const, content: '...', createdAt: new Date().toISOString()}];
+    return [
+      ...messages,
+      {
+        id: 'typing',
+        role: 'assistant' as const,
+        content: '...',
+        createdAt: new Date().toISOString()
+      }
+    ];
   }, [messages, typing]);
 
   const userAnchors = useMemo<UserAnchor[]>(() => {
     return messages
-      .map((message, messageIndex) => ({message, messageIndex}))
-      .filter(({message}) => message.role === 'user')
-      .map(({message, messageIndex}) => ({
+      .map((message, messageIndex) => ({ message, messageIndex }))
+      .filter(({ message }) => message.role === 'user')
+      .map(({ message, messageIndex }) => ({
         anchorId: `msg-${message.id}`,
         messageIndex,
         messageId: message.id,
@@ -58,13 +78,15 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
     return undefined;
   }, [messages]);
 
-  const anchorsById = useMemo(() => new Map(userAnchors.map((anchor) => [anchor.anchorId, anchor])), [userAnchors]);
-
-
+  const anchorsById = useMemo(
+    () => new Map(userAnchors.map((anchor) => [anchor.anchorId, anchor])),
+    [userAnchors]
+  );
 
   useEffect(
     () => () => {
-      if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+      if (anchorNavTimeoutRef.current)
+        window.clearTimeout(anchorNavTimeoutRef.current);
     },
     []
   );
@@ -72,7 +94,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const scrollFromHash = (behavior: "auto" | "smooth") => {
+    const scrollFromHash = (behavior: 'auto' | 'smooth') => {
       if (isAnchorNavRef.current) return;
       const hash = window.location.hash.slice(1);
       if (!hash || !anchorsById.has(hash)) return;
@@ -80,8 +102,13 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
       if (!anchor) return;
 
       isAnchorNavRef.current = true;
-      virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start', behavior});
-      if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+      virtuosoRef.current?.scrollToIndex({
+        index: anchor.messageIndex,
+        align: 'start',
+        behavior
+      });
+      if (anchorNavTimeoutRef.current)
+        window.clearTimeout(anchorNavTimeoutRef.current);
       anchorNavTimeoutRef.current = window.setTimeout(() => {
         isAnchorNavRef.current = false;
       }, 750);
@@ -114,14 +141,19 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
 
   const syncActiveFromRange = (range: ListRange) => {
     if (isAnchorNavRef.current) {
-      const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+      const hash =
+        typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
       const target = hash ? anchorsById.get(hash) : undefined;
-      if (target && target.messageIndex >= range.startIndex && target.messageIndex <= range.endIndex) {
+      if (
+        target &&
+        target.messageIndex >= range.startIndex &&
+        target.messageIndex <= range.endIndex
+      ) {
         isAnchorNavRef.current = false;
       }
     }
 
-    const {startIndex} = range;
+    const { startIndex } = range;
     let resolved = userAnchors[0];
     for (const anchor of userAnchors) {
       if (anchor.messageIndex <= startIndex) {
@@ -142,10 +174,15 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         onAnchorHover={setHoveredAnchorId}
         onAnchorClick={(anchor) => {
           isAnchorNavRef.current = true;
-          virtuosoRef.current?.scrollToIndex({index: anchor.messageIndex, align: 'start', behavior: 'smooth'});
+          virtuosoRef.current?.scrollToIndex({
+            index: anchor.messageIndex,
+            align: 'start',
+            behavior: 'smooth'
+          });
           if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', `#${anchor.anchorId}`);
-            if (anchorNavTimeoutRef.current) window.clearTimeout(anchorNavTimeoutRef.current);
+            if (anchorNavTimeoutRef.current)
+              window.clearTimeout(anchorNavTimeoutRef.current);
             anchorNavTimeoutRef.current = window.setTimeout(() => {
               isAnchorNavRef.current = false;
             }, 750);
@@ -162,7 +199,8 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         atBottomThreshold={80}
         rangeChanged={syncActiveFromRange}
         itemContent={(index, message) => {
-          const anchorId = message.role === 'user' ? `msg-${message.id}` : undefined;
+          const anchorId =
+            message.role === 'user' ? `msg-${message.id}` : undefined;
           return (
             <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
               <MessageBubble
@@ -170,7 +208,12 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
                 onCopyMessage={onCopyMessage}
                 onEditMessage={onEditMessage}
                 onRegenerate={onRegenerate}
-                isLastAssistant={message.role === 'assistant' && message.id === lastAssistantMessageId}
+                onRetryMessage={onRetryMessage}
+                onRestoreMessage={onRestoreMessage}
+                isLastAssistant={
+                  message.role === 'assistant' &&
+                  message.id === lastAssistantMessageId
+                }
                 anchorId={anchorId}
               />
             </div>
@@ -182,7 +225,7 @@ export function MessageList({messages, typing, onCopyMessage, onEditMessage, onR
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-5 mt-10 right-5 z-10 h-10 w-10 rounded-full shadow-lg"
+          className="absolute bottom-5 right-5 z-10 mt-10 h-10 w-10 rounded-full shadow-lg"
           onClick={scrollToBottom}
           aria-label={t('message.scrollToBottom')}
           title={t('message.scrollToBottom')}

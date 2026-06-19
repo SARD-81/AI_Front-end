@@ -54,7 +54,9 @@
       "thinking": "در حال پاسخ…",
       "copyLinkSuccess": "لینک پیام کپی شد",
       "copyLinkError": "کپی لینک ممکن نبود",
-      "scrollToBottom": "رفتن به پایین"
+      "scrollToBottom": "رفتن به پایین",
+      "pending": "در حال ارسال…",
+      "failed": "ارسال نشد"
     },
     "emptyState": {
       "logoAlt": "لوگو",
@@ -82,7 +84,9 @@
       "connectionError": "ارتباط با سرور پاسخ‌گویی برقرار نشد. لطفاً دوباره تلاش کنید.",
       "copySuccess": "کپی شد",
       "copyError": "کپی پیام ممکن نبود",
-      "openConversations": "باز کردن گفتگوها"
+      "openConversations": "باز کردن گفتگوها",
+      "retryFailed": "تلاش دوباره",
+      "restoreToInput": "بازگردانی به ورودی"
     },
     "thinkingLevel": {
       "label": "سطح تفکر",

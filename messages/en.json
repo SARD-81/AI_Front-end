@@ -54,7 +54,9 @@
       "thinking": "Responding…",
       "copyLinkSuccess": "Message link copied",
       "copyLinkError": "Could not copy the link",
-      "scrollToBottom": "Scroll to bottom"
+      "scrollToBottom": "Scroll to bottom",
+      "pending": "Sending…",
+      "failed": "Not sent"
     },
     "emptyState": {
       "logoAlt": "Logo",
@@ -82,7 +84,9 @@
       "connectionError": "Could not reach the response server. Please try again.",
       "copySuccess": "Copied",
       "copyError": "Could not copy the message",
-      "openConversations": "Open conversations"
+      "openConversations": "Open conversations",
+      "retryFailed": "Retry",
+      "restoreToInput": "Restore to input"
     },
     "thinkingLevel": {
       "label": "Thinking level",
