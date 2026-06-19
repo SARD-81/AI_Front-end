@@ -36,7 +36,13 @@
       "cancelDelete": "Cancel",
       "confirmDelete": "Delete",
       "deleting": "Deleting...",
-      "deleteError": "Could not delete the conversation."
+      "deleteError": "Could not delete the conversation.",
+      "editProfile": "Edit profile",
+      "logoutNow": "Sign out now",
+      "logoutConfirmTitle": "Sign out?",
+      "logoutConfirmDescription": "You will be signed out immediately and returned to the sign-in page.",
+      "cancelLogout": "Stay signed in",
+      "confirmLogout": "Sign out"
     },
     "dialog": {
       "close": "Close"
@@ -182,7 +188,11 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
+      "degreeOptions": [
+        "Bachelor’s",
+        "Master’s",
+        "PhD"
+      ],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "specializationLabel": "Specialization (optional)",
@@ -313,7 +323,15 @@
     "account": {
       "name": "Name",
       "email": "Email",
-      "guestUser": "Guest user"
+      "fullName": "Full name",
+      "studentId": "Student ID",
+      "role": "Role",
+      "loading": "Loading account profile...",
+      "roles": {
+        "student": "Student",
+        "professor": "Professor",
+        "staff": "Staff"
+      }
     },
     "options": {
       "appearance": {

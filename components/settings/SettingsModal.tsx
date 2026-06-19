@@ -16,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {Skeleton} from '@/components/ui/skeleton';
+import type {AuthUserDTO} from '@/lib/types/auth';
 import {cn} from '@/lib/utils';
 
 export type AppSettings = {
@@ -134,13 +136,15 @@ export function SettingsModal({
   onOpenChange,
   settings,
   setSettings,
-  user
+  user,
+  isUserLoading = false
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settings: AppSettings;
   setSettings: Dispatch<SetStateAction<AppSettings>>;
-  user?: {name?: string | null; email?: string | null};
+  user?: AuthUserDTO;
+  isUserLoading?: boolean;
 }) {
   const [tab, setTab] = useState<'general' | 'account'>('general');
   const t = useTranslations('settings');
@@ -164,13 +168,17 @@ export function SettingsModal({
     {value: 'en', label: t('options.language.en')}
   ] as const;
 
-  const profile = useMemo(
-    () => ({
-      name: user?.name?.trim() || t('account.guestUser'),
-      email: user?.email?.trim() || '—'
-    }),
-    [t, user?.email, user?.name]
-  );
+  const profile = useMemo(() => {
+    const fullName = user?.fullName?.trim();
+    const firstLastName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+
+    return {
+      name: fullName || firstLastName || user?.studentId?.trim() || '—',
+      email: user?.email?.trim() || '—',
+      studentId: user?.studentId?.trim() || '—',
+      role: user?.role ? t(`account.roles.${user.role}`) : '—'
+    };
+  }, [t, user?.email, user?.firstName, user?.fullName, user?.lastName, user?.role, user?.studentId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -237,13 +245,26 @@ export function SettingsModal({
                     />
                   </SettingRow>
                 </>
+              ) : isUserLoading ? (
+                <div className="space-y-4 py-4" aria-label={t('account.loading')}>
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
               ) : (
                 <>
-                  <SettingRow label={t('account.name')}>
+                  <SettingRow label={t('account.fullName')}>
                     <span className="text-sm text-muted-foreground">{profile.name}</span>
                   </SettingRow>
                   <SettingRow label={t('account.email')}>
                     <span className="text-sm text-muted-foreground">{profile.email}</span>
+                  </SettingRow>
+                  <SettingRow label={t('account.studentId')}>
+                    <span className="text-sm text-muted-foreground" dir="ltr">{profile.studentId}</span>
+                  </SettingRow>
+                  <SettingRow label={t('account.role')}>
+                    <span className="text-sm text-muted-foreground">{profile.role}</span>
                   </SettingRow>
                 </>
               )}
