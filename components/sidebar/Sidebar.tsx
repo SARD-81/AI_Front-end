@@ -183,7 +183,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               )}
               onClick={onNavigate}
             >
-              <Image src="/logo.png" alt={t('sidebar.logoAlt')} width={60} height={60} className="h-15 w-15" />
+              <Image src="/Logo.png" alt={t('sidebar.logoAlt')} width={60} height={60} className="h-15 w-15" />
               {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">{t('sidebar.universityName')}</span> : null}
             </Link>
 

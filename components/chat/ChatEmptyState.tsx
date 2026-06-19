@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
 import {Composer} from './Composer';
@@ -25,15 +25,16 @@ export function ChatEmptyState({
   focusTrigger,
   onPromptSelect
 }: ChatEmptyStateProps) {
+  const locale = useLocale();
   const t = useTranslations('app');
   const suggestedPrompts = t.raw('emptyState.suggestedPrompts') as string[];
   return (
-    <div className="flex h-full items-center justify-center px-4" dir="rtl">
+    <div className="flex h-full items-center justify-center px-4" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-[800px] space-y-6 text-center">
         <div className="mx-auto h-20 w-20 rounded-full border border-border bg-muted p-[3px] shadow-soft">
           <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
             <Image
-              src="/logo.png"
+              src="/Logo.png"
               alt={t('emptyState.logoAlt')}
               width={60}
               height={60}

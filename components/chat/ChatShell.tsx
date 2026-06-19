@@ -135,7 +135,7 @@ export function ChatShell({
       let activeChatId = chatId;
 
       if (!activeChatId) {
-        const created = await actions.create.mutateAsync({});
+        const created = await actions.create.mutateAsync({ title: t('newChat') });
         activeChatId = created.id;
         router.push(`/${locale}/chat/${activeChatId}`);
       }
