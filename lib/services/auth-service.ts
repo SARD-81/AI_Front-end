@@ -73,18 +73,10 @@ const otpTokenSchema = z
     token: z.string().optional()
   })
   .passthrough()
-  .transform((value) => {
-    const otpToken = value.otp_token ?? value.otpToken ?? value.token;
-
-    if (!otpToken) {
-      throw new ServiceError('توکن تأیید از سرور دریافت نشد.', 500, 'OTP_TOKEN_MISSING');
-    }
-
-    return {
-      message: value.message ?? 'کد تأیید شد.',
-      otpToken
-    };
-  });
+  .transform((value) => ({
+    message: value.message ?? 'کد تأیید شد.',
+    otpToken: value.otp_token ?? value.otpToken ?? value.token
+  }));
 
 export class ServiceError extends Error {
   status: number;
@@ -126,10 +118,13 @@ export async function loginUser(
     const result = await apiFetch<LoginResponseDTO>(API_ENDPOINTS.auth.login, {
       method: 'POST',
       signal: opts?.signal,
-      body: JSON.stringify({
-        email: input.email ?? input.identifier,
-        password: input.password
-      })
+      body: JSON.stringify(
+        input.email
+          ? { email: input.email, password: input.password }
+          : input.identifier?.includes('@')
+            ? { email: input.identifier, password: input.password }
+            : { identifier: input.identifier, password: input.password }
+      )
     });
 
     return loginSchema.parse(result);
@@ -238,7 +233,6 @@ export async function registerUser(
         signal: opts?.signal,
         body: JSON.stringify({
           email: input.email,
-          otp_token: input.otpToken,
           password: input.password,
           firstName: input.firstName,
           lastName: input.lastName,
@@ -308,7 +302,6 @@ export async function completePasswordReset(
         signal: opts?.signal,
         body: JSON.stringify({
           email: input.email,
-          ...(input.otpToken ? { otp_token: input.otpToken } : {}),
           new_password: input.newPassword
         })
       }

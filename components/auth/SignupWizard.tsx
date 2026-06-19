@@ -58,7 +58,6 @@ export function SignupWizard({
 }: SignupWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
-  const [otpToken, setOtpToken] = useState<string>('');
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
   const degreeOptions = t.raw('signup.degreeOptions') as string[];
@@ -86,7 +85,6 @@ export function SignupWizard({
   useEffect(() => {
     setStep(1);
     setVerifiedEmail('');
-    setOtpToken('');
     step1Form.reset();
     step2Form.reset();
   }, [resetToken, step1Form, step2Form]);
@@ -128,7 +126,6 @@ export function SignupWizard({
         { signal: controller.signal }
       );
       setVerifiedEmail(values.email);
-      setOtpToken(result.otpToken);
       setStep(2);
       toast.success(result.message);
     } catch (error) {
@@ -142,7 +139,7 @@ export function SignupWizard({
   });
 
   const onRegister = step2Form.handleSubmit(async (values) => {
-    if (!verifiedEmail || !otpToken) {
+    if (!verifiedEmail) {
       toast.error(t('signup.verifyFirstStepRequired'));
       setStep(1);
       return;
@@ -157,7 +154,6 @@ export function SignupWizard({
       const result = await registerUser(
         {
           email: verifiedEmail,
-          otpToken,
           password: values.password,
           firstName: values.firstName,
           lastName: values.lastName,
