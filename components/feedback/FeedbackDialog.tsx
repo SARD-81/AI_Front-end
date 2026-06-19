@@ -2,7 +2,8 @@
 
 import {zodResolver} from '@hookform/resolvers/zod';
 import {AnimatePresence, motion} from 'motion/react';
-import {useEffect} from 'react';
+import {useEffect, useMemo} from 'react';
+import {useTranslations} from 'next-intl';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {Button} from '@/components/ui/button';
@@ -12,13 +13,13 @@ import {Label} from '@/components/ui/label';
 import {cn} from '@/lib/utils';
 
 const FEEDBACK_CHIPS = [
-  {key: 'off_topic', label: 'جواب ربطی نداشت', reasonCategory: 'irrelevant'},
-  {key: 'incomplete', label: 'ناقص بود', reasonCategory: 'incomplete'},
-  {key: 'wrong', label: 'اشتباه بود', reasonCategory: 'inaccurate'},
-  {key: 'hallucination', label: 'اطلاعات ساختگی داشت', reasonCategory: 'inaccurate'},
-  {key: 'unclear', label: 'واضح نبود', reasonCategory: 'tone'},
-  {key: 'length_issue', label: 'خیلی کوتاه / خیلی طولانی بود', reasonCategory: 'other'},
-  {key: 'source_issue', label: 'منبع مشکل داشت', reasonCategory: 'other'}
+  {key: 'off_topic', reasonCategory: 'irrelevant'},
+  {key: 'incomplete', reasonCategory: 'incomplete'},
+  {key: 'wrong', reasonCategory: 'inaccurate'},
+  {key: 'hallucination', reasonCategory: 'inaccurate'},
+  {key: 'unclear', reasonCategory: 'tone'},
+  {key: 'length_issue', reasonCategory: 'other'},
+  {key: 'source_issue', reasonCategory: 'other'}
 ] as const;
 
 type FeedbackChipKey = (typeof FEEDBACK_CHIPS)[number]['key'];
@@ -32,7 +33,7 @@ const chipMap = Object.fromEntries(FEEDBACK_CHIPS.map((chip) => [chip.key, chip]
 const formSchema = z.object({
   selectedChipKey: z.enum(FEEDBACK_CHIPS.map((chip) => chip.key) as [FeedbackChipKey, ...FeedbackChipKey[]]),
   mappedReasonCategory: z.enum(['inaccurate', 'irrelevant', 'tone', 'incomplete', 'other']),
-  text_comment: z.string().max(500, 'حداکثر ۵۰۰ کاراکتر مجاز است.').optional()
+  text_comment: z.string().max(500).optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,14 +47,20 @@ type FeedbackDialogProps = {
   onClear: () => Promise<void>;
 };
 
-function buildComment(chipLabel: string, userComment?: string) {
-  const prefix = `دلیل انتخاب‌شده: ${chipLabel}`;
+function buildComment(reasonPrefix: string, userComment?: string) {
+  const prefix = reasonPrefix;
   const trimmed = userComment?.trim();
   const full = trimmed ? `${prefix}\n\n${trimmed}` : prefix;
   return full.length <= 500 ? full : `${full.slice(0, 499)}…`;
 }
 
 export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, onSubmit, onClear}: FeedbackDialogProps) {
+  const t = useTranslations('app.feedback');
+  const chipLabels = useMemo(
+    () =>
+      Object.fromEntries(FEEDBACK_CHIPS.map((chip) => [chip.key, t(`chips.${chip.key}`)])) as Record<FeedbackChipKey, string>,
+    [t]
+  );
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,14 +93,14 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl" dir="rtl">
-        <DialogTitle className="text-right text-lg font-semibold">ارسال بازخورد</DialogTitle>
+        <DialogTitle className="text-right text-lg font-semibold">{t('title')}</DialogTitle>
+        <p className="text-right text-sm text-muted-foreground">{t('description')}</p>
 
         <Form {...form}>
           <form
             className="space-y-4"
             onSubmit={form.handleSubmit(async (values) => {
-              const selectedChip = chipMap[values.selectedChipKey];
-              const textComment = buildComment(selectedChip.label, values.text_comment);
+              const textComment = buildComment(t('commentPrefix', {reason: chipLabels[values.selectedChipKey]}), values.text_comment);
               await onSubmit({
                 is_liked: false,
                 reason_category: values.mappedReasonCategory,
@@ -126,7 +133,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                                 : 'border-border bg-background text-foreground hover:bg-muted'
                             )}
                           >
-                            {chip.label}
+                            {chipLabels[chip.key]}
                           </button>
                         );
                       })}
@@ -143,14 +150,14 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
               render={({field}) => (
                 <FormItem>
                   <Label htmlFor="feedback-comment" className="text-sm font-medium">
-                    جزئیات (اختیاری)
+                    {t('commentLabel')}
                   </Label>
                   <FormControl>
                     <textarea
                       id="feedback-comment"
                       className="flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                       maxLength={500}
-                      placeholder="در صورت نیاز توضیح بیشتری بنویسید"
+                      placeholder={t('placeholder')}
                       {...field}
                     />
                   </FormControl>
@@ -168,7 +175,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                   transition={{duration: 0.2, ease: 'easeOut'}}
                 >
                   <Button type="button" variant="ghost" className="px-0 text-destructive hover:text-destructive" onClick={onClear} disabled={isSubmitting}>
-                    حذف بازخورد
+                    {t('clear')}
                   </Button>
                 </motion.div>
               ) : null}
@@ -176,10 +183,10 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
 
             <div className="flex items-center justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                انصراف
+                {t('cancel')}
               </Button>
               <Button type="submit" disabled={submitDisabled}>
-                ثبت بازخورد
+                {t('submit')}
               </Button>
             </div>
           </form>
