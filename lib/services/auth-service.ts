@@ -7,6 +7,8 @@ import type {
   LoginResultDTO,
   PasswordResetCompleteInputDTO,
   PasswordResetResultDTO,
+  ProfileResponseDTO,
+  ProfileUpdateDTO,
   RegisterInputDTO,
   RegisterResultDTO,
   SendOtpInputDTO,
@@ -136,18 +138,41 @@ export async function loginUser(
   }
 }
 
-export async function getMe(opts?: { signal?: AbortSignal }) {
+export async function getProfile(opts?: { signal?: AbortSignal }): Promise<ProfileResponseDTO> {
   try {
-    return await apiFetch<{ user: Record<string, string> }>(
-      API_ENDPOINTS.auth.profile,
-      {
-        method: 'GET',
-        signal: opts?.signal
-      }
-    );
+    return await apiFetch<ProfileResponseDTO>(API_ENDPOINTS.auth.profile, {
+      method: 'GET',
+      signal: opts?.signal
+    });
   } catch (error) {
     throw toServiceError(error);
   }
+}
+
+export async function updateProfile(
+  input: ProfileUpdateDTO,
+  opts?: { signal?: AbortSignal }
+): Promise<ProfileResponseDTO> {
+  try {
+    return await apiFetch<ProfileResponseDTO>(API_ENDPOINTS.auth.profile, {
+      method: 'PATCH',
+      signal: opts?.signal,
+      body: JSON.stringify({
+        firstName: input.firstName,
+        lastName: input.lastName,
+        studentId: input.studentId,
+        faculty: input.faculty,
+        major: input.major,
+        degreeLevel: input.degreeLevel
+      })
+    });
+  } catch (error) {
+    throw toServiceError(error);
+  }
+}
+
+export async function getMe(opts?: { signal?: AbortSignal }): Promise<ProfileResponseDTO> {
+  return getProfile(opts);
 }
 
 export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {

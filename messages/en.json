@@ -208,6 +208,26 @@
     }
   },
 
+  "profile": {
+    "title": "Complete your profile",
+    "description": "Please review and complete the required student profile fields before continuing to chat.",
+    "loading": "Loading profile...",
+    "loadError": "Could not load your profile. Please try again.",
+    "saveError": "Could not save your profile. Please try again.",
+    "saveSuccess": "Profile saved successfully.",
+    "missingRequired": "Please complete all required fields.",
+    "retry": "Try again",
+    "save": "Save and continue",
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "faculty": "Faculty",
+      "major": "Major",
+      "degreeLevel": "Degree level",
+      "studentId": "Student ID"
+    }
+  },
+
   "settings": {
     "title": "Settings",
     "demoPageDescription": "This page is added as a demo.",
