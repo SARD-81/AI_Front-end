@@ -49,7 +49,7 @@ export type VerifyOtpBodyDTO = {
 
 export type RegisterInputDTO = {
   email: string;
-  otpToken: string;
+  otpToken?: string;
   password: string;
   firstName: string;
   lastName: string;
@@ -93,7 +93,7 @@ export type SendOtpResultDTO = {
 
 export type VerifyOtpResultDTO = {
   message: string;
-  otpToken: string;
+  otpToken?: string;
 };
 
 export type RegisterResultDTO = {
