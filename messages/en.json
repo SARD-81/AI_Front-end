@@ -155,11 +155,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "specializationLabel": "Specialization (optional)",
@@ -246,7 +242,7 @@
   },
   "profile": {
     "title": "Complete your profile",
-    "description": "Please review and complete the required student profile fields before continuing to chat.",
+    "description": "Complete the required details below so the AI assistant can personalize and authorize your chat access.",
     "loading": "Loading profile...",
     "loadError": "Could not load your profile. Please try again.",
     "saveError": "Could not save your profile. Please try again.",
@@ -261,6 +257,18 @@
       "major": "Major",
       "degreeLevel": "Degree level",
       "studentId": "Student ID"
+    },
+    "bannerTitle": "Profile completion is required",
+    "bannerDescription": "You are in the right place. Complete your profile once to continue using the AI assistant.",
+    "stillIncomplete": "Your profile is saved, but required details are still missing. Please review the highlighted fields.",
+    "fieldRequired": "{field} is required.",
+    "roleLabel": "Current role",
+    "logout": "Logout",
+    "backToLogin": "Back to login",
+    "roles": {
+      "student": "Student",
+      "professor": "Professor",
+      "staff": "Staff"
     }
   },
   "settings": {
