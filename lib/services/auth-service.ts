@@ -14,12 +14,46 @@ import type {
   VerifyOtpResultDTO
 } from '@/lib/types/auth';
 
-const loginSchema = z.object({
-  user: z.object({
-    studentId: z.string(),
-    fullName: z.string().optional()
+const loginSchema = z
+  .object({
+    user: z
+      .object({
+        studentId: z.string().optional(),
+        student_id: z.string().optional(),
+        fullName: z.string().optional(),
+        full_name: z.string().optional(),
+        role: z.enum(['student', 'professor', 'staff']).optional(),
+        isProfileCompleted: z.boolean().optional(),
+        is_profile_completed: z.boolean().optional()
+      })
+      .passthrough(),
+    isProfileCompleted: z.boolean().optional(),
+    is_profile_completed: z.boolean().optional()
   })
-});
+  .passthrough()
+  .transform((value) => {
+    const studentId = value.user.studentId ?? value.user.student_id;
+
+    if (!studentId) {
+      throw new ServiceError('شناسه دانشجویی از سرور دریافت نشد.', 500, 'LOGIN_USER_MISSING');
+    }
+
+    const isProfileCompleted =
+      value.isProfileCompleted ??
+      value.is_profile_completed ??
+      value.user.isProfileCompleted ??
+      value.user.is_profile_completed;
+
+    return {
+      user: {
+        studentId,
+        fullName: value.user.fullName ?? value.user.full_name,
+        role: value.user.role,
+        isProfileCompleted
+      },
+      isProfileCompleted
+    };
+  });
 
 const messageSchema = z
   .object({
@@ -90,7 +124,7 @@ export async function loginUser(
       method: 'POST',
       signal: opts?.signal,
       body: JSON.stringify({
-        identifier: input.identifier,
+        email: input.email ?? input.identifier,
         password: input.password
       })
     });
@@ -156,7 +190,7 @@ export async function verifyOtp(
       {
         method: 'POST',
         signal: opts?.signal,
-        body: JSON.stringify({ email: input.email, otp: input.otpCode })
+        body: JSON.stringify({ email: input.email, otpCode: input.otpCode })
       }
     );
 
@@ -180,9 +214,12 @@ export async function registerUser(
           email: input.email,
           otp_token: input.otpToken,
           password: input.password,
-          first_name: input.firstName,
-          last_name: input.lastName,
-          student_id: input.studentId
+          firstName: input.firstName,
+          lastName: input.lastName,
+          studentId: input.studentId,
+          faculty: input.faculty,
+          major: input.major,
+          degreeLevel: input.degreeLevel
         })
       }
     );
@@ -223,7 +260,7 @@ export async function verifyPasswordResetOtp(
       {
         method: 'POST',
         signal: opts?.signal,
-        body: JSON.stringify({ email: input.email, otp: input.otpCode })
+        body: JSON.stringify({ email: input.email, otpCode: input.otpCode })
       }
     );
 
@@ -245,7 +282,7 @@ export async function completePasswordReset(
         signal: opts?.signal,
         body: JSON.stringify({
           email: input.email,
-          otp_token: input.otpToken,
+          ...(input.otpToken ? { otp_token: input.otpToken } : {}),
           new_password: input.newPassword
         })
       }
