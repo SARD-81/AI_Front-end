@@ -3,6 +3,7 @@ import { apiFetch, ApiError } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
 import type {
   LoginInputDTO,
+  LoginResponseDTO,
   LoginResultDTO,
   PasswordResetCompleteInputDTO,
   PasswordResetResultDTO,
@@ -120,7 +121,7 @@ export async function loginUser(
   opts?: { signal?: AbortSignal }
 ): Promise<LoginResultDTO> {
   try {
-    const result = await apiFetch<LoginResultDTO>(API_ENDPOINTS.auth.login, {
+    const result = await apiFetch<LoginResponseDTO>(API_ENDPOINTS.auth.login, {
       method: 'POST',
       signal: opts?.signal,
       body: JSON.stringify({

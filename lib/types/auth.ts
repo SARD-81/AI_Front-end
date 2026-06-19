@@ -20,12 +20,17 @@ export type LoginInputDTO = {
 };
 
 export type LoginResponseDTO = {
-  refresh: string;
-  access: string;
-  student_id: string;
-  full_name: string;
-  role: AuthRoleDTO;
-  is_profile_completed: boolean;
+  user: {
+    studentId?: string;
+    student_id?: string;
+    fullName?: string;
+    full_name?: string;
+    role: AuthRoleDTO;
+    isProfileCompleted?: boolean;
+    is_profile_completed?: boolean;
+  };
+  isProfileCompleted?: boolean;
+  is_profile_completed?: boolean;
 };
 
 export type SendOtpInputDTO = {
@@ -49,9 +54,9 @@ export type RegisterInputDTO = {
   firstName: string;
   lastName: string;
   studentId: string;
-  faculty?: string;
-  major?: string;
-  degreeLevel?: string;
+  faculty: string;
+  major: string;
+  degreeLevel: string;
   specialization?: string;
 };
 
