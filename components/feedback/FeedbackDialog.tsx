@@ -3,7 +3,7 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {AnimatePresence, motion} from 'motion/react';
 import {useEffect, useMemo} from 'react';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {Button} from '@/components/ui/button';
@@ -55,6 +55,7 @@ function buildComment(reasonPrefix: string, userComment?: string) {
 }
 
 export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, onSubmit, onClear}: FeedbackDialogProps) {
+  const locale = useLocale();
   const t = useTranslations('app.feedback');
   const chipLabels = useMemo(
     () =>
@@ -92,9 +93,9 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl" dir="rtl">
-        <DialogTitle className="text-right text-lg font-semibold">{t('title')}</DialogTitle>
-        <p className="text-right text-sm text-muted-foreground">{t('description')}</p>
+      <DialogContent className="max-w-xl" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+        <DialogTitle className="text-lg font-semibold">{t('title')}</DialogTitle>
+        <p className="text-sm text-muted-foreground">{t('description')}</p>
 
         <Form {...form}>
           <form
