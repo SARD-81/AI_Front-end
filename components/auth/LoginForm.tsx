@@ -37,6 +37,7 @@ type LoginFormProps = {
   setBusy: (busy: boolean) => void;
   abortRef: React.MutableRefObject<AbortController | null>;
   initialIdentifier?: string;
+  onForgotPassword: () => void;
 };
 
 export function LoginForm({
@@ -44,7 +45,8 @@ export function LoginForm({
   busy = false,
   setBusy,
   abortRef,
-  initialIdentifier
+  initialIdentifier,
+  onForgotPassword
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -168,6 +170,15 @@ export function LoginForm({
           ) : null}
           {t('login.submit')}
         </Button>
+
+        <button
+          type="button"
+          className="w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onForgotPassword}
+          disabled={busy || form.formState.isSubmitting}
+        >
+          {t('login.forgotPassword')}
+        </button>
       </form>
     </Form>
   );
