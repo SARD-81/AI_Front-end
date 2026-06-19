@@ -233,7 +233,7 @@ export function ChatShell({
         </SheetContent>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="relative flex h-14 items-center border-b border-border">
+          <header className="relative flex min-h-14 items-center border-b border-border py-1 sm:h-14 sm:py-0">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
                 <Button
@@ -249,7 +249,7 @@ export function ChatShell({
             </div>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="w-full max-w-3xl truncate px-14 text-center text-sm font-medium sm:px-6 md:text-base">
+              <h1 className="w-full max-w-3xl truncate px-16 text-center text-sm font-medium leading-6 sm:px-6 md:text-base">
                 {headerTitle}
               </h1>
             </div>

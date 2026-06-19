@@ -38,7 +38,7 @@ export function ChatEmptyState({
               width={60}
               height={60}
               priority
-              className="h-60 w-60 object-contain"
+              className="h-full w-full object-contain"
             />
           </div>
         </div>
