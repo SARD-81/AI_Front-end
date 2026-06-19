@@ -98,14 +98,27 @@ export const createSignupStep2Schema = (t: AuthSchemaTranslator) =>
       path: ['confirmPassword']
     });
 
+export const createPasswordResetCompleteSchema = (t: AuthSchemaTranslator) =>
+  z
+    .object({
+      password: createPasswordSchema(t),
+      confirmPassword: z.string().min(1, t('profile.confirmPasswordRequired'))
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('profile.confirmPasswordMismatch'),
+      path: ['confirmPassword']
+    });
+
 const fallbackT: AuthSchemaTranslator = (key) => key;
 
 export const loginSchema = createLoginSchema(fallbackT);
 export const signupStep1EmailSchema = createSignupStep1EmailSchema(fallbackT);
 export const signupStep1Schema = createSignupStep1Schema(fallbackT);
 export const signupStep2Schema = createSignupStep2Schema(fallbackT);
+export const passwordResetCompleteSchema = createPasswordResetCompleteSchema(fallbackT);
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type SignupStep1EmailValues = z.infer<typeof signupStep1EmailSchema>;
 export type SignupStep1Values = z.infer<typeof signupStep1Schema>;
 export type SignupStep2Values = z.infer<typeof signupStep2Schema>;
+export type PasswordResetCompleteValues = z.infer<typeof passwordResetCompleteSchema>;

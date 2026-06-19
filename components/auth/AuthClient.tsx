@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { PasswordResetWizard } from '@/components/auth/PasswordResetWizard';
 import { SignupWizard } from '@/components/auth/SignupWizard';
 import {
   Card,
@@ -25,7 +26,7 @@ const FEATURE_STRIPS = [
   'from-white/45 via-primary/20 to-transparent'
 ];
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = 'login' | 'signup' | 'reset';
 
 function safeNextUrl(next: string | null, locale: string): string {
   const fallback = `/${locale}/chat`;
@@ -59,12 +60,15 @@ export function AuthClient({ locale }: { locale: string }) {
     login: useRef<AbortController | null>(null),
     sendOtp: useRef<AbortController | null>(null),
     verifyOtp: useRef<AbortController | null>(null),
-    register: useRef<AbortController | null>(null)
+    register: useRef<AbortController | null>(null),
+    resetRequestOtp: useRef<AbortController | null>(null),
+    resetVerifyOtp: useRef<AbortController | null>(null),
+    resetComplete: useRef<AbortController | null>(null)
   };
 
   useEffect(() => {
     const modeQuery = searchParams.get('mode');
-    if (modeQuery === 'signup' || modeQuery === 'login') {
+    if (modeQuery === 'signup' || modeQuery === 'login' || modeQuery === 'reset') {
       setAuthMode(modeQuery);
     }
   }, [searchParams]);
@@ -75,11 +79,17 @@ export function AuthClient({ locale }: { locale: string }) {
       controllersRef.sendOtp.current?.abort();
       controllersRef.verifyOtp.current?.abort();
       controllersRef.register.current?.abort();
+      controllersRef.resetRequestOtp.current?.abort();
+      controllersRef.resetVerifyOtp.current?.abort();
+      controllersRef.resetComplete.current?.abort();
       postSignupAuthRef.current?.abort();
     };
   }, [
     controllersRef.login,
     controllersRef.register,
+    controllersRef.resetComplete,
+    controllersRef.resetRequestOtp,
+    controllersRef.resetVerifyOtp,
     controllersRef.sendOtp,
     controllersRef.verifyOtp
   ]);
@@ -109,6 +119,11 @@ export function AuthClient({ locale }: { locale: string }) {
 
   const handleLoginSuccess = (result: LoginResultDTO) => {
     router.push(getPostLoginDestination(result));
+  };
+
+  const handlePasswordResetCompleted = (email: string) => {
+    setLoginInitialIdentifier(email);
+    updateMode('login');
   };
 
   const handleRegistered = async ({
@@ -243,7 +258,11 @@ export function AuthClient({ locale }: { locale: string }) {
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="rounded-2xl border border-white/12 bg-white/10 px-3 py-2 text-xs text-slate-200/80 backdrop-blur-md">
-                      {authMode === 'login' ? t('card.loginTitle') : t('card.signupTitle')}
+                      {authMode === 'login'
+                        ? t('card.loginTitle')
+                        : authMode === 'reset'
+                          ? t('card.resetTitle')
+                          : t('card.signupTitle')}
                     </div>
                     <Image
                       src="/Logo.png"
@@ -257,12 +276,16 @@ export function AuthClient({ locale }: { locale: string }) {
                     <CardTitle className="text-2xl font-black leading-relaxed text-white md:text-3xl">
                       {authMode === 'login'
                         ? t('card.loginTitle')
-                        : t('card.signupTitle')}
+                        : authMode === 'reset'
+                          ? t('card.resetTitle')
+                          : t('card.signupTitle')}
                     </CardTitle>
                     <CardDescription className="text-sm leading-7 text-slate-300/85">
                       {authMode === 'login'
                         ? t('card.loginDescription')
-                        : t('card.signupDescription')}
+                        : authMode === 'reset'
+                          ? t('card.resetDescription')
+                          : t('card.signupDescription')}
                     </CardDescription>
                   </div>
                 </CardHeader>
@@ -283,10 +306,11 @@ export function AuthClient({ locale }: { locale: string }) {
                             setBusy={setBusy}
                             abortRef={controllersRef.login}
                             initialIdentifier={loginInitialIdentifier}
+                            onForgotPassword={() => updateMode('reset')}
                             onSuccess={handleLoginSuccess}
                           />
                         </motion.div>
-                      ) : (
+                      ) : authMode === 'signup' ? (
                         <motion.div
                           key="signup"
                           initial={{ opacity: 0, y: 8, height: 0 }}
@@ -305,6 +329,27 @@ export function AuthClient({ locale }: { locale: string }) {
                               register: controllersRef.register
                             }}
                             onRegistered={handleRegistered}
+                          />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="reset"
+                          initial={{ opacity: 0, y: 8, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: 'auto' }}
+                          exit={{ opacity: 0, y: -8, height: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className="overflow-hidden"
+                        >
+                          <PasswordResetWizard
+                            busy={busy || postSignupAuthLoading}
+                            setBusy={setBusy}
+                            controllerRefs={{
+                              requestOtp: controllersRef.resetRequestOtp,
+                              verifyOtp: controllersRef.resetVerifyOtp,
+                              complete: controllersRef.resetComplete
+                            }}
+                            onBackToLogin={() => updateMode('login')}
+                            onCompleted={handlePasswordResetCompleted}
                           />
                         </motion.div>
                       )}
