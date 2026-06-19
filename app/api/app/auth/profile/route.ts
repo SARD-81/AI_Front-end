@@ -5,6 +5,19 @@ import { callWithAutoRefresh } from '@/lib/server/with-refresh';
 
 type BackendProfile = Record<string, unknown>;
 
+type ProfileBody = {
+  first_name?: string;
+  firstName?: string;
+  last_name?: string;
+  lastName?: string;
+  student_id?: string;
+  studentId?: string;
+  faculty?: string;
+  major?: string;
+  degree_level?: string;
+  degreeLevel?: string;
+};
+
 function normalizeProfile(profile: BackendProfile) {
   return {
     user: {
@@ -42,6 +55,42 @@ function normalizeProfile(profile: BackendProfile) {
   };
 }
 
+function editableProfilePayload(body: ProfileBody) {
+  const payload: Record<string, string> = {};
+  const fields: Array<[keyof ProfileBody, keyof ProfileBody, string]> = [
+    ['first_name', 'firstName', 'first_name'],
+    ['last_name', 'lastName', 'last_name'],
+    ['student_id', 'studentId', 'student_id'],
+    ['faculty', 'faculty', 'faculty'],
+    ['major', 'major', 'major'],
+    ['degree_level', 'degreeLevel', 'degree_level']
+  ];
+
+  for (const [snakeKey, camelKey, backendKey] of fields) {
+    const value = body[snakeKey] ?? body[camelKey];
+    if (typeof value === 'string') {
+      payload[backendKey] = value;
+    }
+  }
+
+  return payload;
+}
+
+async function requestProfile(method: 'PATCH' | 'PUT', request: Request) {
+  const body = (await request.json()) as ProfileBody;
+  const payload = editableProfilePayload(body);
+  const profile = await callWithAutoRefresh((access) =>
+    backendFetch<BackendProfile>('/profile/', {
+      base: 'auth',
+      accessToken: access,
+      method,
+      body: JSON.stringify(payload)
+    })
+  );
+
+  return NextResponse.json(normalizeProfile(profile));
+}
+
 export async function GET() {
   try {
     const profile = await callWithAutoRefresh((access) =>
@@ -53,6 +102,22 @@ export async function GET() {
     );
 
     return NextResponse.json(normalizeProfile(profile));
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    return await requestProfile('PATCH', request);
+  } catch (error) {
+    return routeErrorResponse(error);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    return await requestProfile('PUT', request);
   } catch (error) {
     return routeErrorResponse(error);
   }
