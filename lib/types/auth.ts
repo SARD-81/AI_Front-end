@@ -1,3 +1,5 @@
+export type AuthRoleDTO = 'student' | 'professor' | 'staff';
+
 export type AuthUserDTO = {
   studentId: string;
   fullName?: string;
@@ -7,11 +9,22 @@ export type AuthUserDTO = {
   faculty?: string;
   major?: string;
   degreeLevel?: string;
+  role?: AuthRoleDTO;
+  isProfileCompleted?: boolean;
 };
 
 export type LoginInputDTO = {
   identifier: string;
   password: string;
+};
+
+export type LoginResponseDTO = {
+  refresh: string;
+  access: string;
+  student_id: string;
+  full_name: string;
+  role: AuthRoleDTO;
+  is_profile_completed: boolean;
 };
 
 export type SendOtpInputDTO = {
@@ -23,6 +36,11 @@ export type VerifyOtpInputDTO = {
   otpCode: string;
 };
 
+export type VerifyOtpBodyDTO = {
+  email: string;
+  otp_code: string;
+};
+
 export type RegisterInputDTO = {
   email: string;
   otpToken: string;
@@ -30,11 +48,21 @@ export type RegisterInputDTO = {
   firstName: string;
   lastName: string;
   studentId: string;
-  // Kept for the UI/future backend contract. These fields are not sent to the current backend contract.
   faculty?: string;
   major?: string;
   degreeLevel?: string;
   specialization?: string;
+};
+
+export type RegisterCompleteBodyDTO = {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  student_id: string;
+  faculty: string;
+  major: string;
+  degree_level: string;
 };
 
 export type PasswordResetCompleteInputDTO = {
@@ -43,8 +71,13 @@ export type PasswordResetCompleteInputDTO = {
   newPassword: string;
 };
 
+export type PasswordResetCompleteBodyDTO = {
+  email: string;
+  new_password: string;
+};
+
 export type LoginResultDTO = {
-  user: Pick<AuthUserDTO, 'studentId' | 'fullName'>;
+  user: Pick<AuthUserDTO, 'studentId' | 'fullName' | 'role' | 'isProfileCompleted'>;
 };
 
 export type SendOtpResultDTO = {
