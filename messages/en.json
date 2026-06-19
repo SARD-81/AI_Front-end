@@ -4,6 +4,7 @@
     "emptyTitle": "What would you like to talk about?",
     "emptyDescription": "Choose a topic or start a fresh chat.",
     "composerPlaceholder": "Type your message...",
+    "composerKeyboardHint": "Enter to send • Shift+Enter for newline",
     "send": "Send",
     "search": "Search",
     "deepThink": "DeepThink",

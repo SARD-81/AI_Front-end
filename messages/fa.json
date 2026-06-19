@@ -4,6 +4,7 @@
     "emptyTitle": "از چه چیزی می‌خواهید صحبت کنیم؟",
     "emptyDescription": "یک موضوع انتخاب کنید یا گفت‌وگوی تازه بسازید.",
     "composerPlaceholder": "پیام خود را بنویسید...",
+    "composerKeyboardHint": "Enter برای ارسال • Shift+Enter برای خط جدید",
     "send": "ارسال",
     "search": "جستجو",
     "deepThink": "DeepThink",

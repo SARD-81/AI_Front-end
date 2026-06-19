@@ -6,6 +6,7 @@ import {useLocale, useTranslations} from 'next-intl';
 import {useEffect, useRef} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {Button} from '@/components/ui/button';
+import {cn} from '@/lib/utils';
 
 const MAX_MESSAGE_LENGTH = 2500;
 
@@ -29,6 +30,8 @@ export function Composer({
   const t = useTranslations('app');
   const locale = useLocale();
   const comingSoonLabel = locale === 'fa' ? 'به‌زودی' : 'Coming soon';
+  const characterCount = value.length;
+  const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -63,21 +66,29 @@ export function Composer({
           }
         }}
         aria-label={t('composerPlaceholder')}
-        aria-describedby="composer-character-counter"
+        aria-describedby="composer-keyboard-hint composer-character-counter"
       />
 
-      <div className="mt-1 flex justify-end px-2">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 px-2">
+        <p id="composer-keyboard-hint" className="text-xs leading-5 text-muted-foreground/80">
+          {t('composerKeyboardHint')}
+        </p>
         <div
           id="composer-character-counter"
           aria-live="polite"
-          className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+          className={cn(
+            'rounded-full border px-2.5 py-0.5 text-xs transition-opacity',
+            showCharacterCounter
+              ? 'border-border bg-muted text-muted-foreground opacity-100'
+              : 'border-transparent text-muted-foreground/60 opacity-70'
+          )}
         >
-          {value.length} / {MAX_MESSAGE_LENGTH}
+          {characterCount} / {MAX_MESSAGE_LENGTH}
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -85,7 +96,7 @@ export function Composer({
             disabled
             aria-disabled="true"
             title={t('searchDisabledHint')}
-            className="cursor-not-allowed opacity-60"
+            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
           >
             <span>{t('search')}</span>
             <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
@@ -98,7 +109,7 @@ export function Composer({
             disabled
             aria-disabled="true"
             title={t('thinkingLevel.futureHint')}
-            className="cursor-not-allowed opacity-60"
+            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
           >
             <span>{t('thinkingLevel.label')}</span>
             <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
@@ -111,7 +122,7 @@ export function Composer({
             aria-label={t('attachment.label')}
             title={t('attachment.notAvailableYet')}
             disabled={true}
-            className="cursor-not-allowed opacity-60"
+            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
           >
             {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}
             <Paperclip className="h-4 w-4" />
@@ -124,7 +135,7 @@ export function Composer({
           disabled={disabled || !value.trim()}
           aria-label={t('send')}
           title={t('send')}
-          className="transition-all duration-200 active:scale-[0.98]"
+          className="ms-auto shrink-0 transition-all duration-200 active:scale-[0.98]"
         >
           <SendHorizontal className="h-4 w-4" />
         </Button>
