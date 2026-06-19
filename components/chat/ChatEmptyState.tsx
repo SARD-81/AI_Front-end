@@ -3,21 +3,14 @@
 import Image from 'next/image';
 import {useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
-import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
 import {Composer} from './Composer';
-
-
 
 type ChatEmptyStateProps = {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   disabled?: boolean;
-  search: boolean;
-  thinkingLevel: ThinkingLevel;
-  onToggleSearch: () => void;
-  onThinkingLevelChange: (value: ThinkingLevel) => void;
   autoFocus?: boolean;
   focusTrigger?: number;
   onPromptSelect: (prompt: string) => void;
@@ -28,10 +21,6 @@ export function ChatEmptyState({
   onChange,
   onSubmit,
   disabled,
-  search,
-  thinkingLevel,
-  onToggleSearch,
-  onThinkingLevelChange,
   autoFocus,
   focusTrigger,
   onPromptSelect
@@ -69,10 +58,6 @@ export function ChatEmptyState({
             onChange={onChange}
             onSubmit={onSubmit}
             disabled={disabled}
-            search={search}
-            thinkingLevel={thinkingLevel}
-            onToggleSearch={onToggleSearch}
-            onThinkingLevelChange={onThinkingLevelChange}
             autoFocus={autoFocus}
             focusTrigger={focusTrigger}
           />

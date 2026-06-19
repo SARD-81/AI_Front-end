@@ -103,15 +103,15 @@
           "subtitle": "Deeper analysis with more processing time."
         }
       },
-      "futureHint": "This option is kept for future backend support."
+      "futureHint": "Thinking levels are coming soon and cannot be changed yet."
     },
 
     "attachment": {
       "label": "Attach file",
-      "notAvailableYet": "File attachments are not enabled yet."
+      "notAvailableYet": "File attachments are coming soon and cannot be uploaded yet."
     },
-    "searchEnabledHint": "Search is enabled; it takes full effect when backend support is available.",
-    "searchDisabledHint": "Search is disabled."
+    "searchEnabledHint": "Search is not available yet.",
+    "searchDisabledHint": "Search is coming soon and is not active in this chat yet."
   },
 
   "auth": {

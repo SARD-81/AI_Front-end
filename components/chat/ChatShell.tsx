@@ -10,7 +10,6 @@ import {Sidebar} from '@/components/sidebar/Sidebar';
 import {Button} from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet';
 import {Skeleton} from '@/components/ui/skeleton';
-import {useThinkingLevel} from '@/hooks/use-thinking-level';
 import {Composer} from './Composer';
 import {MessageList} from './MessageList';
 import {ChatEmptyState} from './ChatEmptyState';
@@ -25,8 +24,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
   const [value, setValue] = useState('');
-  const [search, setSearch] = useState(false);
-  const {thinkingLevel, setThinkingLevel} = useThinkingLevel('standard');
   const [streamContent, setStreamContent] = useState('');
   const streamChunksRef = useRef<string[]>([]);
   const streamFrameRef = useRef<number | null>(null);
@@ -96,17 +93,10 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     return compactTitle.length > maxLength ? `${compactTitle.slice(0, maxLength)}…` : compactTitle;
   }, [chat?.messages, chat?.title, t]);
 
-
   const submitMessage = async (nextValue: string) => {
     if (!nextValue.trim() || sendMutation.isPending || actions.create.isPending) return;
 
-    const payload = {
-      content: nextValue,
-      search,
-      thinkingLevel,
-      deepThink: thinkingLevel !== 'standard'
-      // TODO(BACKEND): confirm mapping for deepThink compatibility.
-    };
+    const payload = {content: nextValue};
 
     setErrorMessage('');
     setValue('');
@@ -165,7 +155,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
     setValue(content);
     setFocusTrigger((prev) => prev + 1);
   };
-
 
   useEffect(() => {
     const deletedChatId = actions.remove.variables;
@@ -229,10 +218,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                   onChange={setValue}
                   onSubmit={submit}
                   disabled={sendMutation.isPending || actions.create.isPending}
-                  search={search}
-                  thinkingLevel={thinkingLevel}
-                  onToggleSearch={() => setSearch((prev) => !prev)}
-                  onThinkingLevelChange={setThinkingLevel}
                   autoFocus={shouldAutoFocus}
                   focusTrigger={focusTrigger}
                   onPromptSelect={(prompt) => {
@@ -261,10 +246,6 @@ export function ChatShell({locale, chatId}: {locale: string; chatId?: string}) {
                     onChange={setValue}
                     onSubmit={submit}
                     disabled={sendMutation.isPending || actions.create.isPending}
-                    search={search}
-                    thinkingLevel={thinkingLevel}
-                    onToggleSearch={() => setSearch((prev) => !prev)}
-                    onThinkingLevelChange={setThinkingLevel}
                     focusTrigger={focusTrigger}
                   />
                 </div>
