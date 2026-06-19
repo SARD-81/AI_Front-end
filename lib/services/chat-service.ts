@@ -29,11 +29,7 @@ type BackendMessage = {
   feedback?: 'like' | 'dislike' | null;
 };
 
-type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';
-
-type FeedbackBody =
-  | {feedback: 'like' | 'dislike' | null}
-  | {is_liked: true | false | null; reason_category?: FeedbackReasonCategory; text_comment?: string};
+type FeedbackBody = {is_liked: true | false | null; comment?: string};
 
 function normalizeDate(value?: string | null) {
   return value ?? new Date().toISOString();
@@ -71,31 +67,15 @@ function normalizeMessage(message: BackendMessage): ChatMessage {
   };
 }
 
-function shapeFeedbackPayload(body: FeedbackBody): {feedback: 'like' | 'dislike' | null} {
-  if ('feedback' in body) {
-    return {feedback: body.feedback};
-  }
-
-  if (body.is_liked === true) {
-    return {feedback: 'like'};
-  }
-
-  if (body.is_liked === false) {
-    return {feedback: 'dislike'};
-  }
-
-  return {feedback: null};
-}
-
 export async function listConversations() {
   const data = await apiFetch<BackendConversation[] | {results?: BackendConversation[]}>(API_ENDPOINTS.conversations.list);
   return normalizeConversationList(data);
 }
 
-export async function createConversation() {
+export async function createConversation(title = 'گفت‌وگو') {
   const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.list, {
     method: 'POST',
-    body: JSON.stringify({})
+    body: JSON.stringify({title})
   });
   return normalizeConversation(data);
 }
@@ -155,22 +135,12 @@ export async function sendMessage(conversationId: string, message: string) {
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {
-  const payload = shapeFeedbackPayload(body);
-  const response = await fetch(API_ENDPOINTS.messages.feedback(messageId), {
-    method: 'PUT',
-    credentials: 'same-origin',
+  return apiFetch(API_ENDPOINTS.messages.feedback(messageId), {
+    method: 'POST',
     signal: opts?.signal,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      is_liked: body.is_liked,
+      ...(body.comment ? {comment: body.comment} : {})
+    })
   });
-
-  const data = await response.json().catch(() => ({} as {message?: string}));
-  if (!response.ok) {
-    const message = typeof data?.message === 'string' ? data.message : 'ارسال بازخورد ناموفق بود.';
-    throw new Error(message);
-  }
-
-  return data;
 }

@@ -4,33 +4,32 @@ import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
 
 type IncomingPayload = {
-  feedback?: string | null;
-  is_liked?: boolean | null;
+  is_liked?: unknown;
+  comment?: unknown;
 };
 
 function badRequest(message: string): Response {
   return new Response(JSON.stringify({message}), {status: 400});
 }
 
-function normalizePayload(raw: unknown): {feedback: string | null} {
+function normalizePayload(raw: unknown): {is_liked: boolean | null; comment?: string} {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw badRequest('بدنه درخواست نامعتبر است.');
   }
 
   const payload = raw as IncomingPayload;
 
-  if (payload.feedback === 'like' || payload.feedback === 'dislike' || payload.feedback === null) {
-    return {feedback: payload.feedback};
+  if (typeof payload.is_liked !== 'boolean' && payload.is_liked !== null) {
+    throw badRequest('مقدار بازخورد نامعتبر است.');
   }
 
-  if (payload.is_liked === true) return {feedback: 'like'};
-  if (payload.is_liked === false) return {feedback: 'dislike'};
-  if (payload.is_liked === null) return {feedback: null};
-
-  throw badRequest('مقدار بازخورد نامعتبر است.');
+  return {
+    is_liked: payload.is_liked,
+    ...(typeof payload.comment === 'string' && payload.comment.trim() ? {comment: payload.comment} : {})
+  };
 }
 
-export async function PUT(request: Request, context: {params: Promise<{id: string}>}) {
+async function handleFeedback(request: Request, context: {params: Promise<{id: string}>}) {
   try {
     const {id} = await context.params;
     const payload = normalizePayload(await request.json());
@@ -39,7 +38,7 @@ export async function PUT(request: Request, context: {params: Promise<{id: strin
       backendFetch(`/messages/${id}/feedback/`, {
         base: 'api',
         accessToken: access,
-        method: 'PUT',
+        method: 'POST',
         body: JSON.stringify(payload)
       })
     );
@@ -52,4 +51,12 @@ export async function PUT(request: Request, context: {params: Promise<{id: strin
     }
     return routeErrorResponse(error);
   }
+}
+
+export async function POST(request: Request, context: {params: Promise<{id: string}>}) {
+  return handleFeedback(request, context);
+}
+
+export async function PUT(request: Request, context: {params: Promise<{id: string}>}) {
+  return handleFeedback(request, context);
 }

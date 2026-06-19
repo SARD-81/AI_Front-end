@@ -14,14 +14,17 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({} as {title?: unknown}));
+    const title = typeof body?.title === 'string' && body.title.trim() ? body.title : 'گفت‌وگو';
+
     const data = await callWithAutoRefresh((access) =>
       backendFetch('/conversations/', {
         base: 'api',
         accessToken: access,
         method: 'POST',
-        body: JSON.stringify({})
+        body: JSON.stringify({title})
       })
     );
     return NextResponse.json(data, {status: 201});

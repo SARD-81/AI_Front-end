@@ -7,7 +7,7 @@ import {Check, Copy} from 'lucide-react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useTranslations} from 'next-intl';
 import {toast} from 'sonner';
-import {FeedbackDialog, type FeedbackReasonCategory} from '@/components/feedback/FeedbackDialog';
+import {FeedbackDialog} from '@/components/feedback/FeedbackDialog';
 import {Button} from '@/components/ui/button';
 import {putMessageFeedback} from '@/lib/services/chat-service';
 import {cn} from '@/lib/utils';
@@ -103,10 +103,7 @@ function MessageBubbleComponent({
       payload
     }: {
       messageId: string;
-      payload:
-        | {is_liked: true}
-        | {is_liked: null}
-        | {is_liked: false; reason_category: FeedbackReasonCategory; text_comment?: string};
+      payload: {is_liked: true | false | null; comment?: string};
     }) => putMessageFeedback(messageId, payload),
     onSuccess: (_data, variables) => {
       queryClient.setQueriesData<ChatDetail>({queryKey: ['chat']}, (previous) => {
@@ -249,8 +246,7 @@ function MessageBubbleComponent({
                         messageId: message.id,
                         payload: {
                           is_liked: false,
-                          reason_category,
-                          ...(text_comment ? {text_comment} : {})
+                          comment: [reason_category, text_comment].filter(Boolean).join(': ')
                         }
                       });
                       toast.success('بازخورد ثبت شد.');
