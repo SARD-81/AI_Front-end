@@ -100,7 +100,7 @@ export function useChatActions() {
 
   return {
     create: useMutation({
-      mutationFn: async (_payload: {title?: string} = {}) => createConversation(),
+      mutationFn: async (payload: {title?: string} = {}) => createConversation(payload.title),
       onSuccess: (chat) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => {
           const next = previous ?? [];

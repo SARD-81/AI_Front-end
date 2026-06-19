@@ -28,7 +28,16 @@
       "guestUser": "Guest user",
       "demoVersion": "Demo version",
       "settings": "Settings",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "emptyHistory": "No conversations yet.",
+      "loadError": "Could not load conversations.",
+      "retry": "Retry",
+      "deleteConfirmTitle": "Delete conversation?",
+      "deleteConfirmDescription": "This will permanently delete \"{title}\".",
+      "cancelDelete": "Cancel",
+      "confirmDelete": "Delete",
+      "deleting": "Deleting...",
+      "deleteError": "Could not delete the conversation."
     },
 
     "dialog": {

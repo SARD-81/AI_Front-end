@@ -16,7 +16,9 @@ import {
   UserCircle2
 } from 'lucide-react';
 import {useTranslations} from 'next-intl';
+import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
+import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +35,7 @@ import {cn} from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 304;
+const ENABLE_CONVERSATION_RENAME = false;
 
 export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () => void}) {
   const t = useTranslations('app');
@@ -59,6 +62,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
   const [editingTitle, setEditingTitle] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const {settings, setSettings} = useAppSettings();
@@ -90,6 +94,38 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     onNavigate?.();
   };
 
+  const handleDeleteConversation = async () => {
+    if (!deleteChatId) return;
+
+    try {
+      await actions.remove.mutateAsync(deleteChatId);
+      setDeleteChatId(null);
+      if (currentChatId !== deleteChatId) return;
+
+      const remainingChats = (queryClient.getQueryData(['chats']) as {id: string}[] | undefined) ?? [];
+      const nextChatId = remainingChats[0]?.id;
+
+      if (nextChatId) {
+        router.replace(`/${locale}/chat/${nextChatId}`);
+        onNavigate?.();
+        return;
+      }
+
+      try {
+        const created = await actions.create.mutateAsync({title: t('newChat')});
+        router.replace(`/${locale}/chat/${created.id}?focus=1`);
+        onNavigate?.();
+        return;
+      } catch {
+        router.replace(`/${locale}/chat`);
+        onNavigate?.();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('sidebar.deleteError');
+      toast.error(message);
+    }
+  };
+
   const chatGroups = useMemo(
     () => [
       {title: t('today'), ids: groups.today.map((item) => item.id)},
@@ -103,6 +139,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     const entries = (chatsQuery.data ?? []).map((chat) => [chat.id, chat] as const);
     return new Map(entries);
   }, [chatsQuery.data]);
+
+  const hasChats = (chatsQuery.data?.length ?? 0) > 0;
+  const deleteTargetTitle = deleteChatId ? chatsById.get(deleteChatId)?.title : undefined;
 
   const user = profileQuery.data?.user;
   const fullName = user?.fullName?.trim();
@@ -195,6 +234,25 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
               </div>
+            ) : chatsQuery.isError ? (
+              <div className={cn('space-y-2 px-2 py-3', collapsed && 'px-1 text-center')}>
+                {!collapsed ? <p className="text-xs text-muted-foreground">{t('sidebar.loadError')}</p> : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size={collapsed ? 'icon' : 'sm'}
+                  onClick={() => chatsQuery.refetch()}
+                  className={cn('h-8', !collapsed && 'w-full justify-start')}
+                  aria-label={t('sidebar.retry')}
+                  title={collapsed ? t('sidebar.retry') : undefined}
+                >
+                  {collapsed ? <MessageCircle className="h-4 w-4" /> : t('sidebar.retry')}
+                </Button>
+              </div>
+            ) : !hasChats ? (
+              <div className={cn('px-2 py-3', collapsed && 'px-1 text-center')}>
+                {!collapsed ? <p className="text-xs text-muted-foreground">{t('sidebar.emptyHistory')}</p> : null}
+              </div>
             ) : (
               chatGroups.map((group) => {
                 if (!group.ids.length) return null;
@@ -271,39 +329,19 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" side="left">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setEditingChatId(chat.id);
-                                    setEditingTitle(chat.title);
-                                  }}
-                                >
-                                  {t('rename')}
-                                </DropdownMenuItem>
+                                {ENABLE_CONVERSATION_RENAME ? (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setEditingChatId(chat.id);
+                                      setEditingTitle(chat.title);
+                                    }}
+                                  >
+                                    {t('rename')}
+                                  </DropdownMenuItem>
+                                ) : null}
                                 <DropdownMenuItem
                                   className="text-destructive"
-                                  onClick={async () => {
-                                    await actions.remove.mutateAsync(chat.id);
-                                    if (currentChatId !== chat.id) return;
-
-                                    const remainingChats = (queryClient.getQueryData(['chats']) as {id: string}[] | undefined) ?? [];
-                                    const nextChatId = remainingChats[0]?.id;
-
-                                    if (nextChatId) {
-                                      router.replace(`/${locale}/chat/${nextChatId}`);
-                                      onNavigate?.();
-                                      return;
-                                    }
-
-                                    try {
-                                      const created = await actions.create.mutateAsync({title: t('newChat')});
-                                      router.replace(`/${locale}/chat/${created.id}?focus=1`);
-                                      onNavigate?.();
-                                      return;
-                                    } catch {
-                                      router.replace(`/${locale}/chat`);
-                                      onNavigate?.();
-                                    }
-                                  }}
+                                  onClick={() => setDeleteChatId(chat.id)}
                                 >
                                   {t('delete')}
                                 </DropdownMenuItem>
@@ -362,6 +400,23 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
       </motion.div>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} setSettings={setSettings} />
+
+      <Dialog open={Boolean(deleteChatId)} onOpenChange={(open) => !actions.remove.isPending && setDeleteChatId(open ? deleteChatId : null)}>
+        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+          <DialogTitle className="text-base font-semibold">{t('sidebar.deleteConfirmTitle')}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {t('sidebar.deleteConfirmDescription', {title: deleteTargetTitle ?? t('chat.defaultTitle')})}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setDeleteChatId(null)} disabled={actions.remove.isPending}>
+              {t('sidebar.cancelDelete')}
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDeleteConversation} disabled={actions.remove.isPending}>
+              {actions.remove.isPending ? t('sidebar.deleting') : t('sidebar.confirmDelete')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </LayoutGroup>
   );
 }
