@@ -1,8 +1,13 @@
 'use client';
 
-import {useMemo} from 'react';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  ChatDetail,
+  ChatMessage,
+  ChatSummary,
+  SendMessagePayload
+} from '@/lib/api/chat';
 import {
   createConversation,
   deleteConversation,
@@ -11,7 +16,7 @@ import {
   renameConversation,
   sendMessage
 } from '@/lib/services/chat-service';
-import {uid} from '@/lib/utils/uid';
+import { uid } from '@/lib/utils/uid';
 
 export function useChats() {
   return useQuery({
@@ -41,13 +46,15 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
 
     const nowDate = new Date();
     chats?.forEach((chat) => {
-      const diffDays = Math.floor((nowDate.getTime() - new Date(chat.updatedAt).getTime()) / 86400000);
+      const diffDays = Math.floor(
+        (nowDate.getTime() - new Date(chat.updatedAt).getTime()) / 86400000
+      );
       if (diffDays < 1) today.push(chat);
       else if (diffDays <= 30) month.push(chat);
       else older.push(chat);
     });
 
-    return {today, month, older};
+    return { today, month, older };
   }, [chats]);
 }
 
@@ -56,41 +63,105 @@ function upsertChatSummary(chats: ChatSummary[] | undefined, chatId: string) {
   const next = chats ?? [];
   const existing = next.find((item) => item.id === chatId);
   if (!existing) {
-    return [{id: chatId, title: 'گفت‌وگو', updatedAt}, ...next];
+    return [{ id: chatId, title: 'گفت‌وگو', updatedAt }, ...next];
   }
 
   const rest = next.filter((item) => item.id !== chatId);
-  return [{...existing, updatedAt}, ...rest];
+  return [{ ...existing, updatedAt }, ...rest];
 }
 
 export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({chatId, payload}: {chatId: string; payload: SendMessagePayload; onToken?: (chunk: string) => void}) => {
+    mutationFn: async ({
+      chatId,
+      payload,
+      clientMessageId
+    }: {
+      chatId: string;
+      payload: SendMessagePayload;
+      clientMessageId?: string;
+      onToken?: (chunk: string) => void;
+    }) => {
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
-        id: uid('user'),
+        id: clientMessageId ?? uid('user'),
         role: 'user',
         content: payload.content,
-        createdAt: nowIso
+        createdAt: nowIso,
+        sendStatus: 'pending'
       };
 
       queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
-        const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
-        return {...base, messages: [...base.messages, userMessage]};
+        const base = previous ?? { id: chatId, title: 'گفت‌وگو', messages: [] };
+        const existing = base.messages.find(
+          (message) => message.id === userMessage.id
+        );
+        if (existing) {
+          return {
+            ...base,
+            messages: base.messages.map((message) =>
+              message.id === userMessage.id
+                ? {
+                    ...message,
+                    content: payload.content,
+                    sendStatus: 'pending'
+                  }
+                : message
+            )
+          };
+        }
+        return { ...base, messages: [...base.messages, userMessage] };
       });
-      queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
+      queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
+        upsertChatSummary(previous, chatId)
+      );
 
-      const assistantMessage = await sendMessage(chatId, payload.content);
+      try {
+        const assistantMessage = await sendMessage(chatId, payload.content);
 
-      queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
-        const base = previous ?? {id: chatId, title: 'گفت‌وگو', messages: []};
-        return {...base, messages: [...base.messages, assistantMessage]};
-      });
-      queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => upsertChatSummary(previous, chatId));
+        queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+          const base = previous ?? {
+            id: chatId,
+            title: 'گفت‌وگو',
+            messages: []
+          };
+          return {
+            ...base,
+            messages: [
+              ...base.messages.map((message) =>
+                message.id === userMessage.id
+                  ? { ...message, sendStatus: 'sent' as const }
+                  : message
+              ),
+              assistantMessage
+            ]
+          };
+        });
+        queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
+          upsertChatSummary(previous, chatId)
+        );
 
-      return {assistantCommitted: true};
+        return { assistantCommitted: true };
+      } catch (error) {
+        queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+          const base = previous ?? {
+            id: chatId,
+            title: 'گفت‌وگو',
+            messages: []
+          };
+          return {
+            ...base,
+            messages: base.messages.map((message) =>
+              message.id === userMessage.id
+                ? { ...message, sendStatus: 'failed' as const }
+                : message
+            )
+          };
+        });
+        throw error;
+      }
     }
   });
 }
@@ -100,7 +171,8 @@ export function useChatActions() {
 
   return {
     create: useMutation({
-      mutationFn: async (payload: {title?: string} = {}) => createConversation(payload.title),
+      mutationFn: async (payload: { title?: string } = {}) =>
+        createConversation(payload.title),
       onSuccess: (chat) => {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) => {
           const next = previous ?? [];
@@ -115,8 +187,9 @@ export function useChatActions() {
       }
     }),
     rename: useMutation({
-      mutationFn: ({chatId, title}: {chatId: string; title: string}) => renameConversation(chatId, title),
-      onSuccess: () => queryClient.invalidateQueries({queryKey: ['chats']})
+      mutationFn: ({ chatId, title }: { chatId: string; title: string }) =>
+        renameConversation(chatId, title),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chats'] })
     }),
     remove: useMutation({
       mutationFn: (chatId: string) => deleteConversation(chatId),
@@ -124,7 +197,7 @@ export function useChatActions() {
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
           (previous ?? []).filter((item) => item.id !== chatId)
         );
-        queryClient.removeQueries({queryKey: ['chat', chatId]});
+        queryClient.removeQueries({ queryKey: ['chat', chatId] });
       }
     })
   };

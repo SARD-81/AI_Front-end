@@ -5,6 +5,7 @@ export type ChatSummary = {
 };
 
 export type MessageRole = 'user' | 'assistant';
+export type MessageSendStatus = 'pending' | 'failed' | 'sent';
 
 export type ChatMessage = {
   id: string;
@@ -12,6 +13,7 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
   isStreaming?: boolean;
+  sendStatus?: MessageSendStatus;
   is_liked?: boolean | null;
 };
 

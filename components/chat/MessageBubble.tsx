@@ -1,21 +1,21 @@
 'use client';
 
-import {memo, useMemo, useState} from 'react';
+import { memo, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {Check, Copy} from 'lucide-react';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {useTranslations} from 'next-intl';
-import {toast} from 'sonner';
-import {FeedbackDialog} from '@/components/feedback/FeedbackDialog';
-import {Button} from '@/components/ui/button';
-import {putMessageFeedback} from '@/lib/services/chat-service';
-import {cn} from '@/lib/utils';
-import {copyToClipboard} from '@/lib/utils/clipboard';
-import type {ChatDetail, ChatMessage} from '@/lib/api/chat';
-import {MessageActions} from './MessageActions';
+import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
+import { Button } from '@/components/ui/button';
+import { putMessageFeedback } from '@/lib/services/chat-service';
+import { cn } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/utils/clipboard';
+import type { ChatDetail, ChatMessage } from '@/lib/api/chat';
+import { MessageActions } from './MessageActions';
 
-function CodeBlock({value}: {value: string}) {
+function CodeBlock({ value }: { value: string }) {
   const t = useTranslations('app');
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -30,12 +30,28 @@ function CodeBlock({value}: {value: string}) {
   return (
     <div className="my-3 overflow-hidden rounded-md border border-border bg-muted">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">{t('message.codeLabel')}</span>
-        <Button variant="ghost" size="sm" onClick={handleCopy} aria-label={t('messageActions.copy')} title={t('messageActions.copy')} className="h-7 px-2">
-          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        <span className="text-xs text-muted-foreground">
+          {t('message.codeLabel')}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          aria-label={t('messageActions.copy')}
+          title={t('messageActions.copy')}
+          className="h-7 px-2"
+        >
+          {copied ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
         </Button>
       </div>
-      <pre dir="ltr" className="overflow-x-auto bg-muted p-3 text-sm leading-6 text-foreground">
+      <pre
+        dir="ltr"
+        className="overflow-x-auto bg-muted p-3 text-sm leading-6 text-foreground"
+      >
         <code dir="ltr">{value}</code>
       </pre>
     </div>
@@ -51,11 +67,11 @@ function ThinkingIndicator() {
         <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none" />
         <span
           className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
-          style={{animationDelay: '120ms'}}
+          style={{ animationDelay: '120ms' }}
         />
         <span
           className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
-          style={{animationDelay: '240ms'}}
+          style={{ animationDelay: '240ms' }}
         />
       </span>
     </div>
@@ -67,6 +83,8 @@ type MessageBubbleProps = {
   onCopyMessage: (content: string) => void;
   onEditMessage?: (message: ChatMessage) => void;
   onRegenerate?: () => void;
+  onRetryMessage?: (message: ChatMessage) => void;
+  onRestoreMessage?: (message: ChatMessage) => void;
   isLastAssistant?: boolean;
   anchorId?: string;
 };
@@ -83,6 +101,8 @@ function MessageBubbleComponent({
   onCopyMessage,
   onEditMessage,
   onRegenerate,
+  onRetryMessage,
+  onRestoreMessage,
   isLastAssistant,
   anchorId
 }: MessageBubbleProps) {
@@ -92,6 +112,7 @@ function MessageBubbleComponent({
   const isUser = message.role === 'user';
   const isTyping = message.id === 'typing';
   const isStreaming = message.id === 'streaming';
+  const sendStatus = message.sendStatus ?? (isUser ? 'sent' : undefined);
   const isAssistantEnglish = useMemo(
     () => message.role === 'assistant' && isMostlyEnglish(message.content),
     [message.role, message.content]
@@ -103,23 +124,26 @@ function MessageBubbleComponent({
       payload
     }: {
       messageId: string;
-      payload: {is_liked: true | false | null; comment?: string};
+      payload: { is_liked: true | false | null; comment?: string };
     }) => putMessageFeedback(messageId, payload),
     onSuccess: (_data, variables) => {
-      queryClient.setQueriesData<ChatDetail>({queryKey: ['chat']}, (previous) => {
-        if (!previous) return previous;
-        return {
-          ...previous,
-          messages: previous.messages.map((item) =>
-            item.id === variables.messageId
-              ? {
-                  ...item,
-                  is_liked: variables.payload.is_liked
-                }
-              : item
-          )
-        };
-      });
+      queryClient.setQueriesData<ChatDetail>(
+        { queryKey: ['chat'] },
+        (previous) => {
+          if (!previous) return previous;
+          return {
+            ...previous,
+            messages: previous.messages.map((item) =>
+              item.id === variables.messageId
+                ? {
+                    ...item,
+                    is_liked: variables.payload.is_liked
+                  }
+                : item
+            )
+          };
+        }
+      );
     }
   });
 
@@ -138,19 +162,24 @@ function MessageBubbleComponent({
   };
 
   const handleLike = async () => {
-    if (!message.id || isTyping || isStreaming || feedbackMutation.isPending) return;
+    if (!message.id || isTyping || isStreaming || feedbackMutation.isPending)
+      return;
     try {
       await feedbackMutation.mutateAsync({
         messageId: message.id,
-        payload: feedbackState === true ? {is_liked: null} : {is_liked: true}
+        payload:
+          feedbackState === true ? { is_liked: null } : { is_liked: true }
       });
       toast.success('بازخورد ثبت شد.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.');
+      toast.error(
+        error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.'
+      );
     }
   };
 
-  const feedbackDisabled = !message.id || isTyping || isStreaming || feedbackMutation.isPending;
+  const feedbackDisabled =
+    !message.id || isTyping || isStreaming || feedbackMutation.isPending;
 
   return (
     <article className="w-full" aria-live={isTyping ? 'polite' : 'off'}>
@@ -166,46 +195,110 @@ function MessageBubbleComponent({
                 'relative text-[15px] leading-7 transition-all duration-200',
                 isUser
                   ? 'ml-auto w-fit max-w-[min(32rem,85%)]'
-                  : 'mr-auto w-full max-w-[min(40rem,92%)] bg-transparent border-0 shadow-none rounded-none px-0 py-0 text-foreground'
+                  : 'mr-auto w-full max-w-[min(40rem,92%)] rounded-none border-0 bg-transparent px-0 py-0 text-foreground shadow-none'
               )}
             >
               {isUser ? (
                 <div className="group relative w-fit max-w-full">
-                  {anchorId ? <span id={anchorId} data-anchor-id={anchorId} className="pointer-events-none absolute -top-2 h-0 w-0" aria-hidden /> : null}
-                  <p className="m-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-secondary px-4 py-3 text-foreground shadow-card">
+                  {anchorId ? (
+                    <span
+                      id={anchorId}
+                      data-anchor-id={anchorId}
+                      className="pointer-events-none absolute -top-2 h-0 w-0"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <p
+                    className={cn(
+                      'm-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-secondary px-4 py-3 text-foreground shadow-card',
+                      sendStatus === 'failed'
+                        ? 'border-destructive/60 bg-destructive/10'
+                        : undefined,
+                      sendStatus === 'pending' ? 'opacity-80' : undefined
+                    )}
+                  >
                     {message.content}
                   </p>
-                  <div className="absolute right-0 top-full h-2 w-full" aria-hidden />
+                  {sendStatus === 'pending' ? (
+                    <div className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{t('message.pending')}</span>
+                    </div>
+                  ) : null}
+                  {sendStatus === 'failed' ? (
+                    <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-xs text-destructive">
+                      <span className="inline-flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {t('message.failed')}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => onRetryMessage?.(message)}
+                      >
+                        {t('chat.retryFailed')}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => onRestoreMessage?.(message)}
+                      >
+                        {t('chat.restoreToInput')}
+                      </Button>
+                    </div>
+                  ) : null}
+                  <div
+                    className="absolute right-0 top-full h-2 w-full"
+                    aria-hidden
+                  />
                   <MessageActions
                     role={message.role}
                     onCopy={() => onCopyMessage(message.content)}
                     onCopyLink={handleCopyLink}
                     onEdit={() => onEditMessage?.(message)}
-                    className="absolute right-0 top-full z-10 mt-2 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
+                    className="pointer-events-none absolute right-0 top-full z-10 mt-2 translate-y-1 opacity-0 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100"
                   />
                 </div>
               ) : (
-                <div dir={isAssistantEnglish ? 'ltr' : undefined} className={cn('prose-chat', isAssistantEnglish ? 'text-left ltr:text-left' : undefined)}>
+                <div
+                  dir={isAssistantEnglish ? 'ltr' : undefined}
+                  className={cn(
+                    'prose-chat',
+                    isAssistantEnglish ? 'text-left ltr:text-left' : undefined
+                  )}
+                >
                   {isStreaming ? (
-                    <p className="my-2 whitespace-pre-wrap break-words leading-8">{message.content}</p>
+                    <p className="my-2 whitespace-pre-wrap break-words leading-8">
+                      {message.content}
+                    </p>
                   ) : (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        p: ({children}) => <p className="my-2 leading-8">{children}</p>,
-                        code: ({className, children, ...props}) => {
+                        p: ({ children }) => (
+                          <p className="my-2 leading-8">{children}</p>
+                        ),
+                        code: ({ className, children, ...props }) => {
                           const text = String(children).replace(/\n$/, '');
                           if (className?.includes('language-')) {
                             return <CodeBlock value={text} />;
                           }
                           return (
-                            <code dir="ltr" className="rounded border border-border/80 bg-muted px-1.5 py-0.5 text-sm" {...props}>
+                            <code
+                              dir="ltr"
+                              className="rounded border border-border/80 bg-muted px-1.5 py-0.5 text-sm"
+                              {...props}
+                            >
                               {text}
                             </code>
                           );
                         },
-                        pre: ({children}) => <>{children}</>,
-                        table: ({children}) => (
+                        pre: ({ children }) => <>{children}</>,
+                        table: ({ children }) => (
                           <div className="my-3 overflow-x-auto">
                             <table>{children}</table>
                           </div>
@@ -231,27 +324,35 @@ function MessageBubbleComponent({
                   feedbackDisabled={feedbackDisabled}
                   className={cn(
                     'mr-auto justify-start transition-all duration-150',
-                    isLastAssistant ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                    isLastAssistant
+                      ? 'pointer-events-auto opacity-100'
+                      : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
                   )}
                 />
                 <FeedbackDialog
                   open={dialogOpen}
                   onOpenChange={setDialogOpen}
-                  initialValue={{isLiked: feedbackState}}
+                  initialValue={{ isLiked: feedbackState }}
                   isSubmitting={feedbackMutation.isPending}
-                  onSubmit={async ({reason_category, text_comment}) => {
+                  onSubmit={async ({ reason_category, text_comment }) => {
                     if (!message.id) return;
                     try {
                       await feedbackMutation.mutateAsync({
                         messageId: message.id,
                         payload: {
                           is_liked: false,
-                          comment: [reason_category, text_comment].filter(Boolean).join(': ')
+                          comment: [reason_category, text_comment]
+                            .filter(Boolean)
+                            .join(': ')
                         }
                       });
                       toast.success('بازخورد ثبت شد.');
                     } catch (error) {
-                      toast.error(error instanceof Error ? error.message : 'ارسال بازخورد ناموفق بود.');
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : 'ارسال بازخورد ناموفق بود.'
+                      );
                       throw error;
                     }
                   }}
@@ -260,12 +361,16 @@ function MessageBubbleComponent({
                     try {
                       await feedbackMutation.mutateAsync({
                         messageId: message.id,
-                        payload: {is_liked: null}
+                        payload: { is_liked: null }
                       });
                       setDialogOpen(false);
                       toast.success('بازخورد حذف شد.');
                     } catch (error) {
-                      toast.error(error instanceof Error ? error.message : 'حذف بازخورد ناموفق بود.');
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : 'حذف بازخورد ناموفق بود.'
+                      );
                     }
                   }}
                 />
@@ -285,6 +390,7 @@ export const MessageBubble = memo(
     prevProps.message.role === nextProps.message.role &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.is_liked === nextProps.message.is_liked &&
+    prevProps.message.sendStatus === nextProps.message.sendStatus &&
     prevProps.isLastAssistant === nextProps.isLastAssistant &&
     prevProps.anchorId === nextProps.anchorId
 );
