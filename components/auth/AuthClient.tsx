@@ -94,11 +94,7 @@ export function AuthClient({ locale }: { locale: string }) {
     controllersRef.verifyOtp
   ]);
 
-  const updateMode = (mode: AuthMode) => {
-    if (busy || postSignupAuthLoading) {
-      return;
-    }
-
+  const applyMode = (mode: AuthMode) => {
     setAuthMode(mode);
     if (mode === 'login') {
       setSignupResetToken((prev) => prev + 1);
@@ -107,6 +103,14 @@ export function AuthClient({ locale }: { locale: string }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('mode', mode);
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const updateMode = (mode: AuthMode) => {
+    if (busy || postSignupAuthLoading) {
+      return;
+    }
+
+    applyMode(mode);
   };
 
   const getPostLoginDestination = (result: LoginResultDTO) => {
@@ -123,7 +127,7 @@ export function AuthClient({ locale }: { locale: string }) {
 
   const handlePasswordResetCompleted = (email: string) => {
     setLoginInitialIdentifier(email);
-    updateMode('login');
+    applyMode('login');
   };
 
   const handleRegistered = async ({
