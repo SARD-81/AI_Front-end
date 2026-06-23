@@ -10,6 +10,7 @@ import {Button} from '@/components/ui/button';
 import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
 import {Form, FormControl, FormField, FormItem, FormMessage} from '@/components/ui/form';
 import {Label} from '@/components/ui/label';
+import type {FeedbackReasonCategory} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
 
 const FEEDBACK_CHIPS = [
@@ -23,8 +24,6 @@ const FEEDBACK_CHIPS = [
 ] as const;
 
 type FeedbackChipKey = (typeof FEEDBACK_CHIPS)[number]['key'];
-export type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';
-
 const chipMap = Object.fromEntries(FEEDBACK_CHIPS.map((chip) => [chip.key, chip])) as Record<
   FeedbackChipKey,
   (typeof FEEDBACK_CHIPS)[number]
@@ -33,7 +32,7 @@ const chipMap = Object.fromEntries(FEEDBACK_CHIPS.map((chip) => [chip.key, chip]
 const formSchema = z.object({
   selectedChipKey: z.enum(FEEDBACK_CHIPS.map((chip) => chip.key) as [FeedbackChipKey, ...FeedbackChipKey[]]),
   mappedReasonCategory: z.enum(['inaccurate', 'irrelevant', 'tone', 'incomplete', 'other']),
-  text_comment: z.string().max(500).optional()
+  text_comment: z.string().max(1000).optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,16 +42,9 @@ type FeedbackDialogProps = {
   onOpenChange: (open: boolean) => void;
   initialValue: {isLiked: boolean | null};
   isSubmitting?: boolean;
-  onSubmit: (payload: {is_liked: false; reason_category: FeedbackReasonCategory; text_comment?: string}) => Promise<void>;
+  onSubmit: (payload: {is_liked: false; reason_category: FeedbackReasonCategory; text_comment: string}) => Promise<void>;
   onClear: () => Promise<void>;
 };
-
-function buildComment(reasonPrefix: string, userComment?: string) {
-  const prefix = reasonPrefix;
-  const trimmed = userComment?.trim();
-  const full = trimmed ? `${prefix}\n\n${trimmed}` : prefix;
-  return full.length <= 500 ? full : `${full.slice(0, 499)}…`;
-}
 
 export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, onSubmit, onClear}: FeedbackDialogProps) {
   const locale = useLocale();
@@ -101,11 +93,10 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
           <form
             className="space-y-4"
             onSubmit={form.handleSubmit(async (values) => {
-              const textComment = buildComment(t('commentPrefix', {reason: chipLabels[values.selectedChipKey]}), values.text_comment);
               await onSubmit({
                 is_liked: false,
                 reason_category: values.mappedReasonCategory,
-                text_comment: textComment
+                text_comment: values.text_comment?.trim() ?? ''
               });
               onOpenChange(false);
             })}
@@ -157,7 +148,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                     <textarea
                       id="feedback-comment"
                       className="flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                      maxLength={500}
+                      maxLength={1000}
                       placeholder={t('placeholder')}
                       {...field}
                     />

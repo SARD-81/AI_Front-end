@@ -2,17 +2,21 @@ import {NextResponse} from 'next/server';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
+import type {FeedbackReasonCategory, MessageFeedbackPayload} from '@/lib/api/chat';
+
+const allowedReasonCategories = new Set<FeedbackReasonCategory>(['inaccurate', 'irrelevant', 'tone', 'incomplete', 'other']);
 
 type IncomingPayload = {
   is_liked?: unknown;
-  comment?: unknown;
+  reason_category?: unknown;
+  text_comment?: unknown;
 };
 
 function badRequest(message: string): Response {
   return new Response(JSON.stringify({message}), {status: 400});
 }
 
-function normalizePayload(raw: unknown): {is_liked: boolean | null; comment?: string} {
+function normalizePayload(raw: unknown): MessageFeedbackPayload {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw badRequest('بدنه درخواست نامعتبر است.');
   }
@@ -23,13 +27,30 @@ function normalizePayload(raw: unknown): {is_liked: boolean | null; comment?: st
     throw badRequest('مقدار بازخورد نامعتبر است.');
   }
 
+  if (typeof payload.text_comment !== 'string') {
+    throw badRequest('متن بازخورد نامعتبر است.');
+  }
+
+  if (payload.text_comment.length > 1000) {
+    throw badRequest('متن بازخورد نباید بیشتر از ۱۰۰۰ کاراکتر باشد.');
+  }
+
+  if (payload.reason_category !== null && !allowedReasonCategories.has(payload.reason_category as FeedbackReasonCategory)) {
+    throw badRequest('دلیل بازخورد نامعتبر است.');
+  }
+
+  if (payload.is_liked === false && payload.reason_category === null) {
+    throw badRequest('انتخاب دلیل برای بازخورد منفی الزامی است.');
+  }
+
   return {
     is_liked: payload.is_liked,
-    ...(typeof payload.comment === 'string' && payload.comment.trim() ? {comment: payload.comment} : {})
+    reason_category: payload.is_liked === true || payload.is_liked === null ? null : (payload.reason_category as FeedbackReasonCategory),
+    text_comment: payload.is_liked === null ? '' : payload.text_comment
   };
 }
 
-async function handleFeedback(request: Request, context: {params: Promise<{id: string}>}) {
+export async function PUT(request: Request, context: {params: Promise<{id: string}>}) {
   try {
     const {id} = await context.params;
     const payload = normalizePayload(await request.json());
@@ -38,7 +59,7 @@ async function handleFeedback(request: Request, context: {params: Promise<{id: s
       backendFetch(`/messages/${id}/feedback/`, {
         base: 'api',
         accessToken: access,
-        method: 'POST',
+        method: 'PUT',
         body: JSON.stringify(payload)
       })
     );
@@ -51,12 +72,4 @@ async function handleFeedback(request: Request, context: {params: Promise<{id: s
     }
     return routeErrorResponse(error);
   }
-}
-
-export async function POST(request: Request, context: {params: Promise<{id: string}>}) {
-  return handleFeedback(request, context);
-}
-
-export async function PUT(request: Request, context: {params: Promise<{id: string}>}) {
-  return handleFeedback(request, context);
 }

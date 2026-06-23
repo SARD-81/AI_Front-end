@@ -30,3 +30,11 @@ export type SendMessagePayload = {
   thinkLevel: ThinkingLevel;
   clientMessageId?: string;
 };
+
+export type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';
+
+export type MessageFeedbackPayload = {
+  is_liked: boolean | null;
+  reason_category: FeedbackReasonCategory | null;
+  text_comment: string;
+};
