@@ -25,7 +25,7 @@ const loginSchema = z
         student_id: z.string().optional(),
         fullName: z.string().optional(),
         full_name: z.string().optional(),
-        role: z.enum(['student', 'professor', 'staff']).optional(),
+        role: z.enum(['student', 'professor', 'staff', 'admin']).optional(),
         isProfileCompleted: z.boolean().optional(),
         is_profile_completed: z.boolean().optional()
       })
@@ -38,7 +38,11 @@ const loginSchema = z
     const studentId = value.user.studentId ?? value.user.student_id;
 
     if (!studentId) {
-      throw new ServiceError('شناسه دانشجویی از سرور دریافت نشد.', 500, 'LOGIN_USER_MISSING');
+      throw new ServiceError(
+        'شناسه دانشجویی از سرور دریافت نشد.',
+        500,
+        'LOGIN_USER_MISSING'
+      );
     }
 
     const isProfileCompleted =
@@ -58,12 +62,65 @@ const loginSchema = z
     };
   });
 
+const profileSchema = z
+  .object({
+    user: z
+      .object({
+        email: z.string().optional(),
+        firstName: z.string().optional(),
+        first_name: z.string().optional(),
+        lastName: z.string().optional(),
+        last_name: z.string().optional(),
+        studentId: z.string().optional(),
+        student_id: z.string().optional(),
+        personnelId: z.string().optional(),
+        personnel_id: z.string().optional(),
+        faculty: z.string().optional(),
+        major: z.string().optional(),
+        degreeLevel: z.string().optional(),
+        degree_level: z.string().optional(),
+        department: z.string().optional(),
+        academicRank: z.string().optional(),
+        academic_rank: z.string().optional(),
+        jobTitle: z.string().optional(),
+        job_title: z.string().optional(),
+        fullName: z.string().optional(),
+        full_name: z.string().optional(),
+        role: z.enum(['student', 'professor', 'staff', 'admin']).optional(),
+        isProfileCompleted: z.boolean().optional(),
+        is_profile_completed: z.boolean().optional()
+      })
+      .passthrough()
+  })
+  .passthrough()
+  .transform((value) => ({
+    user: {
+      email: value.user.email,
+      firstName: value.user.firstName ?? value.user.first_name ?? '',
+      lastName: value.user.lastName ?? value.user.last_name ?? '',
+      studentId: value.user.studentId ?? value.user.student_id,
+      personnelId: value.user.personnelId ?? value.user.personnel_id,
+      faculty: value.user.faculty,
+      major: value.user.major,
+      degreeLevel: value.user.degreeLevel ?? value.user.degree_level,
+      department: value.user.department,
+      academicRank: value.user.academicRank ?? value.user.academic_rank,
+      jobTitle: value.user.jobTitle ?? value.user.job_title,
+      fullName: value.user.fullName ?? value.user.full_name,
+      role: value.user.role,
+      isProfileCompleted:
+        value.user.isProfileCompleted ?? value.user.is_profile_completed
+    }
+  }));
+
 const messageSchema = z
   .object({
     message: z.string().optional()
   })
   .passthrough()
-  .transform((value) => ({message: value.message ?? 'درخواست با موفقیت انجام شد.'}));
+  .transform((value) => ({
+    message: value.message ?? 'درخواست با موفقیت انجام شد.'
+  }));
 
 const otpTokenSchema = z
   .object({
@@ -98,7 +155,6 @@ export function isAbortError(error: unknown): boolean {
   );
 }
 
-
 function isStudentEmail(email: string): boolean {
   return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
 }
@@ -129,11 +185,19 @@ function toRegisterCompletePayload(input: RegisterInputDTO) {
 
   if (isStudentEmail(input.email)) {
     if ('role' in input && input.role && input.role !== 'student') {
-      throw new ServiceError('دامنه ایمیل با نقش انتخاب‌شده سازگار نیست.', 400, 'REGISTER_ROLE_DOMAIN_MISMATCH');
+      throw new ServiceError(
+        'دامنه ایمیل با نقش انتخاب‌شده سازگار نیست.',
+        400,
+        'REGISTER_ROLE_DOMAIN_MISMATCH'
+      );
     }
 
     if (!('studentId' in input)) {
-      throw new ServiceError('اطلاعات دانشجویی کامل نیست.', 400, 'REGISTER_STUDENT_FIELDS_MISSING');
+      throw new ServiceError(
+        'اطلاعات دانشجویی کامل نیست.',
+        400,
+        'REGISTER_STUDENT_FIELDS_MISSING'
+      );
     }
 
     return {
@@ -147,7 +211,11 @@ function toRegisterCompletePayload(input: RegisterInputDTO) {
 
   if (isEmployeeEmail(input.email)) {
     if (input.role !== 'professor' && input.role !== 'staff') {
-      throw new ServiceError('برای ایمیل sbu.ac.ir نقش استاد یا کارمند را انتخاب کنید.', 400, 'REGISTER_ROLE_REQUIRED');
+      throw new ServiceError(
+        'برای ایمیل sbu.ac.ir نقش استاد یا کارمند را انتخاب کنید.',
+        400,
+        'REGISTER_ROLE_REQUIRED'
+      );
     }
 
     const payload = {
@@ -162,7 +230,11 @@ function toRegisterCompletePayload(input: RegisterInputDTO) {
       : addOptionalString(payload, 'jobTitle', input.jobTitle);
   }
 
-  throw new ServiceError('ایمیل باید در دامنه مجاز دانشگاهی باشد.', 400, 'REGISTER_EMAIL_DOMAIN_INVALID');
+  throw new ServiceError(
+    'ایمیل باید در دامنه مجاز دانشگاهی باشد.',
+    400,
+    'REGISTER_EMAIL_DOMAIN_INVALID'
+  );
 }
 
 function toServiceError(error: unknown): ServiceError {
@@ -194,12 +266,19 @@ export async function loginUser(
   }
 }
 
-export async function getProfile(opts?: { signal?: AbortSignal }): Promise<ProfileResponseDTO> {
+export async function getProfile(opts?: {
+  signal?: AbortSignal;
+}): Promise<ProfileResponseDTO> {
   try {
-    return await apiFetch<ProfileResponseDTO>(API_ENDPOINTS.auth.profile, {
-      method: 'GET',
-      signal: opts?.signal
-    });
+    const result = await apiFetch<ProfileResponseDTO>(
+      API_ENDPOINTS.auth.profile,
+      {
+        method: 'GET',
+        signal: opts?.signal
+      }
+    );
+
+    return profileSchema.parse(result);
   } catch (error) {
     throw toServiceError(error);
   }
@@ -210,24 +289,27 @@ export async function updateProfile(
   opts?: { signal?: AbortSignal }
 ): Promise<ProfileResponseDTO> {
   try {
-    return await apiFetch<ProfileResponseDTO>(API_ENDPOINTS.auth.profile, {
-      method: 'PATCH',
-      signal: opts?.signal,
-      body: JSON.stringify({
-        firstName: input.firstName,
-        lastName: input.lastName,
-        studentId: input.studentId,
-        faculty: input.faculty,
-        major: input.major,
-        degreeLevel: input.degreeLevel
-      })
-    });
+    const result = await apiFetch<ProfileResponseDTO>(
+      API_ENDPOINTS.auth.profile,
+      {
+        method: 'PATCH',
+        signal: opts?.signal,
+        body: JSON.stringify({
+          first_name: input.firstName,
+          last_name: input.lastName
+        })
+      }
+    );
+
+    return profileSchema.parse(result);
   } catch (error) {
     throw toServiceError(error);
   }
 }
 
-export async function getMe(opts?: { signal?: AbortSignal }): Promise<ProfileResponseDTO> {
+export async function getMe(opts?: {
+  signal?: AbortSignal;
+}): Promise<ProfileResponseDTO> {
   return getProfile(opts);
 }
 

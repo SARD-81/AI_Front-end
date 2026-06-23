@@ -190,11 +190,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",
@@ -299,8 +295,8 @@
     }
   },
   "profile": {
-    "title": "Complete your profile",
-    "description": "Complete the required details below so the AI assistant can personalize and authorize your chat access.",
+    "title": "Profile details",
+    "description": "Review your role-specific profile details. Only your first and last name can be updated on this page.",
     "loading": "Loading profile...",
     "loadError": "Could not load your profile. Please try again.",
     "saveError": "Could not save your profile. Please try again.",
@@ -314,7 +310,13 @@
       "faculty": "Faculty",
       "major": "Major",
       "degreeLevel": "Degree level",
-      "studentId": "Student ID"
+      "studentId": "Student ID",
+      "email": "Email",
+      "personnelId": "Personnel ID",
+      "department": "Department",
+      "academicRank": "Academic rank",
+      "jobTitle": "Job title",
+      "role": "Role"
     },
     "bannerTitle": "Profile completion is required",
     "bannerDescription": "You are in the right place. Complete your profile once to continue using the AI assistant.",
@@ -326,8 +328,15 @@
     "roles": {
       "student": "Student",
       "professor": "Professor",
-      "staff": "Staff"
-    }
+      "staff": "Staff",
+      "admin": "Admin"
+    },
+    "editableNotice": "Only first and last name can be edited here.",
+    "readOnlyNotice": "Academic/employment details are read-only.",
+    "editableSectionTitle": "Editable information",
+    "readOnlySectionTitle": "Read-only profile details",
+    "incompleteHelp": "Most academic/employment fields are fixed from registration. If anything is missing or incorrect, contact support or your administrator.",
+    "notProvided": "Not provided"
   },
   "settings": {
     "title": "Settings",
