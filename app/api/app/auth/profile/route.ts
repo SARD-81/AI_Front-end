@@ -12,10 +12,6 @@ type ProfileBody = {
   lastName?: string;
   student_id?: string;
   studentId?: string;
-  faculty?: string;
-  major?: string;
-  degree_level?: string;
-  degreeLevel?: string;
 };
 
 function normalizeProfile(profile: BackendProfile) {
@@ -45,6 +41,19 @@ function normalizeProfile(profile: BackendProfile) {
           ? (profile.degree_level ?? profile.degreeLevel)
           : '',
       role: typeof profile.role === 'string' ? profile.role : undefined,
+      personnelId:
+        typeof (profile.personnel_id ?? profile.personnelId) === 'string'
+          ? (profile.personnel_id ?? profile.personnelId)
+          : undefined,
+      department: typeof profile.department === 'string' ? profile.department : undefined,
+      academicRank:
+        typeof (profile.academic_rank ?? profile.academicRank) === 'string'
+          ? (profile.academic_rank ?? profile.academicRank)
+          : undefined,
+      jobTitle:
+        typeof (profile.job_title ?? profile.jobTitle) === 'string'
+          ? (profile.job_title ?? profile.jobTitle)
+          : undefined,
       isProfileCompleted:
         typeof profile.is_profile_completed === 'boolean'
           ? profile.is_profile_completed
@@ -59,11 +68,7 @@ function editableProfilePayload(body: ProfileBody) {
   const payload: Record<string, string> = {};
   const fields: Array<[keyof ProfileBody, keyof ProfileBody, string]> = [
     ['first_name', 'firstName', 'first_name'],
-    ['last_name', 'lastName', 'last_name'],
-    ['student_id', 'studentId', 'student_id'],
-    ['faculty', 'faculty', 'faculty'],
-    ['major', 'major', 'major'],
-    ['degree_level', 'degreeLevel', 'degree_level']
+    ['last_name', 'lastName', 'last_name']
   ];
 
   for (const [snakeKey, camelKey, backendKey] of fields) {
