@@ -297,6 +297,12 @@
       "backToLogin": "Back to sign in",
       "hidePassword": "Hide password",
       "showPassword": "Show password"
+    },
+    "languageSwitch": {
+      "language": "Language",
+      "fa": "FA",
+      "en": "EN",
+      "ariaLabel": "Switch language to {locale}"
     }
   },
   "profile": {
@@ -381,7 +387,6 @@
         "green": "Green"
       },
       "language": {
-        "auto": "Auto-detect",
         "fa": "فارسی",
         "en": "English"
       }

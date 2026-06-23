@@ -297,6 +297,12 @@
       "backToLogin": "بازگشت به ورود",
       "hidePassword": "پنهان‌سازی رمز عبور",
       "showPassword": "نمایش رمز عبور"
+    },
+    "languageSwitch": {
+      "language": "زبان",
+      "fa": "FA",
+      "en": "EN",
+      "ariaLabel": "تغییر زبان به {locale}"
     }
   },
   "profile": {
@@ -381,7 +387,6 @@
         "green": "سبز"
       },
       "language": {
-        "auto": "تشخیص خودکار",
         "fa": "فارسی",
         "en": "English"
       }
