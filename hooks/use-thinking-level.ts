@@ -5,7 +5,7 @@ import type {ThinkingLevel} from '@/lib/api/chat';
 
 const THINKING_LEVEL_STORAGE_KEY = 'thinking_level';
 
-export function useThinkingLevel(defaultValue: ThinkingLevel = 'standard') {
+export function useThinkingLevel(defaultValue: ThinkingLevel = 'low') {
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(defaultValue);
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export function useThinkingLevel(defaultValue: ThinkingLevel = 'standard') {
 
     try {
       const storedLevel = window.localStorage.getItem(THINKING_LEVEL_STORAGE_KEY);
-      if (storedLevel === 'standard' || storedLevel === 'low' || storedLevel === 'medium' || storedLevel === 'high') {
+      if (storedLevel === 'low' || storedLevel === 'medium' || storedLevel === 'high') {
         setThinkingLevel(storedLevel);
       }
     } catch {

@@ -16,7 +16,7 @@ import { ChatEmptyState } from './ChatEmptyState';
 import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { toast } from 'sonner';
-import type { ChatMessage } from '@/lib/api/chat';
+import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
 
 export function ChatShell({
   locale,
@@ -38,6 +38,7 @@ export function ChatShell({
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
+  const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
 
   const chatQuery = useChat(chatId);
   const chat = chatQuery.data;
@@ -123,7 +124,12 @@ export function ChatShell({
     if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
       return;
 
-    const payload = { content: nextValue };
+    const stableClientMessageId = clientMessageId ?? crypto.randomUUID();
+    const payload = {
+      content: nextValue,
+      thinkLevel,
+      clientMessageId: stableClientMessageId
+    };
 
     setErrorMessage('');
     streamChunksRef.current = [];
@@ -143,7 +149,7 @@ export function ChatShell({
       const result = await sendMutation.mutateAsync({
         chatId: activeChatId,
         payload,
-        clientMessageId,
+        clientMessageId: stableClientMessageId,
         onToken: (chunk) => {
           streamChunksRef.current.push(chunk);
           scheduleStreamFlush();
@@ -304,6 +310,8 @@ export function ChatShell({
                   disabled={sendMutation.isPending || actions.create.isPending}
                   autoFocus={shouldAutoFocus}
                   focusTrigger={focusTrigger}
+                  thinkLevel={thinkLevel}
+                  onThinkLevelChange={setThinkLevel}
                   onPromptSelect={(prompt) => {
                     setValue(prompt);
                     setFocusTrigger((prev) => prev + 1);
@@ -342,6 +350,8 @@ export function ChatShell({
                       sendMutation.isPending || actions.create.isPending
                     }
                     focusTrigger={focusTrigger}
+                    thinkLevel={thinkLevel}
+                    onThinkLevelChange={setThinkLevel}
                   />
                 </div>
               </div>

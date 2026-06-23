@@ -119,7 +119,10 @@ export function useSendMessage() {
       );
 
       try {
-        const assistantMessage = await sendMessage(chatId, payload.content);
+        const assistantMessage = await sendMessage(chatId, {
+          ...payload,
+          clientMessageId: userMessage.id
+        });
 
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
@@ -135,7 +138,9 @@ export function useSendMessage() {
                   ? { ...message, sendStatus: 'sent' as const }
                   : message
               ),
-              assistantMessage
+              ...(base.messages.some((message) => message.id === assistantMessage.id)
+                ? []
+                : [assistantMessage])
             ]
           };
         });

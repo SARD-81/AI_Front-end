@@ -6,6 +6,7 @@ import {useLocale, useTranslations} from 'next-intl';
 import {useEffect, useRef} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {Button} from '@/components/ui/button';
+import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
 
 const MAX_MESSAGE_LENGTH = 2500;
@@ -17,6 +18,8 @@ type ComposerProps = {
   disabled?: boolean;
   autoFocus?: boolean;
   focusTrigger?: number;
+  thinkLevel: ThinkingLevel;
+  onThinkLevelChange: (value: ThinkingLevel) => void;
 };
 
 export function Composer({
@@ -25,11 +28,14 @@ export function Composer({
   onSubmit,
   disabled,
   autoFocus,
-  focusTrigger
+  focusTrigger,
+  thinkLevel,
+  onThinkLevelChange
 }: ComposerProps) {
   const t = useTranslations('app');
   const locale = useLocale();
   const comingSoonLabel = locale === 'fa' ? 'به‌زودی' : 'Coming soon';
+  const thinkingLevels: ThinkingLevel[] = ['low', 'medium', 'high'];
   const characterCount = value.length;
   const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -102,18 +108,27 @@ export function Composer({
             <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
           </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled
-            aria-disabled="true"
-            title={t('thinkingLevel.futureHint')}
-            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
-          >
-            <span>{t('thinkingLevel.label')}</span>
-            <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
-          </Button>
+          <label className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground shadow-sm">
+            <span className="hidden whitespace-nowrap text-xs text-muted-foreground sm:inline">
+              {t('thinkingLevel.label')}
+            </span>
+            <select
+              value={thinkLevel}
+              onChange={(event) =>
+                onThinkLevelChange(event.target.value as ThinkingLevel)
+              }
+              disabled={disabled}
+              aria-label={t('thinkingLevel.label')}
+              title={t('thinkingLevel.description')}
+              className="max-w-[150px] bg-transparent text-xs font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-none"
+            >
+              {thinkingLevels.map((level) => (
+                <option key={level} value={level}>
+                  {t(`thinkingLevel.options.${level}.title`)}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <Button
             type="button"
