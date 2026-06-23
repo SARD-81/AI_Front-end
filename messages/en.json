@@ -235,7 +235,18 @@
       "jobTitleLabel": "Job title (optional)",
       "modalTitle": "Complete profile",
       "modalDescription": "Complete these guided steps for",
-      "next": "Next"
+      "next": "Next",
+      "stepHelpers": {
+        "role": "Choose how this university email should be registered. You can review this before continuing.",
+        "personal": "Tell us who you are so your account feels personal and recognizable.",
+        "academic": "Add the role-specific university details required for your account.",
+        "employment": "Add your university employment details required for staff access.",
+        "password": "Create a secure password to finish your account setup."
+      },
+      "roleDescriptions": {
+        "professor": "For faculty members with teaching or research responsibilities.",
+        "staff": "For university staff and administrative team members."
+      }
     },
     "validation": {
       "studentId": {
