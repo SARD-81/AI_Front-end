@@ -112,6 +112,7 @@ export function LoginForm({
                 <Input
                   {...field}
                   placeholder={t('login.emailPlaceholder')}
+                  autoComplete="email"
                   dir="ltr"
                   className={authInputClassName}
                 />
@@ -133,6 +134,7 @@ export function LoginForm({
                     {...field}
                     type={showPassword ? 'text' : 'password'}
                     placeholder={t('login.passwordPlaceholder')}
+                    autoComplete="current-password"
                     className={`${authInputClassName} pl-11`}
                   />
                   <button

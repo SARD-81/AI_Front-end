@@ -20,12 +20,6 @@ import { Separator } from '@/components/ui/separator';
 import { isAbortError, loginUser } from '@/lib/services/auth-service';
 import type { LoginResultDTO } from '@/lib/types/auth';
 
-const FEATURE_STRIPS = [
-  'from-primary/70 via-primary/25 to-transparent',
-  'from-sky-300/60 via-primary/25 to-transparent',
-  'from-white/45 via-primary/20 to-transparent'
-];
-
 type AuthMode = 'login' | 'signup' | 'reset';
 
 function safeNextUrl(next: string | null, locale: string): string {
@@ -180,10 +174,10 @@ export function AuthClient({ locale }: { locale: string }) {
         fill
         priority
         sizes="100vw"
-        className="pointer-events-none select-none object-cover opacity-45 blur-[2px] scale-[1.03] saturate-125 contrast-110"
+        className="pointer-events-none select-none object-cover opacity-60 scale-[1.01] saturate-125 contrast-110"
       />
-      <div className="pointer-events-none absolute inset-0 bg-slate-950/60" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.94)_0%,rgba(15,23,42,0.74)_48%,rgba(2,6,23,0.92)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-slate-950/38" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.86)_0%,rgba(15,23,42,0.54)_48%,rgba(2,6,23,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
       <div className="pointer-events-none absolute -right-28 bottom-12 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl" />
@@ -196,24 +190,19 @@ export function AuthClient({ locale }: { locale: string }) {
             <div className="pointer-events-none absolute -bottom-28 -right-20 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
 
             <div className="relative z-10 flex h-full flex-col justify-between gap-12">
-              <div className="space-y-8">
-                <div className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-slate-950/35 px-4 py-3 shadow-lg shadow-black/20 backdrop-blur-md">
+              <div className="flex flex-1 flex-col items-center justify-center space-y-8 text-center">
+                <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/20 bg-white/12 p-4 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md md:h-44 md:w-44">
                   <Image
                     src="/Logo.png"
                     alt={t('hero.logoAlt')}
-                    width={64}
-                    height={64}
-                    className="h-12 w-12 rounded-xl object-contain ring-1 ring-white/10"
+                    width={176}
+                    height={176}
+                    className="h-full w-full object-contain drop-shadow-2xl"
                     priority
                   />
-                  <div className="h-8 w-px bg-white/15" />
-                  <div className="space-y-1 text-right">
-                    <span className="block text-[11px] font-medium text-sky-100/80">SBU AI Assistant</span>
-                    <span className="block h-1.5 w-24 rounded-full bg-gradient-to-l from-primary via-sky-300/70 to-transparent" />
-                  </div>
                 </div>
 
-                <div className="max-w-2xl space-y-5">
+                <div className="mx-auto max-w-2xl space-y-5">
                   <motion.h1
                     initial={{opacity: 0, y: 10}}
                     animate={{opacity: 1, y: 0}}
@@ -233,23 +222,8 @@ export function AuthClient({ locale }: { locale: string }) {
                 </div>
               </div>
 
-              <div className="space-y-5">
-                <div className="grid grid-cols-3 gap-3 text-xs text-slate-200/80 sm:max-w-xl">
-                  {FEATURE_STRIPS.map((strip) => (
-                    <div key={strip} className="rounded-2xl border border-white/10 bg-slate-950/25 p-3 backdrop-blur-sm">
-                      <span className={`mb-3 block h-1.5 rounded-full bg-gradient-to-l ${strip}`} />
-                      <span className="block h-1.5 w-2/3 rounded-full bg-white/15" />
-                      <span className="mt-2 block h-1.5 w-1/2 rounded-full bg-white/10" />
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-slate-950/25 p-4 backdrop-blur-md">
-                  <div className="grid grid-cols-6 gap-2 opacity-70">
-                    {Array.from({ length: 24 }).map((_, idx) => (
-                      <span key={idx} className="h-1.5 rounded-full bg-gradient-to-l from-white/45 to-primary/35" />
-                    ))}
-                  </div>
-                </div>
+              <div className="mx-auto max-w-xl rounded-3xl border border-white/12 bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md">
+                {t('hero.tagline')}
               </div>
             </div>
           </section>
@@ -260,14 +234,7 @@ export function AuthClient({ locale }: { locale: string }) {
               <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
               <div className="relative z-10">
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="rounded-2xl border border-white/12 bg-white/10 px-3 py-2 text-xs text-slate-200/80 backdrop-blur-md">
-                      {authMode === 'login'
-                        ? t('card.loginTitle')
-                        : authMode === 'reset'
-                          ? t('card.resetTitle')
-                          : t('card.signupTitle')}
-                    </div>
+                  <div className="flex justify-end">
                     <Image
                       src="/Logo.png"
                       alt={t('hero.logoAlt')}

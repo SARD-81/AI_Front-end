@@ -151,7 +151,8 @@
     "hero": {
       "logoAlt": "University logo",
       "title": "Shahid Beheshti University AI Assistant",
-      "description": "Unified authentication gateway for secure access to the university’s smart educational and research services."
+      "description": "Unified authentication gateway for secure access to the university’s smart educational and research services.",
+      "tagline": "Secure, role-aware access for students, professors, and university staff."
     },
     "card": {
       "loginTitle": "Sign in",
@@ -218,7 +219,9 @@
       "groups": {
         "personalInfo": "Personal info",
         "academicInfo": "Academic info",
-        "password": "Password"
+        "password": "Password",
+        "role": "Role",
+        "employmentInfo": "Employment info"
       },
       "roleLabel": "Role",
       "studentRoleLabel": "Student",
@@ -228,7 +231,10 @@
       "personnelIdLabel": "Personnel ID",
       "departmentLabel": "Department",
       "academicRankLabel": "Academic rank (optional)",
-      "jobTitleLabel": "Job title (optional)"
+      "jobTitleLabel": "Job title (optional)",
+      "modalTitle": "Complete profile",
+      "modalDescription": "Complete these guided steps for",
+      "next": "Next"
     },
     "validation": {
       "studentId": {
