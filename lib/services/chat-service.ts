@@ -1,6 +1,6 @@
 import {apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
-import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
+import type {ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
   nextCursor: string | null;
@@ -29,7 +29,7 @@ type BackendMessage = {
   feedback?: 'like' | 'dislike' | null;
 };
 
-type FeedbackBody = {is_liked: true | false | null; comment?: string};
+type FeedbackBody = MessageFeedbackPayload;
 
 function normalizeDate(value?: string | null) {
   return value ?? new Date().toISOString();
@@ -275,11 +275,12 @@ export async function sendMessageWithWebSocket(
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {
   return apiFetch(API_ENDPOINTS.messages.feedback(messageId), {
-    method: 'POST',
+    method: 'PUT',
     signal: opts?.signal,
     body: JSON.stringify({
       is_liked: body.is_liked,
-      ...(body.comment ? {comment: body.comment} : {})
+      reason_category: body.reason_category,
+      text_comment: body.text_comment
     })
   });
 }

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { putMessageFeedback } from '@/lib/services/chat-service';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
-import type { ChatDetail, ChatMessage } from '@/lib/api/chat';
+import type { ChatDetail, ChatMessage, MessageFeedbackPayload } from '@/lib/api/chat';
 import { MessageActions } from './MessageActions';
 
 function CodeBlock({ value }: { value: string }) {
@@ -124,7 +124,7 @@ function MessageBubbleComponent({
       payload
     }: {
       messageId: string;
-      payload: { is_liked: true | false | null; comment?: string };
+      payload: MessageFeedbackPayload;
     }) => putMessageFeedback(messageId, payload),
     onSuccess: (_data, variables) => {
       queryClient.setQueriesData<ChatDetail>(
@@ -168,7 +168,9 @@ function MessageBubbleComponent({
       await feedbackMutation.mutateAsync({
         messageId: message.id,
         payload:
-          feedbackState === true ? { is_liked: null } : { is_liked: true }
+          feedbackState === true
+            ? { is_liked: null, reason_category: null, text_comment: '' }
+            : { is_liked: true, reason_category: null, text_comment: '' }
       });
       toast.success(t('feedback.toastSaved'));
     } catch (error) {
@@ -334,14 +336,15 @@ function MessageBubbleComponent({
                   onOpenChange={setDialogOpen}
                   initialValue={{ isLiked: feedbackState }}
                   isSubmitting={feedbackMutation.isPending}
-                  onSubmit={async ({ text_comment }) => {
+                  onSubmit={async ({ reason_category, text_comment }) => {
                     if (!message.id) return;
                     try {
                       await feedbackMutation.mutateAsync({
                         messageId: message.id,
                         payload: {
                           is_liked: false,
-                          comment: text_comment
+                          reason_category,
+                          text_comment
                         }
                       });
                       toast.success(t('feedback.toastSaved'));
@@ -359,7 +362,7 @@ function MessageBubbleComponent({
                     try {
                       await feedbackMutation.mutateAsync({
                         messageId: message.id,
-                        payload: { is_liked: null }
+                        payload: { is_liked: null, reason_category: null, text_comment: '' }
                       });
                       setDialogOpen(false);
                       toast.success(t('feedback.toastCleared'));
