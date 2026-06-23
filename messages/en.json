@@ -23,6 +23,8 @@
       "expandShort": "Expand",
       "collapseShort": "Collapse",
       "renameInput": "Rename conversation",
+      "renameTitleTooLong": "Conversation title must be {max} characters or fewer.",
+      "renameError": "Could not rename the conversation.",
       "chatOptions": "Conversation options",
       "profile": "Profile",
       "guestUser": "Guest user",

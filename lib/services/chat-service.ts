@@ -1,4 +1,4 @@
-import {apiFetch, getApiBaseUrl} from '@/lib/api/client';
+import {ApiError, apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import type {ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
@@ -30,6 +30,29 @@ type BackendMessage = {
 };
 
 type FeedbackBody = MessageFeedbackPayload;
+
+
+function getStringValue(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) return value.map(getStringValue).find(Boolean) ?? '';
+  return '';
+}
+
+function getTitleErrorMessage(payload: unknown): string {
+  if (typeof payload !== 'object' || payload === null) return '';
+
+  const record = payload as Record<string, unknown>;
+  const directTitle = getStringValue(record.title);
+  if (directTitle) return directTitle;
+
+  const error = record.error;
+  if (typeof error === 'object' && error !== null) {
+    const nestedTitle = getStringValue((error as Record<string, unknown>).title);
+    if (nestedTitle) return nestedTitle;
+  }
+
+  return '';
+}
 
 function normalizeDate(value?: string | null) {
   return value ?? new Date().toISOString();
@@ -81,11 +104,24 @@ export async function createConversation(title = 'گفت‌وگو') {
 }
 
 export async function renameConversation(id: string, title: string) {
-  const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {
-    method: 'PATCH',
-    body: JSON.stringify({title})
-  });
-  return normalizeConversation(data);
+  const trimmedTitle = title.trim();
+
+  try {
+    const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {
+      method: 'PATCH',
+      body: JSON.stringify({title: trimmedTitle})
+    });
+    return normalizeConversation(data);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      const titleMessage = getTitleErrorMessage(error.payload);
+      if (titleMessage) {
+        throw new ApiError(titleMessage, error.status, error.payload);
+      }
+    }
+
+    throw error;
+  }
 }
 
 export async function deleteConversation(id: string) {

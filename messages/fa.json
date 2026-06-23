@@ -23,6 +23,8 @@
       "expandShort": "باز کردن",
       "collapseShort": "بستن",
       "renameInput": "تغییر نام گفتگو",
+      "renameTitleTooLong": "عنوان گفتگو باید حداکثر {max} کاراکتر باشد.",
+      "renameError": "تغییر نام گفتگو ممکن نبود.",
       "chatOptions": "گزینه‌های گفتگو",
       "profile": "پروفایل",
       "guestUser": "کاربر مهمان",
