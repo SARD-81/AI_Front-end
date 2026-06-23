@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import {useLocale, useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
+import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
 import {Composer} from './Composer';
 
@@ -13,6 +14,8 @@ type ChatEmptyStateProps = {
   disabled?: boolean;
   autoFocus?: boolean;
   focusTrigger?: number;
+  thinkLevel: ThinkingLevel;
+  onThinkLevelChange: (value: ThinkingLevel) => void;
   onPromptSelect: (prompt: string) => void;
 };
 
@@ -23,6 +26,8 @@ export function ChatEmptyState({
   disabled,
   autoFocus,
   focusTrigger,
+  thinkLevel,
+  onThinkLevelChange,
   onPromptSelect
 }: ChatEmptyStateProps) {
   const locale = useLocale();
@@ -61,6 +66,8 @@ export function ChatEmptyState({
             disabled={disabled}
             autoFocus={autoFocus}
             focusTrigger={focusTrigger}
+            thinkLevel={thinkLevel}
+            onThinkLevelChange={onThinkLevelChange}
           />
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">

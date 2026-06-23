@@ -96,12 +96,8 @@
       "restoreToInput": "Restore to input"
     },
     "thinkingLevel": {
-      "label": "Thinking level",
+      "label": "Response depth / thinking level",
       "options": {
-        "standard": {
-          "title": "Standard",
-          "subtitle": "Fast, direct answers without extra reasoning."
-        },
         "low": {
           "title": "Low thinking",
           "subtitle": "Quick answers with minimal internal reasoning."
@@ -115,7 +111,7 @@
           "subtitle": "Deeper analysis with more processing time."
         }
       },
-      "futureHint": "Thinking levels are coming soon and cannot be changed yet."
+      "description": "Thinking level controls response depth for this message."
     },
     "attachment": {
       "label": "Attach file",
@@ -190,7 +186,11 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
+      "degreeOptions": [
+        "Bachelor’s",
+        "Master’s",
+        "PhD"
+      ],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",

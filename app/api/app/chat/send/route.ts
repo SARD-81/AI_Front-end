@@ -10,11 +10,14 @@ export async function POST(request: Request) {
       conversation_id: string;
       message: string;
       client_message_id?: string;
+      think_level?: 'low' | 'medium' | 'high';
     };
 
     const payload = {
-      ...body,
-      client_message_id: body.client_message_id || randomUUID()
+      conversation_id: body.conversation_id,
+      message: body.message,
+      client_message_id: body.client_message_id || randomUUID(),
+      ...(body.think_level ? {think_level: body.think_level} : {})
     };
 
     const data = await callWithAutoRefresh((access) =>

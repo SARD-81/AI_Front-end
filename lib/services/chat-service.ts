@@ -1,6 +1,6 @@
 import {apiFetch} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
-import type {ChatDetail, ChatMessage, ChatSummary} from '@/lib/api/chat';
+import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
   nextCursor: string | null;
@@ -121,13 +121,14 @@ export async function listMessages(conversationId: string, cursor?: string) {
   } satisfies PaginatedMessages;
 }
 
-export async function sendMessage(conversationId: string, message: string) {
+export async function sendMessage(conversationId: string, payload: SendMessagePayload) {
   const data = await apiFetch<BackendMessage>(API_ENDPOINTS.chat.send, {
     method: 'POST',
     body: JSON.stringify({
       conversation_id: conversationId,
-      message,
-      client_message_id: crypto.randomUUID()
+      message: payload.content,
+      client_message_id: payload.clientMessageId,
+      think_level: payload.thinkLevel
     })
   });
 
