@@ -22,6 +22,26 @@ import type { LoginResultDTO } from '@/lib/types/auth';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
+
+function replaceLocaleInPath(pathname: string, nextLocale: string) {
+  const segments = pathname.split('/');
+  if (segments[1] === 'fa' || segments[1] === 'en') {
+    segments[1] = nextLocale;
+    return segments.join('/');
+  }
+  return `/${nextLocale}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+}
+
+function persistLanguagePreference(nextLocale: string) {
+  try {
+    const raw = localStorage.getItem('app_settings');
+    const settings = raw ? JSON.parse(raw) : {};
+    localStorage.setItem('app_settings', JSON.stringify({...settings, language: nextLocale}));
+  } catch {
+    localStorage.setItem('app_settings', JSON.stringify({language: nextLocale}));
+  }
+}
+
 function safeNextUrl(next: string | null, locale: string): string {
   const fallback = `/${locale}/chat`;
   if (!next) return fallback;
@@ -106,6 +126,17 @@ export function AuthClient({ locale }: { locale: string }) {
 
     applyMode(mode);
   };
+
+  const switchLocale = () => {
+    const nextLocale = locale === 'en' ? 'fa' : 'en';
+    const params = new URLSearchParams(searchParams.toString());
+    const nextPath = replaceLocaleInPath(pathname, nextLocale);
+    const query = params.toString();
+    persistLanguagePreference(nextLocale);
+    router.replace(query ? `${nextPath}?${query}` : nextPath);
+  };
+
+  const nextLocaleLabel = locale === 'en' ? t('languageSwitch.fa') : t('languageSwitch.en');
 
   const getPostLoginDestination = (result: LoginResultDTO) => {
     if (result.isProfileCompleted === false || result.user.isProfileCompleted === false) {
@@ -234,6 +265,18 @@ export function AuthClient({ locale }: { locale: string }) {
               <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
               <div className="relative z-10">
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-slate-300/80">{t('languageSwitch.language')}</span>
+                    <button
+                      type="button"
+                      onClick={switchLocale}
+                      aria-label={t('languageSwitch.ariaLabel', {locale: nextLocaleLabel})}
+                      title={t('languageSwitch.ariaLabel', {locale: nextLocaleLabel})}
+                      className="inline-flex h-8 min-w-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.07] px-3 text-xs font-bold tracking-wide text-sky-100 transition hover:bg-white/[0.12] hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-300/70"
+                    >
+                      {nextLocaleLabel}
+                    </button>
+                  </div>
                   {/* <div className="flex justify-end">
                     <Image
                       src="/Logo.png"
