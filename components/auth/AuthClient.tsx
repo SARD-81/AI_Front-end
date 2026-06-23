@@ -234,7 +234,7 @@ export function AuthClient({ locale }: { locale: string }) {
               <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
               <div className="relative z-10">
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
-                  <div className="flex justify-end">
+                  {/* <div className="flex justify-end">
                     <Image
                       src="/Logo.png"
                       alt={t('hero.logoAlt')}
@@ -242,7 +242,7 @@ export function AuthClient({ locale }: { locale: string }) {
                       height={44}
                       className="h-11 w-11 rounded-xl object-contain opacity-90 ring-1 ring-white/10"
                     />
-                  </div>
+                  </div> */}
                   <div className="space-y-3 text-right">
                     <CardTitle className="text-2xl font-black leading-relaxed text-white md:text-3xl">
                       {authMode === 'login'
