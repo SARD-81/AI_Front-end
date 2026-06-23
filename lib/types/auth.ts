@@ -1,8 +1,9 @@
-export type AuthRoleDTO = 'student' | 'professor' | 'staff';
-export type PublicRegisterRoleDTO = AuthRoleDTO;
+export type AuthRoleDTO = 'student' | 'professor' | 'staff' | 'admin';
+export type PublicRegisterRoleDTO = Exclude<AuthRoleDTO, 'admin'>;
 
 export type AuthUserDTO = {
-  studentId: string;
+  studentId?: string;
+  personnelId?: string;
   fullName?: string;
   firstName?: string;
   lastName?: string;
@@ -10,6 +11,9 @@ export type AuthUserDTO = {
   faculty?: string;
   major?: string;
   degreeLevel?: string;
+  department?: string;
+  academicRank?: string;
+  jobTitle?: string;
   role?: AuthRoleDTO;
   isProfileCompleted?: boolean;
 };
@@ -137,7 +141,10 @@ export type PasswordResetCompleteBodyDTO = {
 };
 
 export type LoginResultDTO = {
-  user: Pick<AuthUserDTO, 'studentId' | 'fullName' | 'role' | 'isProfileCompleted'>;
+  user: Pick<
+    AuthUserDTO,
+    'studentId' | 'fullName' | 'role' | 'isProfileCompleted'
+  >;
   isProfileCompleted?: boolean;
 };
 
@@ -165,8 +172,4 @@ export type ProfileResponseDTO = {
 export type ProfileUpdateDTO = {
   firstName: string;
   lastName: string;
-  studentId: string;
-  faculty: string;
-  major: string;
-  degreeLevel: string;
 };

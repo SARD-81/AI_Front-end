@@ -23,56 +23,63 @@ import {
   ServiceError,
   updateProfile
 } from '@/lib/services/auth-service';
-import type { AuthRoleDTO, ProfileUpdateDTO } from '@/lib/types/auth';
+import type {
+  AuthRoleDTO,
+  AuthUserDTO,
+  ProfileUpdateDTO
+} from '@/lib/types/auth';
 
 type ProfileFormProps = {
   locale: string;
 };
 
-type FieldName = keyof ProfileUpdateDTO;
+type EditableFieldName = keyof ProfileUpdateDTO;
+type ReadOnlyFieldName =
+  | 'email'
+  | 'studentId'
+  | 'personnelId'
+  | 'faculty'
+  | 'major'
+  | 'degreeLevel'
+  | 'department'
+  | 'academicRank'
+  | 'jobTitle'
+  | 'role';
 
-const baseFields: FieldName[] = [
-  'firstName',
-  'lastName',
-  'faculty',
-  'major',
-  'degreeLevel'
-];
-const allFields: FieldName[] = [...baseFields, 'studentId'];
-
-function getRequiredFields(role?: AuthRoleDTO): FieldName[] {
-  if (role === 'student') return [...baseFields, 'studentId'];
-  return baseFields;
-}
-
-function getVisibleFields(role?: AuthRoleDTO): FieldName[] {
-  if (role === 'student') return [...baseFields, 'studentId'];
-  if (role === 'professor' || role === 'staff') return baseFields;
-  return allFields;
-}
+const editableFields: EditableFieldName[] = ['firstName', 'lastName'];
+const roleReadOnlyFields: Record<AuthRoleDTO, ReadOnlyFieldName[]> = {
+  student: ['email', 'studentId', 'faculty', 'major', 'degreeLevel'],
+  professor: ['email', 'personnelId', 'faculty', 'academicRank'],
+  staff: ['email', 'personnelId', 'department', 'jobTitle'],
+  admin: ['email', 'role']
+};
 
 function getInitialValues(
   profile?: Partial<ProfileUpdateDTO>
 ): ProfileUpdateDTO {
   return {
     firstName: profile?.firstName ?? '',
-    lastName: profile?.lastName ?? '',
-    faculty: profile?.faculty ?? '',
-    major: profile?.major ?? '',
-    degreeLevel: profile?.degreeLevel ?? '',
-    studentId: profile?.studentId ?? ''
+    lastName: profile?.lastName ?? ''
   };
 }
 
 function trimValues(values: ProfileUpdateDTO): ProfileUpdateDTO {
   return {
     firstName: values.firstName.trim(),
-    lastName: values.lastName.trim(),
-    faculty: values.faculty.trim(),
-    major: values.major.trim(),
-    degreeLevel: values.degreeLevel.trim(),
-    studentId: values.studentId.trim()
+    lastName: values.lastName.trim()
   };
+}
+
+function getReadOnlyValue(
+  profile: AuthUserDTO,
+  field: ReadOnlyFieldName,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (field === 'role') {
+    return profile.role ? t(`roles.${profile.role}`) : '';
+  }
+
+  return profile[field] ?? '';
 }
 
 export function ProfileForm({ locale }: ProfileFormProps) {
@@ -80,7 +87,9 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   const t = useTranslations('profile');
   const [values, setValues] = useState<ProfileUpdateDTO>(getInitialValues());
   const [formError, setFormError] = useState<string | null>(null);
-  const [touchedFields, setTouchedFields] = useState<Set<FieldName>>(new Set());
+  const [touchedFields, setTouchedFields] = useState<Set<EditableFieldName>>(
+    new Set()
+  );
   const [submitted, setSubmitted] = useState(false);
 
   const profileQuery = useQuery({
@@ -89,9 +98,8 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   });
 
   const profile = profileQuery.data?.user;
-  const role = profile?.role;
-  const requiredFields = useMemo(() => getRequiredFields(role), [role]);
-  const visibleFields = useMemo(() => getVisibleFields(role), [role]);
+  const role = profile?.role ?? 'admin';
+  const readOnlyFields = useMemo(() => roleReadOnlyFields[role], [role]);
 
   useEffect(() => {
     if (profile) {
@@ -100,8 +108,8 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   }, [profile]);
 
   const missingFields = useMemo(
-    () => requiredFields.filter((field) => !values[field]?.trim()),
-    [requiredFields, values]
+    () => editableFields.filter((field) => !values[field]?.trim()),
+    [values]
   );
 
   const mutation = useMutation({
@@ -133,14 +141,14 @@ export function ProfileForm({ locale }: ProfileFormProps) {
     onSettled: () => router.replace(`/${locale}/auth?mode=login`)
   });
 
-  const setFieldValue = (field: FieldName, value: string) => {
+  const setFieldValue = (field: EditableFieldName, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
   };
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = trimValues(values);
-    const missing = requiredFields.filter((field) => !trimmed[field]);
+    const missing = editableFields.filter((field) => !trimmed[field]);
 
     setSubmitted(true);
     setFormError(null);
@@ -200,7 +208,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-xl border-border/70 bg-card/95 shadow-card">
+    <Card className="w-full max-w-2xl border-border/70 bg-card/95 shadow-card">
       <CardHeader className="space-y-4">
         <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
           <p className="font-semibold">{t('bannerTitle')}</p>
@@ -210,54 +218,101 @@ export function ProfileForm({ locale }: ProfileFormProps) {
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription className="mt-2">{t('description')}</CardDescription>
         </div>
-        {role ? (
-          <p className="inline-flex w-fit rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+          <p className="inline-flex w-fit rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium">
             {t('roleLabel')}: {t(`roles.${role}`)}
           </p>
-        ) : null}
+          <p>{t('editableNotice')}</p>
+          <p>{t('readOnlyNotice')}</p>
+        </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {visibleFields.map((field) => {
-            const isMissing = missingFields.includes(field);
-            const showFieldError =
-              isMissing && (submitted || touchedFields.has(field));
+        <form onSubmit={onSubmit} className="space-y-6" noValidate>
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              {t('editableSectionTitle')}
+            </h2>
+            {editableFields.map((field) => {
+              const isMissing = missingFields.includes(field);
+              const showFieldError =
+                isMissing && (submitted || touchedFields.has(field));
 
-            return (
-              <div key={field} className="space-y-2">
-                <Label
-                  htmlFor={field}
-                  className={showFieldError ? 'text-destructive' : undefined}
-                >
-                  {t(`fields.${field}`)}
-                  {requiredFields.includes(field) ? ' *' : ''}
-                </Label>
-                <Input
-                  id={field}
-                  value={values[field]}
-                  onBlur={() =>
-                    setTouchedFields((current) => new Set(current).add(field))
-                  }
-                  onChange={(event) => setFieldValue(field, event.target.value)}
-                  aria-invalid={showFieldError}
-                  aria-describedby={
-                    showFieldError ? `${field}-error` : undefined
-                  }
-                  className={
-                    showFieldError
-                      ? 'border-destructive focus-visible:ring-destructive/40'
-                      : undefined
-                  }
-                  dir={field === 'studentId' ? 'ltr' : undefined}
-                />
-                {showFieldError ? (
-                  <p id={`${field}-error`} className="text-xs text-destructive">
-                    {t('fieldRequired', { field: t(`fields.${field}`) })}
-                  </p>
-                ) : null}
+              return (
+                <div key={field} className="space-y-2">
+                  <Label
+                    htmlFor={field}
+                    className={showFieldError ? 'text-destructive' : undefined}
+                  >
+                    {t(`fields.${field}`)} *
+                  </Label>
+                  <Input
+                    id={field}
+                    value={values[field]}
+                    onBlur={() =>
+                      setTouchedFields((current) => new Set(current).add(field))
+                    }
+                    onChange={(event) =>
+                      setFieldValue(field, event.target.value)
+                    }
+                    aria-invalid={showFieldError}
+                    aria-describedby={
+                      showFieldError ? `${field}-error` : undefined
+                    }
+                    className={
+                      showFieldError
+                        ? 'border-destructive focus-visible:ring-destructive/40'
+                        : undefined
+                    }
+                  />
+                  {showFieldError ? (
+                    <p
+                      id={`${field}-error`}
+                      className="text-xs text-destructive"
+                    >
+                      {t('fieldRequired', { field: t(`fields.${field}`) })}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          {profile ? (
+            <div className="space-y-3 rounded-2xl border border-border bg-muted/30 p-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t('readOnlySectionTitle')}
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t('incompleteHelp')}
+                </p>
               </div>
-            );
-          })}
+              <dl className="grid gap-3 sm:grid-cols-2">
+                {readOnlyFields.map((field) => (
+                  <div
+                    key={field}
+                    className="rounded-xl border border-border bg-background/70 p-3"
+                  >
+                    <dt className="text-xs font-medium text-muted-foreground">
+                      {t(`fields.${field}`)}
+                    </dt>
+                    <dd
+                      className="mt-1 break-words text-sm text-foreground"
+                      dir={
+                        field === 'email' ||
+                        field === 'studentId' ||
+                        field === 'personnelId'
+                          ? 'ltr'
+                          : undefined
+                      }
+                    >
+                      {getReadOnlyValue(profile, field, t) || t('notProvided')}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ) : null}
 
           {formError ? (
             <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
