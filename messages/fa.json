@@ -93,7 +93,10 @@
       "copyError": "کپی پیام ممکن نبود",
       "openConversations": "باز کردن گفتگوها",
       "retryFailed": "تلاش دوباره",
-      "restoreToInput": "بازگردانی به ورودی"
+      "restoreToInput": "بازگردانی به ورودی",
+      "connecting": "در حال اتصال...",
+      "profileIncomplete": "برای ادامه گفتگو لطفاً پروفایل خود را تکمیل کنید.",
+      "accountLocked": "حساب شما قفل شده است. لطفاً با پشتیبانی تماس بگیرید."
     },
     "thinkingLevel": {
       "label": "عمق پاسخ / سطح تفکر",

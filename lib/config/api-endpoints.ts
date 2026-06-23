@@ -21,7 +21,8 @@ export const API_ENDPOINTS = {
     messages: (id: string) => `/api/app/conversations/${id}/messages`
   },
   chat: {
-    send: '/api/app/chat/send'
+    send: '/api/app/chat/send',
+    wsTicket: '/api/app/chat/ws-ticket'
   },
   messages: {
     feedback: (id: string) => `/api/app/messages/${id}/feedback`

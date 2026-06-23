@@ -93,7 +93,10 @@
       "copyError": "Could not copy the message",
       "openConversations": "Open conversations",
       "retryFailed": "Retry",
-      "restoreToInput": "Restore to input"
+      "restoreToInput": "Restore to input",
+      "connecting": "Connecting...",
+      "profileIncomplete": "Please complete your profile to continue chatting.",
+      "accountLocked": "Your account is locked. Please contact support."
     },
     "thinkingLevel": {
       "label": "Response depth / thinking level",

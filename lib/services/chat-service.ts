@@ -1,4 +1,4 @@
-import {apiFetch} from '@/lib/api/client';
+import {apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import type {ChatDetail, ChatMessage, ChatSummary, SendMessagePayload} from '@/lib/api/chat';
 
@@ -133,6 +133,144 @@ export async function sendMessage(conversationId: string, payload: SendMessagePa
   });
 
   return normalizeMessage(data);
+}
+
+type WsTicketResponse = {
+  ticket: string;
+  expires_in: number;
+};
+
+type WsAnswerMessage = {
+  id: string;
+  client_message_id: string | null;
+  role: 'assistant';
+  content: string;
+  created_at: string;
+};
+
+type WsServerMessage =
+  | {type: 'connected'; conversation_id: string}
+  | {type: 'ack'; message_id: string}
+  | {type: 'answer'; data: WsAnswerMessage; idempotent: boolean}
+  | {type: 'error'; code: string; error: string};
+
+export class ChatWebSocketError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly closeCode?: number,
+    public readonly shouldRedirectToProfile = false,
+    public readonly isLocked = false
+  ) {
+    super(message);
+  }
+}
+
+function resolveChatWebSocketUrl(conversationId: string, ticket: string) {
+  const configuredBase = getApiBaseUrl();
+  const base = configuredBase || (typeof window !== 'undefined' ? window.location.origin : '');
+  const url = new URL(base || 'http://localhost');
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.pathname = `/ws/chat/${encodeURIComponent(conversationId)}/`;
+  url.search = '';
+  url.searchParams.set('ticket', ticket);
+  return url.toString();
+}
+
+function mapCloseError(event: CloseEvent) {
+  if (event.code === 4405) {
+    return new ChatWebSocketError('Profile is incomplete.', 'PROFILE_INCOMPLETE', event.code, true);
+  }
+  if (event.code === 4403) {
+    return new ChatWebSocketError('Account is locked.', 'LOCKED', event.code, false, true);
+  }
+  return new ChatWebSocketError(event.reason || 'WebSocket connection closed before an answer.', undefined, event.code);
+}
+
+export async function requestChatWsTicket() {
+  return apiFetch<WsTicketResponse>(API_ENDPOINTS.chat.wsTicket, {method: 'POST'});
+}
+
+export async function sendMessageWithWebSocket(
+  conversationId: string,
+  payload: SendMessagePayload,
+  opts?: {onAck?: () => void; signal?: AbortSignal}
+) {
+  const ticket = await requestChatWsTicket();
+
+  return new Promise<ChatMessage>((resolve, reject) => {
+    let settled = false;
+    let answered = false;
+    const socket = new WebSocket(resolveChatWebSocketUrl(conversationId, ticket.ticket));
+
+    const cleanup = () => {
+      opts?.signal?.removeEventListener('abort', handleAbort);
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+    };
+
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+        socket.close();
+      }
+      reject(error);
+    };
+
+    const handleAbort = () => fail(new ChatWebSocketError('WebSocket send was aborted.'));
+
+    opts?.signal?.addEventListener('abort', handleAbort, {once: true});
+
+    socket.onopen = () => {
+      socket.send(
+        JSON.stringify({
+          message: payload.content,
+          client_message_id: payload.clientMessageId,
+          think_level: payload.thinkLevel
+        })
+      );
+    };
+
+    socket.onmessage = (event) => {
+      let message: WsServerMessage;
+      try {
+        message = JSON.parse(String(event.data)) as WsServerMessage;
+      } catch {
+        fail(new ChatWebSocketError('Invalid WebSocket message.'));
+        return;
+      }
+
+      if (message.type === 'ack') {
+        opts?.onAck?.();
+        return;
+      }
+
+      if (message.type === 'answer') {
+        answered = true;
+        if (settled) return;
+        settled = true;
+        cleanup();
+        socket.close();
+        resolve(normalizeMessage(message.data));
+        return;
+      }
+
+      if (message.type === 'error') {
+        fail(new ChatWebSocketError(message.error, message.code));
+      }
+    };
+
+    socket.onerror = () => fail(new ChatWebSocketError('WebSocket connection failed.'));
+    socket.onclose = (event) => {
+      if (!settled && !answered) {
+        fail(mapCloseError(event));
+      }
+    };
+  });
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {

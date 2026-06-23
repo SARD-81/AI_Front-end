@@ -17,6 +17,7 @@ import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { toast } from 'sonner';
 import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
+import { ChatWebSocketError } from '@/lib/services/chat-service';
 
 export function ChatShell({
   locale,
@@ -168,7 +169,14 @@ export function ChatShell({
     } catch (error) {
       clearStreamingState();
       const fallback = t('chat.connectionError');
-      setErrorMessage(error instanceof Error ? error.message : fallback);
+      if (error instanceof ChatWebSocketError && error.shouldRedirectToProfile) {
+        router.push(`/${locale}/profile`);
+        setErrorMessage(t('chat.profileIncomplete'));
+      } else if (error instanceof ChatWebSocketError && error.isLocked) {
+        setErrorMessage(t('chat.accountLocked'));
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : fallback);
+      }
     }
   };
 
@@ -260,6 +268,12 @@ export function ChatShell({
               </h1>
             </div>
           </header>
+
+          {isSendingOrStreaming && !errorMessage ? (
+            <div className="border-b border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+              <div className="mx-auto w-full max-w-3xl">{t('chat.connecting')}</div>
+            </div>
+          ) : null}
 
           {errorMessage ? (
             <div

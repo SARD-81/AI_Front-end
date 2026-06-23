@@ -14,7 +14,9 @@ import {
   getConversation,
   listConversations,
   renameConversation,
-  sendMessage
+  sendMessage,
+  sendMessageWithWebSocket,
+  ChatWebSocketError
 } from '@/lib/services/chat-service';
 import { uid } from '@/lib/utils/uid';
 
@@ -119,10 +121,51 @@ export function useSendMessage() {
       );
 
       try {
-        const assistantMessage = await sendMessage(chatId, {
-          ...payload,
-          clientMessageId: userMessage.id
-        });
+        let assistantMessage: ChatMessage;
+        let wsError: unknown;
+
+        try {
+          assistantMessage = await sendMessageWithWebSocket(
+            chatId,
+            {
+              ...payload,
+              clientMessageId: userMessage.id
+            },
+            {
+              onAck: () => {
+                queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+                  const base = previous ?? {
+                    id: chatId,
+                    title: 'گفت‌وگو',
+                    messages: []
+                  };
+                  return {
+                    ...base,
+                    messages: base.messages.map((message) =>
+                      message.id === userMessage.id
+                        ? { ...message, sendStatus: 'pending' as const }
+                        : message
+                    )
+                  };
+                });
+              }
+            }
+          );
+        } catch (error) {
+          wsError = error;
+
+          if (
+            error instanceof ChatWebSocketError &&
+            (error.shouldRedirectToProfile || error.isLocked)
+          ) {
+            throw error;
+          }
+
+          assistantMessage = await sendMessage(chatId, {
+            ...payload,
+            clientMessageId: userMessage.id
+          });
+        }
 
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
@@ -148,7 +191,7 @@ export function useSendMessage() {
           upsertChatSummary(previous, chatId)
         );
 
-        return { assistantCommitted: true };
+        return { assistantCommitted: true, usedRestFallback: Boolean(wsError) };
       } catch (error) {
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
