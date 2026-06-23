@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Loader2} from 'lucide-react';
 import {useTranslations} from 'next-intl';
@@ -44,7 +44,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
     resolver: zodResolver(createSignupStep2Schema(schemaT)),
     mode: 'onChange',
     defaultValues: {
-      email,
+      email: email.trim(),
       role: studentDomain ? 'student' : undefined,
       firstName: '',
       lastName: '',
@@ -62,6 +62,16 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
       confirmPassword: ''
     }
   });
+
+  useEffect(() => {
+    const verifiedEmail = email.trim();
+    const nextRole = isStudentEmail(verifiedEmail) ? 'student' : undefined;
+
+    form.setValue('email', verifiedEmail, {shouldDirty: false, shouldValidate: true});
+    form.setValue('role', nextRole, {shouldDirty: false, shouldValidate: true});
+    setStepIndex(0);
+    setRegisterError(null);
+  }, [email, form]);
 
   const role = studentDomain ? 'student' : form.watch('role');
   const steps = useMemo<StepKey[]>(() => (studentDomain ? ['personal', 'academic', 'password'] : ['role', 'personal', 'academic', 'password']), [studentDomain]);

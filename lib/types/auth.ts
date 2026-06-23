@@ -66,7 +66,7 @@ export type StudentRegisterInputDTO = RegisterBaseInputDTO & {
   studentId: string;
   major: string;
   degreeLevel: string;
-  entryYear?: number;
+  entryYear: number;
 };
 
 export type ProfessorRegisterInputDTO = RegisterBaseInputDTO & {
