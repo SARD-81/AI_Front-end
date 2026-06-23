@@ -57,14 +57,14 @@ export function LoginForm({
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(createLoginSchema(schemaT)),
     defaultValues: {
-      identifier: initialIdentifier ?? '',
+      email: initialIdentifier ?? '',
       password: ''
     }
   });
 
   useEffect(() => {
     if (initialIdentifier !== undefined) {
-      form.setValue('identifier', initialIdentifier, {
+      form.setValue('email', initialIdentifier, {
         shouldDirty: false,
         shouldTouch: false
       });
@@ -104,14 +104,14 @@ export function LoginForm({
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
         <FormField
           control={form.control}
-          name="identifier"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-slate-200/90">{t('login.identifierLabel')}</FormLabel>
+              <FormLabel className="text-slate-200/90">{t('login.emailLabel')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  placeholder={t('login.identifierPlaceholder')}
+                  placeholder={t('login.emailPlaceholder')}
                   dir="ltr"
                   className={authInputClassName}
                 />
