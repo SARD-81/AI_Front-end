@@ -156,7 +156,7 @@
     "card": {
       "loginTitle": "Sign in",
       "signupTitle": "Create account",
-      "loginDescription": "Enter your student ID or university email and password to sign in.",
+      "loginDescription": "Enter your university email and password to sign in.",
       "signupDescription": "To create an account, first verify your university email.",
       "switchToSignup": "Don’t have an account? Sign up",
       "switchToLogin": "Already have an account? Sign in",
@@ -166,14 +166,14 @@
     "login": {
       "success": "Signed in successfully.",
       "errorFallback": "Sign-in failed.",
-      "identifierLabel": "Student ID or university email",
-      "identifierPlaceholder": "Example: 401123456 or user@sbu.ac.ir",
       "passwordLabel": "Password",
       "passwordPlaceholder": "Password",
       "hidePassword": "Hide password",
       "showPassword": "Show password",
       "submit": "Sign in",
-      "forgotPassword": "Forgot password?"
+      "forgotPassword": "Forgot password?",
+      "emailLabel": "University email",
+      "emailPlaceholder": "Example: user@sbu.ac.ir"
     },
     "signup": {
       "sendOtpErrorFallback": "Failed to send verification code.",
@@ -196,7 +196,6 @@
       ],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
-      "specializationLabel": "Specialization (optional)",
       "passwordLabel": "Password",
       "confirmPasswordLabel": "Confirm password",
       "back": "Back",
@@ -220,7 +219,16 @@
         "personalInfo": "Personal info",
         "academicInfo": "Academic info",
         "password": "Password"
-      }
+      },
+      "roleLabel": "Role",
+      "studentRoleLabel": "Student",
+      "professorRoleLabel": "Professor",
+      "staffRoleLabel": "Staff",
+      "entryYearLabel": "Entry year",
+      "personnelIdLabel": "Personnel ID",
+      "departmentLabel": "Department",
+      "academicRankLabel": "Academic rank (optional)",
+      "jobTitleLabel": "Job title (optional)"
     },
     "validation": {
       "studentId": {
@@ -230,16 +238,18 @@
         "max": "Student ID must be at most 12 digits."
       },
       "login": {
-        "identifierRequired": "Student ID or university email is required.",
-        "identifierInvalid": "Identifier must be a valid student ID or an allowed university email.",
-        "passwordRequired": "Password is required."
+        "passwordRequired": "Password is required.",
+        "emailRequired": "University email is required.",
+        "emailInvalid": "Enter a valid email address."
       },
       "signup": {
         "emailRequired": "University email is required.",
         "emailInvalidFormat": "Invalid email format.",
-        "emailDomainInvalid": "Email must be within an allowed university domain.",
+        "emailDomainInvalid": "Email must be @mail.sbu.ac.ir or @sbu.ac.ir.",
         "otpRequired": "Verification code is required.",
-        "otpInvalid": "Verification code must be exactly 6 digits."
+        "otpInvalid": "Verification code must be exactly 6 digits.",
+        "roleRequired": "Select professor or staff for @sbu.ac.ir email.",
+        "roleInvalidForDomain": "Selected role is not valid for this email domain."
       },
       "password": {
         "min": "Password must be at least 8 characters.",
@@ -255,7 +265,11 @@
         "facultyRequired": "Faculty is required.",
         "majorMin": "Major must be at least 2 characters.",
         "confirmPasswordRequired": "Confirm password is required.",
-        "confirmPasswordMismatch": "Passwords do not match."
+        "confirmPasswordMismatch": "Passwords do not match.",
+        "entryYearRequired": "Entry year is required.",
+        "entryYearInvalid": "Entry year must be a Persian year between 1300 and 1500.",
+        "personnelIdRequired": "Personnel ID is required.",
+        "departmentRequired": "Department is required."
       }
     },
     "reset": {

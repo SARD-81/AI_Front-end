@@ -1,17 +1,18 @@
 import {z} from 'zod';
-import {isUniversityEmail} from '@/lib/config/university-email';
 
 export type AuthSchemaMessageKey =
   | 'studentId.required'
   | 'studentId.numeric'
   | 'studentId.min'
   | 'studentId.max'
-  | 'login.identifierRequired'
-  | 'login.identifierInvalid'
+  | 'login.emailRequired'
+  | 'login.emailInvalid'
   | 'login.passwordRequired'
   | 'signup.emailRequired'
   | 'signup.emailInvalidFormat'
   | 'signup.emailDomainInvalid'
+  | 'signup.roleRequired'
+  | 'signup.roleInvalidForDomain'
   | 'signup.otpRequired'
   | 'signup.otpInvalid'
   | 'password.min'
@@ -24,10 +25,26 @@ export type AuthSchemaMessageKey =
   | 'profile.degreeLevelRequired'
   | 'profile.facultyRequired'
   | 'profile.majorMin'
+  | 'profile.entryYearRequired'
+  | 'profile.entryYearInvalid'
+  | 'profile.personnelIdRequired'
+  | 'profile.departmentRequired'
   | 'profile.confirmPasswordRequired'
   | 'profile.confirmPasswordMismatch';
 
 export type AuthSchemaTranslator = (key: AuthSchemaMessageKey) => string;
+
+function isStudentEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
+}
+
+function isEmployeeEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith('@sbu.ac.ir');
+}
+
+function isAllowedRegisterEmail(email: string): boolean {
+  return isStudentEmail(email) || isEmployeeEmail(email);
+}
 
 export const createStudentIdSchema = (t: AuthSchemaTranslator) =>
   z
@@ -39,21 +56,10 @@ export const createStudentIdSchema = (t: AuthSchemaTranslator) =>
 
 export const createLoginSchema = (t: AuthSchemaTranslator) =>
   z.object({
-    identifier: z
+    email: z
       .string()
-      .min(1, t('login.identifierRequired'))
-      .refine(
-        (value) => {
-          const trimmedValue = value.trim();
-
-          if (trimmedValue.includes('@')) {
-            return isUniversityEmail(trimmedValue);
-          }
-
-          return /^\d{5,12}$/.test(trimmedValue);
-        },
-        {message: t('login.identifierInvalid')}
-      ),
+      .min(1, t('login.emailRequired'))
+      .email(t('login.emailInvalid')),
     password: z.string().min(1, t('login.passwordRequired'))
   });
 
@@ -63,7 +69,7 @@ export const createSignupStep1EmailSchema = (t: AuthSchemaTranslator) =>
       .string()
       .min(1, t('signup.emailRequired'))
       .email(t('signup.emailInvalidFormat'))
-      .refine((value) => isUniversityEmail(value.trim()), t('signup.emailDomainInvalid'))
+      .refine((value) => isAllowedRegisterEmail(value), t('signup.emailDomainInvalid'))
   });
 
 export const createSignupStep1Schema = (t: AuthSchemaTranslator) =>
@@ -80,18 +86,69 @@ export const createPasswordSchema = (t: AuthSchemaTranslator) =>
     .regex(/[0-9]/, t('password.number'))
     .regex(/[^A-Za-z0-9]/, t('password.symbol'));
 
+const optionalString = z.string().optional();
+const entryYearSchema = (t: AuthSchemaTranslator) =>
+  z
+    .number({message: t('profile.entryYearRequired')})
+    .int(t('profile.entryYearInvalid'))
+    .min(1300, t('profile.entryYearInvalid'))
+    .max(1500, t('profile.entryYearInvalid'));
+
 export const createSignupStep2Schema = (t: AuthSchemaTranslator) =>
   z
     .object({
+      email: z.string().email().optional(),
+      role: z.enum(['student', 'professor', 'staff']).optional(),
       firstName: z.string().min(2, t('profile.firstNameMin')),
       lastName: z.string().min(2, t('profile.lastNameMin')),
-      studentId: createStudentIdSchema(t),
-      degreeLevel: z.string().min(1, t('profile.degreeLevelRequired')),
+      studentId: z.string(),
+      degreeLevel: z.string(),
+      entryYear: z.union([entryYearSchema(t), z.literal(''), z.undefined()]).optional(),
       faculty: z.string().min(1, t('profile.facultyRequired')),
-      major: z.string().min(2, t('profile.majorMin')),
+      major: z.string(),
       specialization: z.string().optional(),
+      personnelId: z.string().optional(),
+      department: z.string().optional(),
+      academicRank: optionalString,
+      jobTitle: optionalString,
       password: createPasswordSchema(t),
       confirmPassword: z.string().min(1, t('profile.confirmPasswordRequired'))
+    })
+    .superRefine((data, ctx) => {
+      const role = data.email && isEmployeeEmail(data.email) ? data.role : 'student';
+
+      if (data.email && isStudentEmail(data.email) && data.role && data.role !== 'student') {
+        ctx.addIssue({code: 'custom', message: t('signup.roleInvalidForDomain'), path: ['role']});
+      }
+
+      if (data.email && isEmployeeEmail(data.email) && data.role !== 'professor' && data.role !== 'staff') {
+        ctx.addIssue({code: 'custom', message: t('signup.roleRequired'), path: ['role']});
+      }
+
+      if (role === 'student') {
+        const studentIdResult = createStudentIdSchema(t).safeParse(data.studentId ?? '');
+        if (!studentIdResult.success) {
+          ctx.addIssue({...studentIdResult.error.issues[0], path: ['studentId']});
+        }
+        if (!data.degreeLevel) {
+          ctx.addIssue({code: 'custom', message: t('profile.degreeLevelRequired'), path: ['degreeLevel']});
+        }
+        if (!data.major || data.major.length < 2) {
+          ctx.addIssue({code: 'custom', message: t('profile.majorMin'), path: ['major']});
+        }
+        if (data.email && data.entryYear === undefined) {
+          ctx.addIssue({code: 'custom', message: t('profile.entryYearRequired'), path: ['entryYear']});
+        }
+      }
+
+      if (role === 'professor' || role === 'staff') {
+        if (!data.personnelId) {
+          ctx.addIssue({code: 'custom', message: t('profile.personnelIdRequired'), path: ['personnelId']});
+        }
+        if (!data.department) {
+          ctx.addIssue({code: 'custom', message: t('profile.departmentRequired'), path: ['department']});
+        }
+      }
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t('profile.confirmPasswordMismatch'),

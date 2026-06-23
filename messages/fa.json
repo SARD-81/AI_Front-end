@@ -156,7 +156,7 @@
     "card": {
       "loginTitle": "ورود به حساب کاربری",
       "signupTitle": "ایجاد حساب کاربری",
-      "loginDescription": "برای ورود، شماره دانشجویی یا ایمیل دانشگاهی و رمز عبور خود را وارد کنید.",
+      "loginDescription": "برای ورود، ایمیل دانشگاهی و رمز عبور خود را وارد کنید.",
       "signupDescription": "برای ثبت‌نام، ابتدا ایمیل دانشگاهی خود را تایید کنید.",
       "switchToSignup": "حساب ندارید؟ ثبت‌نام",
       "switchToLogin": "حساب دارید؟ ورود",
@@ -166,14 +166,14 @@
     "login": {
       "success": "ورود با موفقیت انجام شد.",
       "errorFallback": "خطا در ورود به سامانه.",
-      "identifierLabel": "شماره دانشجویی یا ایمیل دانشگاهی",
-      "identifierPlaceholder": "مثال: 401123456 یا user@sbu.ac.ir",
       "passwordLabel": "رمز عبور",
       "passwordPlaceholder": "رمز عبور",
       "hidePassword": "پنهان‌سازی رمز عبور",
       "showPassword": "نمایش رمز عبور",
       "submit": "ورود به سامانه",
-      "forgotPassword": "فراموشی رمز عبور؟"
+      "forgotPassword": "فراموشی رمز عبور؟",
+      "emailLabel": "ایمیل دانشگاهی",
+      "emailPlaceholder": "مثال: user@sbu.ac.ir"
     },
     "signup": {
       "sendOtpErrorFallback": "ارسال کد تایید ناموفق بود.",
@@ -196,7 +196,6 @@
       ],
       "facultyLabel": "دانشکده",
       "majorLabel": "رشته تحصیلی",
-      "specializationLabel": "گرایش (اختیاری)",
       "passwordLabel": "رمز عبور",
       "confirmPasswordLabel": "تکرار رمز عبور",
       "back": "بازگشت",
@@ -220,7 +219,16 @@
         "personalInfo": "اطلاعات شخصی",
         "academicInfo": "اطلاعات تحصیلی",
         "password": "رمز عبور"
-      }
+      },
+      "roleLabel": "نقش",
+      "studentRoleLabel": "دانشجو",
+      "professorRoleLabel": "استاد",
+      "staffRoleLabel": "کارمند",
+      "entryYearLabel": "سال ورود",
+      "personnelIdLabel": "شناسه پرسنلی",
+      "departmentLabel": "گروه/واحد",
+      "academicRankLabel": "مرتبه علمی (اختیاری)",
+      "jobTitleLabel": "عنوان شغلی (اختیاری)"
     },
     "validation": {
       "studentId": {
@@ -230,16 +238,18 @@
         "max": "شماره دانشجویی نباید بیشتر از ۱۲ رقم باشد."
       },
       "login": {
-        "identifierRequired": "ورود شماره دانشجویی یا ایمیل الزامی است.",
-        "identifierInvalid": "شناسه باید شماره دانشجویی معتبر یا ایمیل دانشگاهی مجاز باشد.",
-        "passwordRequired": "رمز عبور الزامی است."
+        "passwordRequired": "رمز عبور الزامی است.",
+        "emailRequired": "ایمیل دانشگاهی الزامی است.",
+        "emailInvalid": "ایمیل معتبر وارد کنید."
       },
       "signup": {
         "emailRequired": "ایمیل دانشگاهی الزامی است.",
         "emailInvalidFormat": "فرمت ایمیل معتبر نیست.",
-        "emailDomainInvalid": "ایمیل باید در دامنه دانشگاهی مجاز باشد.",
+        "emailDomainInvalid": "ایمیل باید در دامنه @mail.sbu.ac.ir یا @sbu.ac.ir باشد.",
         "otpRequired": "کد تایید الزامی است.",
-        "otpInvalid": "کد تایید باید دقیقا ۶ رقم باشد."
+        "otpInvalid": "کد تایید باید دقیقا ۶ رقم باشد.",
+        "roleRequired": "برای ایمیل @sbu.ac.ir نقش استاد یا کارمند را انتخاب کنید.",
+        "roleInvalidForDomain": "نقش انتخاب‌شده با دامنه ایمیل سازگار نیست."
       },
       "password": {
         "min": "رمز عبور باید حداقل ۸ کاراکتر باشد.",
@@ -255,7 +265,11 @@
         "facultyRequired": "دانشکده الزامی است.",
         "majorMin": "رشته تحصیلی باید حداقل ۲ کاراکتر باشد.",
         "confirmPasswordRequired": "تکرار رمز عبور الزامی است.",
-        "confirmPasswordMismatch": "تکرار رمز عبور با رمز عبور یکسان نیست."
+        "confirmPasswordMismatch": "تکرار رمز عبور با رمز عبور یکسان نیست.",
+        "entryYearRequired": "سال ورود الزامی است.",
+        "entryYearInvalid": "سال ورود باید عدد سال شمسی بین ۱۳۰۰ تا ۱۵۰۰ باشد.",
+        "personnelIdRequired": "شناسه پرسنلی الزامی است.",
+        "departmentRequired": "گروه/واحد الزامی است."
       }
     },
     "reset": {

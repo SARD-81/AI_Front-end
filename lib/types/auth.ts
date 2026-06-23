@@ -1,4 +1,5 @@
 export type AuthRoleDTO = 'student' | 'professor' | 'staff';
+export type PublicRegisterRoleDTO = AuthRoleDTO;
 
 export type AuthUserDTO = {
   studentId: string;
@@ -14,9 +15,9 @@ export type AuthUserDTO = {
 };
 
 export type LoginInputDTO = {
-  email?: string;
-  identifier?: string;
+  email: string;
   password: string;
+  identifier?: string;
 };
 
 export type LoginResponseDTO = {
@@ -47,20 +48,43 @@ export type VerifyOtpBodyDTO = {
   otp_code: string;
 };
 
-export type RegisterInputDTO = {
+type RegisterBaseInputDTO = {
   email: string;
   otpToken?: string;
   password: string;
   firstName: string;
   lastName: string;
-  studentId: string;
   faculty: string;
-  major: string;
-  degreeLevel: string;
-  specialization?: string;
 };
 
-export type RegisterCompleteBodyDTO = {
+export type StudentRegisterInputDTO = RegisterBaseInputDTO & {
+  role?: 'student';
+  studentId: string;
+  major: string;
+  degreeLevel: string;
+  entryYear?: number;
+};
+
+export type ProfessorRegisterInputDTO = RegisterBaseInputDTO & {
+  role: 'professor';
+  personnelId: string;
+  department: string;
+  academicRank?: string;
+};
+
+export type StaffRegisterInputDTO = RegisterBaseInputDTO & {
+  role: 'staff';
+  personnelId: string;
+  department: string;
+  jobTitle?: string;
+};
+
+export type RegisterInputDTO =
+  | StudentRegisterInputDTO
+  | ProfessorRegisterInputDTO
+  | StaffRegisterInputDTO;
+
+export type StudentRegisterCompleteBodyDTO = {
   email: string;
   password: string;
   first_name: string;
@@ -69,7 +93,37 @@ export type RegisterCompleteBodyDTO = {
   faculty: string;
   major: string;
   degree_level: string;
+  entry_year: number;
 };
+
+export type ProfessorRegisterCompleteBodyDTO = {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role: 'professor';
+  personnel_id: string;
+  faculty: string;
+  department: string;
+  academic_rank?: string;
+};
+
+export type StaffRegisterCompleteBodyDTO = {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role: 'staff';
+  personnel_id: string;
+  department: string;
+  faculty: string;
+  job_title?: string;
+};
+
+export type RegisterCompleteBodyDTO =
+  | StudentRegisterCompleteBodyDTO
+  | ProfessorRegisterCompleteBodyDTO
+  | StaffRegisterCompleteBodyDTO;
 
 export type PasswordResetCompleteInputDTO = {
   email: string;

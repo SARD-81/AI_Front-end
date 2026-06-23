@@ -2,46 +2,19 @@ import { NextResponse } from 'next/server';
 import { setAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
-import {
-  isLikelyEmail,
-  isValidUniversityEmail,
-  studentIdToEmail
-} from '@/lib/server/university-config';
+import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 
 type LoginBody = {
-  identifier?: string;
   email?: string;
   password?: string;
 };
-
-function resolveLoginEmail(body: LoginBody): string {
-  const explicitEmail = body.email?.trim();
-  if (explicitEmail) {
-    return explicitEmail;
-  }
-
-  const identifier = body.identifier?.trim() ?? '';
-  if (!identifier) {
-    return '';
-  }
-
-  if (isLikelyEmail(identifier)) {
-    return identifier;
-  }
-
-  if (/^\d+$/.test(identifier)) {
-    return studentIdToEmail(identifier);
-  }
-
-  return '';
-}
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as LoginBody;
     const password = body.password ?? '';
-    const email = resolveLoginEmail(body);
+    const email = body.email?.trim() ?? '';
 
     if (!email || !isValidUniversityEmail(email)) {
       return NextResponse.json(

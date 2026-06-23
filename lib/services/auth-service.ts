@@ -98,6 +98,73 @@ export function isAbortError(error: unknown): boolean {
   );
 }
 
+
+function isStudentEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
+}
+
+function isEmployeeEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith('@sbu.ac.ir');
+}
+
+function addOptionalString(
+  payload: Record<string, unknown>,
+  key: string,
+  value: string | undefined
+): Record<string, unknown> {
+  if (value?.trim()) {
+    payload[key] = value.trim();
+  }
+  return payload;
+}
+
+function toRegisterCompletePayload(input: RegisterInputDTO) {
+  const basePayload = {
+    email: input.email,
+    password: input.password,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    faculty: input.faculty
+  };
+
+  if (isStudentEmail(input.email)) {
+    if ('role' in input && input.role && input.role !== 'student') {
+      throw new ServiceError('دامنه ایمیل با نقش انتخاب‌شده سازگار نیست.', 400, 'REGISTER_ROLE_DOMAIN_MISMATCH');
+    }
+
+    if (!('studentId' in input)) {
+      throw new ServiceError('اطلاعات دانشجویی کامل نیست.', 400, 'REGISTER_STUDENT_FIELDS_MISSING');
+    }
+
+    return {
+      ...basePayload,
+      studentId: input.studentId,
+      major: input.major,
+      degreeLevel: input.degreeLevel,
+      entryYear: input.entryYear
+    };
+  }
+
+  if (isEmployeeEmail(input.email)) {
+    if (input.role !== 'professor' && input.role !== 'staff') {
+      throw new ServiceError('برای ایمیل sbu.ac.ir نقش استاد یا کارمند را انتخاب کنید.', 400, 'REGISTER_ROLE_REQUIRED');
+    }
+
+    const payload = {
+      ...basePayload,
+      role: input.role,
+      personnelId: input.personnelId,
+      department: input.department
+    };
+
+    return input.role === 'professor'
+      ? addOptionalString(payload, 'academicRank', input.academicRank)
+      : addOptionalString(payload, 'jobTitle', input.jobTitle);
+  }
+
+  throw new ServiceError('ایمیل باید در دامنه مجاز دانشگاهی باشد.', 400, 'REGISTER_EMAIL_DOMAIN_INVALID');
+}
+
 function toServiceError(error: unknown): ServiceError {
   if (error instanceof ServiceError) return error;
   if (error instanceof ApiError) {
@@ -118,13 +185,7 @@ export async function loginUser(
     const result = await apiFetch<LoginResponseDTO>(API_ENDPOINTS.auth.login, {
       method: 'POST',
       signal: opts?.signal,
-      body: JSON.stringify(
-        input.email
-          ? { email: input.email, password: input.password }
-          : input.identifier?.includes('@')
-            ? { email: input.identifier, password: input.password }
-            : { identifier: input.identifier, password: input.password }
-      )
+      body: JSON.stringify({ email: input.email, password: input.password })
     });
 
     return loginSchema.parse(result);
@@ -231,16 +292,7 @@ export async function registerUser(
       {
         method: 'POST',
         signal: opts?.signal,
-        body: JSON.stringify({
-          email: input.email,
-          password: input.password,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          studentId: input.studentId,
-          faculty: input.faculty,
-          major: input.major,
-          degreeLevel: input.degreeLevel
-        })
+        body: JSON.stringify(toRegisterCompletePayload(input))
       }
     );
 
