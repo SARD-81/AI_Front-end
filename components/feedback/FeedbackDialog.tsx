@@ -49,6 +49,7 @@ type FeedbackDialogProps = {
 export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, onSubmit, onClear}: FeedbackDialogProps) {
   const locale = useLocale();
   const t = useTranslations('app.feedback');
+  const isRtl = locale === 'fa';
   const chipLabels = useMemo(
     () =>
       Object.fromEntries(FEEDBACK_CHIPS.map((chip) => [chip.key, t(`chips.${chip.key}`)])) as Record<FeedbackChipKey, string>,
@@ -85,7 +86,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+      <DialogContent className={cn('max-w-xl', isRtl ? 'text-right' : 'text-left')} dir={isRtl ? 'rtl' : 'ltr'}>
         <DialogTitle className="text-lg font-semibold">{t('title')}</DialogTitle>
         <p className="text-sm text-muted-foreground">{t('description')}</p>
 

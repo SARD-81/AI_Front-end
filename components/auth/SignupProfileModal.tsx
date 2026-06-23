@@ -3,7 +3,7 @@
 import {useEffect, useMemo, useState} from 'react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Loader2} from 'lucide-react';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {useForm} from 'react-hook-form';
 import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
@@ -34,6 +34,7 @@ type StepKey = 'personal' | 'role' | 'academic' | 'password';
 
 export function SignupProfileModal({email, open, busy, setBusy, registerRef, onOpenChange, onRegistered}: Props) {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
   const [stepIndex, setStepIndex] = useState(0);
   const [registerError, setRegisterError] = useState<string | null>(null);
@@ -124,7 +125,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-2xl overflow-y-auto overflow-x-hidden rounded-[1.5rem] border-white/15 bg-slate-950/95 text-white shadow-2xl backdrop-blur-xl sm:rounded-[2rem]">
+      <DialogContent dir={locale === 'fa' ? 'rtl' : 'ltr'} className="max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-2xl overflow-y-auto overflow-x-hidden rounded-[1.5rem] border-white/15 bg-slate-950/95 text-white shadow-2xl backdrop-blur-xl sm:rounded-[2rem]">
         <DialogTitle className="text-xl font-black leading-8 text-white md:text-2xl">{t('signup.modalTitle')}</DialogTitle>
         <p className="text-sm leading-7 text-slate-300">{t('signup.modalDescription')} <span dir="ltr" className="text-sky-100">{email}</span></p>
         <div className="grid grid-cols-3 gap-2 text-xs sm:grid-cols-4">

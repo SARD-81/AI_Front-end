@@ -86,9 +86,9 @@ export function useAppSettings() {
   return {settings, setSettings, settingsKey: SETTINGS_KEY};
 }
 
-function SettingRow({label, children}: {label: string; children: ReactNode}) {
+function SettingRow({label, children, isRtl}: {label: string; children: ReactNode; isRtl: boolean}) {
   return (
-    <div className="flex flex-row-reverse items-center justify-between gap-3 border-b border-border py-4 text-right last:border-none">
+    <div className={cn('flex items-center justify-between gap-3 border-b border-border py-4 last:border-none', isRtl ? 'text-right' : 'text-left')}>
       <span className="text-sm font-medium">{label}</span>
       {children}
     </div>
@@ -98,11 +98,13 @@ function SettingRow({label, children}: {label: string; children: ReactNode}) {
 function SettingsDropdown({
   value,
   options,
-  onChange
+  onChange,
+  isRtl
 }: {
   value: string;
   options: readonly {value: string; label: string}[];
   onChange: (value: string) => void;
+  isRtl: boolean;
 }) {
   const selectedLabel = options.find((item) => item.value === value)?.label ?? options[0].label;
 
@@ -111,13 +113,13 @@ function SettingsDropdown({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-10 min-w-44 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-sm text-right"
+          className={cn('flex h-10 min-w-44 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-sm', isRtl ? 'text-right' : 'text-left')}
         >
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{selectedLabel}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align={isRtl ? 'start' : 'end'} className="w-48">
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
@@ -150,6 +152,8 @@ export function SettingsModal({
 }) {
   const [tab, setTab] = useState<'general' | 'account'>('general');
   const t = useTranslations('settings');
+  const locale = useLocale();
+  const isRtl = locale === 'fa';
 
   const appearanceOptions = [
     {value: 'system', label: t('options.appearance.system')},
@@ -184,12 +188,12 @@ export function SettingsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        dir="rtl"
-        className="h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border p-0 text-right sm:h-[600px]"
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className={cn('h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border p-0 sm:h-[600px]', isRtl ? 'text-right' : 'text-left')}
       >
         <DialogTitle className="sr-only">{t('title')}</DialogTitle>
         <div className="flex h-full flex-col sm:flex-row">
-          <aside className="w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:border-r sm:p-4">
+          <aside className={cn('w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:p-4', isRtl ? 'sm:border-l' : 'sm:border-r')}>
             <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">{t('title')}</h2>
             <nav className="space-y-1">
               <button
@@ -224,25 +228,28 @@ export function SettingsModal({
             <div className="mt-2">
               {tab === 'general' ? (
                 <>
-                  <SettingRow label={t('general.appearance')}>
+                  <SettingRow label={t('general.appearance')} isRtl={isRtl}>
                     <SettingsDropdown
                       value={settings.appearance}
                       options={appearanceOptions}
                       onChange={(value) => setSettings((prev) => ({...prev, appearance: value as AppSettings['appearance']}))}
+                      isRtl={isRtl}
                     />
                   </SettingRow>
-                  <SettingRow label={t('general.accentColor')}>
+                  <SettingRow label={t('general.accentColor')} isRtl={isRtl}>
                     <SettingsDropdown
                       value={settings.accent}
                       options={accentOptions}
                       onChange={(value) => setSettings((prev) => ({...prev, accent: value as AppSettings['accent']}))}
+                      isRtl={isRtl}
                     />
                   </SettingRow>
-                  <SettingRow label={t('general.language')}>
+                  <SettingRow label={t('general.language')} isRtl={isRtl}>
                     <SettingsDropdown
                       value={settings.language}
                       options={languageOptions}
                       onChange={(value) => setSettings((prev) => ({...prev, language: value as AppSettings['language']}))}
+                      isRtl={isRtl}
                     />
                   </SettingRow>
                 </>
@@ -255,16 +262,16 @@ export function SettingsModal({
                 </div>
               ) : (
                 <>
-                  <SettingRow label={t('account.fullName')}>
+                  <SettingRow label={t('account.fullName')} isRtl={isRtl}>
                     <span className="text-sm text-muted-foreground">{profile.name}</span>
                   </SettingRow>
-                  <SettingRow label={t('account.email')}>
+                  <SettingRow label={t('account.email')} isRtl={isRtl}>
                     <span className="text-sm text-muted-foreground">{profile.email}</span>
                   </SettingRow>
-                  <SettingRow label={t('account.studentId')}>
+                  <SettingRow label={t('account.studentId')} isRtl={isRtl}>
                     <span className="text-sm text-muted-foreground" dir="ltr">{profile.studentId}</span>
                   </SettingRow>
-                  <SettingRow label={t('account.role')}>
+                  <SettingRow label={t('account.role')} isRtl={isRtl}>
                     <span className="text-sm text-muted-foreground">{profile.role}</span>
                   </SettingRow>
                 </>
