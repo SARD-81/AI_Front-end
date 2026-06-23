@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const data = await backendFetch('/register/request-otp/', {
       base: 'auth',
       method: 'POST',
-      body: JSON.stringify(body)
+      body: JSON.stringify({email})
     });
 
     return NextResponse.json(data);

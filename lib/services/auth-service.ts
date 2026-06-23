@@ -37,14 +37,6 @@ const loginSchema = z
   .transform((value) => {
     const studentId = value.user.studentId ?? value.user.student_id;
 
-    if (!studentId) {
-      throw new ServiceError(
-        'شناسه دانشجویی از سرور دریافت نشد.',
-        500,
-        'LOGIN_USER_MISSING'
-      );
-    }
-
     const isProfileCompleted =
       value.isProfileCompleted ??
       value.is_profile_completed ??
