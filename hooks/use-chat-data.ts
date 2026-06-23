@@ -237,7 +237,16 @@ export function useChatActions() {
     rename: useMutation({
       mutationFn: ({ chatId, title }: { chatId: string; title: string }) =>
         renameConversation(chatId, title),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chats'] })
+      onSuccess: (chat) => {
+        queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
+          (previous ?? []).map((item) =>
+            item.id === chat.id ? { ...item, title: chat.title, updatedAt: chat.updatedAt } : item
+          )
+        );
+        queryClient.setQueryData<ChatDetail>(['chat', chat.id], (previous) =>
+          previous ? { ...previous, title: chat.title } : previous
+        );
+      }
     }),
     remove: useMutation({
       mutationFn: (chatId: string) => deleteConversation(chatId),

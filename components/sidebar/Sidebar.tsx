@@ -36,7 +36,8 @@ import {cn} from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 304;
-const ENABLE_CONVERSATION_RENAME = false;
+const MAX_CONVERSATION_TITLE_LENGTH = 100;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () => void}) {
   const t = useTranslations('app');
@@ -94,6 +95,35 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     // TODO(BACKEND): confirm created chat id shape from POST /conversations/.
     router.push(`/${locale}/chat/${created.id}?focus=1`);
     onNavigate?.();
+  };
+
+  const commitRename = async (chatId: string, previousTitle: string) => {
+    const title = editingTitle.trim();
+
+    if (!title) {
+      setEditingTitle(previousTitle);
+      setEditingChatId(null);
+      return;
+    }
+
+    if (title.length > MAX_CONVERSATION_TITLE_LENGTH) {
+      toast.error(t('sidebar.renameTitleTooLong', {max: MAX_CONVERSATION_TITLE_LENGTH}));
+      return;
+    }
+
+    if (title === previousTitle.trim()) {
+      setEditingChatId(null);
+      return;
+    }
+
+    try {
+      await actions.rename.mutateAsync({chatId, title});
+      setEditingChatId(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('sidebar.renameError');
+      toast.error(message);
+      setEditingTitle(previousTitle);
+    }
   };
 
   const handleDeleteConversation = async () => {
@@ -267,6 +297,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
 
                       const href = `/${locale}/chat/${chat.id}`;
                       const isActive = pathname === href || openMenuChatId === chat.id;
+                      const canRenameConversation = UUID_PATTERN.test(chat.id) && Boolean(chat.title.trim());
 
                       return (
                         <motion.div layout key={chat.id} className="group">
@@ -288,17 +319,15 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                   <input
                                     autoFocus
                                     value={editingTitle}
+                                    maxLength={MAX_CONVERSATION_TITLE_LENGTH}
                                     onChange={(event) => setEditingTitle(event.target.value)}
                                     onBlur={() => {
-                                      const title = editingTitle.trim() || chat.title;
-                                      actions.rename.mutate({chatId: chat.id, title});
-                                      setEditingChatId(null);
+                                      void commitRename(chat.id, chat.title);
                                     }}
                                     onKeyDown={(event) => {
                                       if (event.key === 'Enter') {
-                                        const title = editingTitle.trim() || chat.title;
-                                        actions.rename.mutate({chatId: chat.id, title});
-                                        setEditingChatId(null);
+                                        event.preventDefault();
+                                        event.currentTarget.blur();
                                       }
                                       if (event.key === 'Escape') {
                                         setEditingTitle(chat.title);
@@ -331,7 +360,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" side="left">
-                                {ENABLE_CONVERSATION_RENAME ? (
+                                {canRenameConversation ? (
                                   <DropdownMenuItem
                                     onClick={() => {
                                       setEditingChatId(chat.id);
