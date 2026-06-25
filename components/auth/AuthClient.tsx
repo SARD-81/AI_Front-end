@@ -61,7 +61,12 @@ export function AuthClient({ locale }: { locale: string }) {
   const searchParams = useSearchParams();
 
   const t = useTranslations('auth');
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const modeQuery = searchParams.get('mode');
+  const initialAuthMode: AuthMode =
+    modeQuery === 'signup' || modeQuery === 'reset' || modeQuery === 'login'
+      ? modeQuery
+      : 'login';
+  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [busy, setBusy] = useState(false);
   const [postSignupAuthLoading, setPostSignupAuthLoading] = useState(false);
   const [signupResetToken, setSignupResetToken] = useState(0);
@@ -81,11 +86,10 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   useEffect(() => {
-    const modeQuery = searchParams.get('mode');
     if (modeQuery === 'signup' || modeQuery === 'login' || modeQuery === 'reset') {
       setAuthMode(modeQuery);
     }
-  }, [searchParams]);
+  }, [modeQuery]);
 
   useEffect(() => {
     return () => {
