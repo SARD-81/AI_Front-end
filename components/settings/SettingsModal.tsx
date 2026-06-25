@@ -88,7 +88,7 @@ export function useAppSettings() {
 
 function SettingRow({label, children, isRtl}: {label: string; children: ReactNode; isRtl: boolean}) {
   return (
-    <div className={cn('flex items-center justify-between gap-3 border-b border-border py-4 last:border-none', isRtl ? 'text-right' : 'text-left')}>
+    <div className={cn('my-2 flex items-center justify-between gap-3 rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] px-4 py-3 shadow-sm last:border-[hsl(var(--surface-subtle))]', isRtl ? 'text-right' : 'text-left')}>
       <span className="text-sm font-medium">{label}</span>
       {children}
     </div>
@@ -113,18 +113,18 @@ function SettingsDropdown({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={cn('flex h-10 min-w-44 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-sm', isRtl ? 'text-right' : 'text-left')}
+          className={cn('flex h-10 min-w-44 items-center justify-between gap-3 rounded-lg border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] shadow-sm hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background', isRtl ? 'text-right' : 'text-left')}
         >
           <span className="truncate">{selectedLabel}</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={isRtl ? 'start' : 'end'} className="w-48">
+      <DropdownMenuContent align={isRtl ? 'start' : 'end'} className="w-48 border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card">
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
-            className="justify-between gap-2"
+            className="justify-between gap-2 focus:bg-[hsl(var(--menu-hover))] focus:text-[hsl(var(--menu-hover-foreground))]"
           >
             <Check className={cn('h-4 w-4', value === option.value ? 'opacity-100' : 'opacity-0')} />
             <span>{option.label}</span>
@@ -189,11 +189,11 @@ export function SettingsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isRtl ? 'rtl' : 'ltr'}
-        className={cn('h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border p-0 sm:h-[600px]', isRtl ? 'text-right' : 'text-left')}
+        className={cn('h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-0 shadow-card sm:h-[600px]', isRtl ? 'text-right' : 'text-left')}
       >
         <DialogTitle className="sr-only">{t('title')}</DialogTitle>
         <div className="flex h-full flex-col sm:flex-row">
-          <aside className={cn('w-full border-b border-border bg-muted/30 p-3 sm:w-60 sm:border-b-0 sm:p-4', isRtl ? 'sm:border-l' : 'sm:border-r')}>
+          <aside className={cn('w-full border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] p-3 sm:w-60 sm:border-b-0 sm:p-4', isRtl ? 'sm:border-l' : 'sm:border-r')}>
             <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">{t('title')}</h2>
             <nav className="space-y-1">
               <button
@@ -201,7 +201,7 @@ export function SettingsModal({
                 onClick={() => setTab('general')}
                 className={cn(
                   'flex h-10 w-full items-center justify-start gap-2 rounded-full px-3 text-sm',
-                  tab === 'general' ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'
+                  tab === 'general' ? 'bg-[hsl(var(--menu-hover))] font-medium text-[hsl(var(--menu-hover-foreground))] shadow-sm' : 'text-muted-foreground hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground'
                 )}
               >
                 <SlidersHorizontal className="h-4 w-4" />
@@ -212,7 +212,7 @@ export function SettingsModal({
                 onClick={() => setTab('account')}
                 className={cn(
                   'flex h-10 w-full items-center justify-start gap-2 rounded-full px-3 text-sm',
-                  tab === 'account' ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'
+                  tab === 'account' ? 'bg-[hsl(var(--menu-hover))] font-medium text-[hsl(var(--menu-hover-foreground))] shadow-sm' : 'text-muted-foreground hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground'
                 )}
               >
                 <CircleUserRound className="h-4 w-4" />
@@ -221,11 +221,11 @@ export function SettingsModal({
             </nav>
           </aside>
 
-          <section className="flex-1 p-6 sm:p-8">
+          <section className="flex-1 bg-background/60 p-6 sm:p-8">
             <h3 className="text-2xl font-semibold">{tab === 'general' ? t('tabs.general') : t('tabs.account')}</h3>
             <div className="mt-4 border-b border-border" />
 
-            <div className="mt-2">
+            <div className="mt-4">
               {tab === 'general' ? (
                 <>
                   <SettingRow label={t('general.appearance')} isRtl={isRtl}>
@@ -263,16 +263,16 @@ export function SettingsModal({
               ) : (
                 <>
                   <SettingRow label={t('account.fullName')} isRtl={isRtl}>
-                    <span className="text-sm text-muted-foreground">{profile.name}</span>
+                    <span className="text-sm font-medium text-foreground">{profile.name}</span>
                   </SettingRow>
                   <SettingRow label={t('account.email')} isRtl={isRtl}>
-                    <span className="text-sm text-muted-foreground">{profile.email}</span>
+                    <span className="text-sm font-medium text-foreground">{profile.email}</span>
                   </SettingRow>
                   <SettingRow label={t('account.studentId')} isRtl={isRtl}>
-                    <span className="text-sm text-muted-foreground" dir="ltr">{profile.studentId}</span>
+                    <span className="text-sm font-medium text-foreground" dir="ltr">{profile.studentId}</span>
                   </SettingRow>
                   <SettingRow label={t('account.role')} isRtl={isRtl}>
-                    <span className="text-sm text-muted-foreground">{profile.role}</span>
+                    <span className="text-sm font-medium text-foreground">{profile.role}</span>
                   </SettingRow>
                 </>
               )}

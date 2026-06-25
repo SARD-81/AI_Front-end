@@ -28,7 +28,7 @@ function CodeBlock({ value }: { value: string }) {
   };
 
   return (
-    <div className="my-3 overflow-hidden rounded-md border border-border bg-muted">
+    <div className="my-3 overflow-hidden rounded-md border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <span className="text-xs text-muted-foreground">
           {t('message.codeLabel')}
@@ -50,7 +50,7 @@ function CodeBlock({ value }: { value: string }) {
       </div>
       <pre
         dir="ltr"
-        className="overflow-x-auto bg-muted p-3 text-sm leading-6 text-foreground"
+        className="overflow-x-auto bg-[hsl(var(--surface-elevated))] p-3 text-sm leading-6 text-foreground"
       >
         <code dir="ltr">{value}</code>
       </pre>
@@ -212,23 +212,23 @@ function MessageBubbleComponent({
                   ) : null}
                   <p
                     className={cn(
-                      'm-0 whitespace-pre-wrap break-words rounded-2xl border border-border bg-secondary px-4 py-3 text-foreground shadow-card',
+                      'm-0 whitespace-pre-wrap break-words rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-4 py-3 text-foreground shadow-card',
                       sendStatus === 'failed'
-                        ? 'border-destructive/60 bg-destructive/10'
+                        ? 'border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] text-[hsl(var(--danger-text))]'
                         : undefined,
-                      sendStatus === 'pending' ? 'opacity-80' : undefined
+                      sendStatus === 'pending' ? 'border-[hsl(var(--warning-border))] bg-[hsl(var(--warning-surface))] text-[hsl(var(--warning-text))]' : undefined
                     )}
                   >
                     {message.content}
                   </p>
                   {sendStatus === 'pending' ? (
-                    <div className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                    <div className="mt-1 flex items-center justify-end gap-1 text-xs text-[hsl(var(--warning-text))]">
                       <Clock className="h-3 w-3" />
                       <span>{t('message.pending')}</span>
                     </div>
                   ) : null}
                   {sendStatus === 'failed' ? (
-                    <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-xs text-destructive">
+                    <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-xs text-[hsl(var(--danger-text))]">
                       <span className="inline-flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {t('message.failed')}
@@ -292,7 +292,7 @@ function MessageBubbleComponent({
                           return (
                             <code
                               dir="ltr"
-                              className="rounded border border-border/80 bg-muted px-1.5 py-0.5 text-sm"
+                              className="rounded border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-1.5 py-0.5 text-sm"
                               {...props}
                             >
                               {text}
@@ -301,7 +301,7 @@ function MessageBubbleComponent({
                         },
                         pre: ({ children }) => <>{children}</>,
                         table: ({ children }) => (
-                          <div className="my-3 overflow-x-auto">
+                          <div className="my-3 overflow-x-auto rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]">
                             <table>{children}</table>
                           </div>
                         )

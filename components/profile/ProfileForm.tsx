@@ -15,6 +15,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import {
   getProfile,
@@ -165,7 +166,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
 
   if (profileQuery.isLoading) {
     return (
-      <Card className="w-full max-w-xl border-border/70 bg-card/95 shadow-card">
+      <Card className="w-full max-w-xl border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-card">
         <CardContent className="flex min-h-40 items-center justify-center gap-2 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           {t('loading')}
@@ -184,7 +185,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
       [401, 403].includes(profileQuery.error.status);
 
     return (
-      <Card className="w-full max-w-xl border-border/70 bg-card/95 shadow-card">
+      <Card className="w-full max-w-xl border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-card">
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription>{message}</CardDescription>
@@ -208,18 +209,18 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-2xl border-border/70 bg-card/95 shadow-card">
+    <Card className="w-full max-w-2xl border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-card">
       <CardHeader className="space-y-4">
-        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
+        <div className="rounded-2xl border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] p-4 text-sm text-[hsl(var(--info-text))]">
           <p className="font-semibold">{t('bannerTitle')}</p>
-          <p className="mt-1 text-primary/80">{t('bannerDescription')}</p>
+          <p className="mt-1 text-[hsl(var(--info-text))]/80">{t('bannerDescription')}</p>
         </div>
         <div>
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription className="mt-2">{t('description')}</CardDescription>
         </div>
         <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-          <p className="inline-flex w-fit rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium">
+          <p className="inline-flex w-fit rounded-full border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-3 py-1 text-xs font-medium">
             {t('roleLabel')}: {t(`roles.${role}`)}
           </p>
           <p>{t('editableNotice')}</p>
@@ -241,7 +242,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
                 <div key={field} className="space-y-2">
                   <Label
                     htmlFor={field}
-                    className={showFieldError ? 'text-destructive' : undefined}
+                    className={showFieldError ? 'text-[hsl(var(--danger-text))]' : undefined}
                   >
                     {t(`fields.${field}`)} *
                   </Label>
@@ -258,16 +259,12 @@ export function ProfileForm({ locale }: ProfileFormProps) {
                     aria-describedby={
                       showFieldError ? `${field}-error` : undefined
                     }
-                    className={
-                      showFieldError
-                        ? 'border-destructive focus-visible:ring-destructive/40'
-                        : undefined
-                    }
+                    className={cn('border-[hsl(var(--field-border))] bg-[hsl(var(--field))] text-[hsl(var(--field-foreground))] shadow-sm placeholder:text-[hsl(var(--field-placeholder))] focus-visible:ring-[hsl(var(--field-focus))]/40', showFieldError ? 'border-[hsl(var(--danger-border))] focus-visible:ring-[hsl(var(--danger))]/40' : undefined)}
                   />
                   {showFieldError ? (
                     <p
                       id={`${field}-error`}
-                      className="text-xs text-destructive"
+                      className="text-xs text-[hsl(var(--danger-text))]"
                     >
                       {t('fieldRequired', { field: t(`fields.${field}`) })}
                     </p>
@@ -278,7 +275,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
           </div>
 
           {profile ? (
-            <div className="space-y-3 rounded-2xl border border-border bg-muted/30 p-4">
+            <div className="space-y-3 rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] p-4">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">
                   {t('readOnlySectionTitle')}
@@ -291,7 +288,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
                 {readOnlyFields.map((field) => (
                   <div
                     key={field}
-                    className="rounded-xl border border-border bg-background/70 p-3"
+                    className="rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-3 shadow-sm"
                   >
                     <dt className="text-xs font-medium text-muted-foreground">
                       {t(`fields.${field}`)}
@@ -315,7 +312,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
           ) : null}
 
           {formError ? (
-            <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="rounded-xl border border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] px-3 py-2 text-sm text-[hsl(var(--danger-text))]">
               {formError}
             </p>
           ) : null}
