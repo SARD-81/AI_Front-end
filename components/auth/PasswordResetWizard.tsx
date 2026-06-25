@@ -35,7 +35,7 @@ import {
 } from '@/lib/validation/auth-schemas';
 
 const authInputClassName =
-  'h-12 rounded-2xl border-white/10 bg-white/[0.08] text-white shadow-inner shadow-black/15 outline-none placeholder:text-slate-400/75 focus-visible:ring-primary/60 focus-visible:ring-offset-0';
+  'h-12 rounded-2xl border-field-border bg-field/90 text-field-foreground shadow-inner shadow-black/15 outline-none placeholder:text-field-placeholder focus-visible:ring-field-focus focus-visible:ring-offset-0 dark:bg-field/70';
 
 const RESEND_SECONDS = 60;
 
@@ -227,7 +227,7 @@ export function PasswordResetWizard({
           <motion.div key="reset-otp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <Form {...otpForm}>
               <form onSubmit={onVerifyOtp} className="space-y-5" noValidate>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-slate-200/85">
+                <div className="rounded-2xl border border-field-border bg-field/70 px-3 py-2 text-sm text-field-foreground shadow-sm">
                   {t('reset.codeSentTo')} <span dir="ltr">{email}</span>
                 </div>
                 <FormField
@@ -271,7 +271,7 @@ export function PasswordResetWizard({
                       <FormControl>
                         <div className="relative">
                           <Input {...field} type={showPassword ? 'text' : 'password'} dir="ltr" className={`${authInputClassName} pl-11`} />
-                          <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-slate-300/75 transition hover:text-white" onClick={() => setShowPassword((prev) => !prev)} aria-label={showPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
+                          <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus" onClick={() => setShowPassword((prev) => !prev)} aria-label={showPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
@@ -289,7 +289,7 @@ export function PasswordResetWizard({
                       <FormControl>
                         <div className="relative">
                           <Input {...field} type={showConfirmPassword ? 'text' : 'password'} dir="ltr" className={`${authInputClassName} pl-11`} />
-                          <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-slate-300/75 transition hover:text-white" onClick={() => setShowConfirmPassword((prev) => !prev)} aria-label={showConfirmPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
+                          <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus" onClick={() => setShowConfirmPassword((prev) => !prev)} aria-label={showConfirmPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>

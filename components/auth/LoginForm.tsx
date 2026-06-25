@@ -29,7 +29,7 @@ import {
 } from '@/lib/validation/auth-schemas';
 
 const authInputClassName =
-  'h-12 rounded-2xl border-white/10 bg-white/[0.08] text-white shadow-inner shadow-black/15 outline-none placeholder:text-slate-400/75 focus-visible:ring-primary/60 focus-visible:ring-offset-0';
+  'h-12 rounded-2xl border-field-border bg-field/90 text-field-foreground shadow-inner shadow-black/15 outline-none placeholder:text-field-placeholder focus-visible:ring-field-focus focus-visible:ring-offset-0 dark:bg-field/70';
 
 type LoginFormProps = {
   onSuccess: (result: LoginResultDTO) => void;
@@ -139,7 +139,7 @@ export function LoginForm({
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-slate-300/75 transition hover:text-white"
+                    className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={
                       showPassword ? t('login.hidePassword') : t('login.showPassword')
@@ -159,7 +159,7 @@ export function LoginForm({
         />
 
         {formError ? (
-          <p className="rounded-2xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">{formError}</p>
+          <p className="rounded-2xl border border-danger-border bg-danger-surface px-3 py-2 text-sm font-medium text-danger-text shadow-sm">{formError}</p>
         ) : null}
 
         <Button
