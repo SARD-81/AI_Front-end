@@ -39,6 +39,13 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))'
         },
+        danger: {
+          DEFAULT: 'hsl(var(--danger))',
+          foreground: 'hsl(var(--danger-foreground))',
+          surface: 'hsl(var(--danger-surface))',
+          border: 'hsl(var(--danger-border))',
+          text: 'hsl(var(--danger-text))'
+        },
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
@@ -49,19 +56,47 @@ const config: Config = {
         },
         success: {
           DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))'
+          foreground: 'hsl(var(--success-foreground))',
+          surface: 'hsl(var(--success-surface))',
+          border: 'hsl(var(--success-border))',
+          text: 'hsl(var(--success-text))'
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))'
+          foreground: 'hsl(var(--warning-foreground))',
+          surface: 'hsl(var(--warning-surface))',
+          border: 'hsl(var(--warning-border))',
+          text: 'hsl(var(--warning-text))'
         },
         info: {
           DEFAULT: 'hsl(var(--info))',
-          foreground: 'hsl(var(--info-foreground))'
+          foreground: 'hsl(var(--info-foreground))',
+          surface: 'hsl(var(--info-surface))',
+          border: 'hsl(var(--info-border))',
+          text: 'hsl(var(--info-text))'
         },
         surface: {
           1: 'hsl(var(--surface-1))',
-          2: 'hsl(var(--surface-2))'
+          2: 'hsl(var(--surface-2))',
+          base: 'hsl(var(--surface-base))',
+          card: 'hsl(var(--surface-card))',
+          elevated: 'hsl(var(--surface-elevated))',
+          subtle: 'hsl(var(--surface-subtle))',
+          overlay: 'hsl(var(--surface-overlay))'
+        },
+        field: {
+          DEFAULT: 'hsl(var(--field))',
+          foreground: 'hsl(var(--field-foreground))',
+          border: 'hsl(var(--field-border))',
+          placeholder: 'hsl(var(--field-placeholder))',
+          focus: 'hsl(var(--field-focus))'
+        },
+        menu: {
+          DEFAULT: 'hsl(var(--menu))',
+          foreground: 'hsl(var(--menu-foreground))',
+          border: 'hsl(var(--menu-border))',
+          hover: 'hsl(var(--menu-hover))',
+          'hover-foreground': 'hsl(var(--menu-hover-foreground))'
         }
       },
       borderRadius: {
