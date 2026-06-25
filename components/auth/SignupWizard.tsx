@@ -159,24 +159,35 @@ export function SignupWizard({
   const isStep1Locked = otpSent || step === 2;
 
   const ProgressIndicator = () => (
-    <div className="mb-5 grid grid-cols-2 gap-2 text-xs sm:text-sm">
+    <div className="mb-5 flex items-stretch gap-2 text-xs sm:text-sm">
       {[
         { id: 1, label: t('signup.progress.emailVerification') },
         { id: 2, label: t('signup.progress.completeProfile') }
-      ].map((item) => {
+      ].map((item, index, items) => {
         const isActive = step === item.id;
         const isComplete = step > item.id;
+        const stepClasses = isComplete
+          ? 'border-success/60 bg-success/15 text-emerald-50 shadow-[0_0_18px_rgba(16,185,129,0.16)]'
+          : isActive
+            ? 'border-sky-300/70 bg-info/20 text-sky-50 shadow-[0_0_18px_rgba(56,189,248,0.18)]'
+            : 'border-white/25 bg-surface-overlay/45 text-slate-200/90';
+        const connectorClasses = isComplete
+          ? 'bg-success/60'
+          : 'bg-white/25';
 
         return (
-          <div
-            key={item.id}
-            className={`rounded-xl border px-3 py-2 transition ${
-              isActive || isComplete
-                ? 'border-primary/40 bg-primary/10 text-foreground'
-                : 'border-border bg-muted/20 text-muted-foreground'
-            }`}
-          >
-            <span className="font-semibold">{item.id}.</span> {item.label}
+          <div key={item.id} className="flex min-w-0 flex-1 items-center gap-2">
+            <div
+              className={`min-w-0 flex-1 rounded-xl border px-3 py-2 transition ${stepClasses}`}
+            >
+              <span className="font-semibold">{item.id}.</span> {item.label}
+            </div>
+            {index < items.length - 1 ? (
+              <div
+                aria-hidden="true"
+                className={`hidden h-px w-5 shrink-0 sm:block ${connectorClasses}`}
+              />
+            ) : null}
           </div>
         );
       })}
@@ -247,8 +258,8 @@ export function SignupWizard({
                       : t('signup.sendOtp')}
                   </Button>
                 ) : (
-                  <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
-                    <div className="text-sm text-muted-foreground">
+                  <div className="space-y-4 rounded-xl border border-sky-300/35 bg-surface-overlay/60 p-4 shadow-[0_0_22px_rgba(14,165,233,0.12)]">
+                    <div className="text-sm text-slate-100/90">
                       {t('signup.otpSentHint')}
                     </div>
                     <FormField
