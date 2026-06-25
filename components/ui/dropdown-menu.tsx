@@ -14,7 +14,7 @@ export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenu
     <Dropdown.Portal>
       <Dropdown.Content
         className={cn(
-          'z-50 min-w-40 rounded-md border border-menu-border bg-menu p-1 text-menu-foreground shadow-card outline-none',
+          'z-50 min-w-40 rounded-md border border-menu-border bg-menu p-1 text-menu-foreground shadow-card outline-none dark:border-menu-border dark:bg-menu dark:shadow-[0_18px_48px_-24px_hsl(var(--shadow-color)/0.9),0_0_0_1px_hsl(var(--foreground)/0.03)]',
           'origin-top-right transition duration-200 ease-out data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
           'data-[state=closed]:-translate-y-1 data-[state=closed]:opacity-0',
           className
@@ -30,7 +30,7 @@ export function DropdownMenuItem({className, ...props}: Dropdown.DropdownMenuIte
   return (
     <Dropdown.Item
       className={cn(
-        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground',
+        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground dark:focus:bg-menu-hover dark:data-[highlighted]:bg-menu-hover',
         className
       )}
       {...props}
@@ -42,7 +42,7 @@ export function DropdownMenuRadioItem({className, children, ...props}: Dropdown.
   return (
     <Dropdown.RadioItem
       className={cn(
-        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground',
+        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground dark:focus:bg-menu-hover dark:data-[highlighted]:bg-menu-hover',
         className
       )}
       {...props}
