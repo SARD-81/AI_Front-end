@@ -223,12 +223,12 @@ export function SignupWizard({
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between gap-3">
-                        <FormLabel>{t('signup.emailLabel')}</FormLabel>
+                        <FormLabel className="text-slate-200/90">{t('signup.emailLabel')}</FormLabel>
                         {otpSent ? (
                           <Button
                             type="button"
                             variant="ghost"
-                            className="h-auto px-2 py-1 text-xs"
+                            className="h-auto px-2 py-1 text-xs text-sky-100 hover:bg-white/10 hover:text-white"
                             onClick={resetOtpState}
                             disabled={busy || step1Form.formState.isSubmitting}
                           >
@@ -237,7 +237,7 @@ export function SignupWizard({
                         ) : null}
                       </div>
                       <FormControl>
-                        <Input {...field} autoComplete="email" dir="ltr" readOnly={isStep1Locked} />
+                        <Input {...field} autoComplete="email" dir="ltr" readOnly={isStep1Locked} className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -246,7 +246,7 @@ export function SignupWizard({
                 {!otpSent ? (
                   <Button
                     type="button"
-                    className="w-full"
+                    className="w-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
                     onClick={onSendOtp}
                     disabled={busy || step1Form.formState.isSubmitting}
                   >
@@ -258,7 +258,7 @@ export function SignupWizard({
                       : t('signup.sendOtp')}
                   </Button>
                 ) : (
-                  <div className="space-y-4 rounded-xl border border-sky-300/35 bg-surface-overlay/60 p-4 shadow-[0_0_22px_rgba(14,165,233,0.12)]">
+                  <div className="space-y-4 rounded-xl border border-sky-300/35 bg-slate-950/45 p-4 shadow-[0_0_22px_rgba(14,165,233,0.12)]">
                     <div className="text-sm text-slate-100/90">
                       {t('signup.otpSentHint')}
                     </div>
@@ -267,9 +267,9 @@ export function SignupWizard({
                       name="otpCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('signup.otpLabel')}</FormLabel>
+                          <FormLabel className="text-slate-200/90">{t('signup.otpLabel')}</FormLabel>
                           <FormControl>
-                            <Input {...field} inputMode="numeric" dir="ltr" />
+                            <Input {...field} inputMode="numeric" dir="ltr" className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -279,6 +279,7 @@ export function SignupWizard({
                       <Button
                         type="button"
                         variant="secondary"
+                        className="border border-white/15 bg-white/10 text-sky-50 hover:bg-white/15 hover:text-white disabled:text-slate-300"
                         onClick={onSendOtp}
                         disabled={
                           busy ||
@@ -299,7 +300,7 @@ export function SignupWizard({
                       </Button>
                       <Button
                         type="submit"
-                        className="flex-1"
+                        className="flex-1 bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
                         disabled={busy || step1Form.formState.isSubmitting}
                       >
                         {isVerifyingOtp ? (
