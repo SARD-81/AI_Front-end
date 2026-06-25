@@ -247,7 +247,7 @@ export function ChatShell({
         </SheetContent>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="relative flex min-h-14 items-center border-b border-border py-1 sm:h-14 sm:py-0">
+          <header className="relative flex min-h-14 items-center border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] py-1 sm:h-14 sm:py-0">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
                 <Button
@@ -270,7 +270,7 @@ export function ChatShell({
           </header>
 
           {isSendingOrStreaming && !errorMessage ? (
-            <div className="border-b border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+            <div className="border-b border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] px-4 py-2 text-sm text-[hsl(var(--info-text))]">
               <div className="mx-auto w-full max-w-3xl">{t('chat.connecting')}</div>
             </div>
           ) : null}
@@ -278,7 +278,7 @@ export function ChatShell({
           {errorMessage ? (
             <div
               role="alert"
-              className="border-b border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive"
+              className="border-b border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] px-4 py-2 text-sm text-[hsl(var(--danger-text))]"
             >
               <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span>{errorMessage}</span>
@@ -354,7 +354,7 @@ export function ChatShell({
             </section>
 
             {!shouldShowEmptyState ? (
-              <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 py-3 backdrop-blur md:py-4">
+              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]/95 py-3 backdrop-blur md:py-4">
                 <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
                   <Composer
                     value={value}

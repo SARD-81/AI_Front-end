@@ -120,10 +120,10 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                               form.setValue('mappedReasonCategory', chip.reasonCategory, {shouldValidate: true});
                             }}
                             className={cn(
-                              'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                              'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2',
                               selected
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border bg-background text-foreground hover:bg-muted'
+                                ? 'border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] text-[hsl(var(--info-text))] shadow-sm'
+                                : 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] text-foreground hover:bg-[hsl(var(--surface-elevated))]'
                             )}
                           >
                             {chipLabels[chip.key]}
@@ -148,7 +148,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                   <FormControl>
                     <textarea
                       id="feedback-comment"
-                      className="flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-h-24 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
                       maxLength={1000}
                       placeholder={t('placeholder')}
                       {...field}

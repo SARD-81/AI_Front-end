@@ -208,7 +208,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               href={`/${locale}`}
               aria-label={t('sidebar.home')}
               className={cn(
-                'flex h-10 items-center rounded-lg border border-border bg-muted text-primary',
+                'flex h-10 items-center rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] text-primary shadow-sm',
                 collapsed ? 'w-10 justify-center' : 'w-full gap-2 px-2'
               )}
               onClick={onNavigate}
@@ -223,7 +223,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 onClick={createNewChat}
                 variant="secondary"
                 className={cn(
-                  'transition-all duration-200 active:scale-[0.98]',
+                  'transition-all duration-200 active:scale-[0.98] shadow-sm',
                   collapsed ? 'h-10 w-10 p-0' : 'h-10 flex-1 justify-start gap-2'
                 )}
                 aria-label={t('newChat')}
@@ -251,7 +251,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   size="icon"
                   onClick={toggleCollapsed}
                   aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
-                  className="h-10 w-10 shrink-0 transition-transform duration-200 active:scale-[0.98]"
+                  className="h-10 w-10 shrink-0 border border-transparent transition-transform duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.98]"
                   title={collapsed ? t('sidebar.expandShort') : t('sidebar.collapseShort')}
                 >
                   <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
@@ -303,8 +303,8 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                         <motion.div layout key={chat.id} className="group">
                           <div
                             className={cn(
-                              'flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-200 hover:bg-accent active:bg-accent/80 active:scale-[0.99]',
-                              isActive && 'bg-accent text-accent-foreground'
+                              'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-foreground transition-all duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:bg-[hsl(var(--surface-subtle))] active:scale-[0.99]',
+                              isActive && 'border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-foreground shadow-sm'
                             )}
                           >
                             <Link
@@ -334,7 +334,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                         setEditingChatId(null);
                                       }
                                     }}
-                                    className="h-7 w-full rounded-md border border-border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    className="h-7 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
                                     dir="rtl"
                                     aria-label={t('sidebar.renameInput')}
                                   />
@@ -359,7 +359,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                   <EllipsisVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" side="left">
+                              <DropdownMenuContent align="start" side="left" className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card">
                                 {canRenameConversation ? (
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -393,7 +393,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={cn('h-11 w-full justify-start gap-2 active:scale-[0.99]', collapsed && 'h-10 w-10 justify-center p-0')}
+                  className={cn('h-11 w-full justify-start gap-2 border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99]', collapsed && 'h-10 w-10 justify-center p-0')}
                   aria-label={t('sidebar.profile')}
                   title={collapsed ? t('sidebar.profile') : undefined}
                 >
@@ -407,7 +407,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   {!collapsed ? <EllipsisVertical className="ms-auto h-4 w-4" /> : null}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="left">
+              <DropdownMenuContent align="start" side="left" className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card">
                 <DropdownMenuItem
                   onClick={() => {
                     setSettingsOpen(true);

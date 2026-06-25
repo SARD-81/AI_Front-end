@@ -53,7 +53,7 @@ export function Composer({
     <motion.div
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
-      className="mx-auto w-full max-w-[800px] rounded-2xl border border-border bg-card p-2 shadow-soft"
+      className="mx-auto w-full max-w-[800px] rounded-2xl border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] p-2 shadow-card"
     >
       <TextareaAutosize
         minRows={1}
@@ -64,7 +64,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-40 w-full resize-none bg-transparent px-2 py-2 text-[15px] leading-7 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="max-h-40 w-full resize-none rounded-xl border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-[15px] leading-7 text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -85,7 +85,7 @@ export function Composer({
           className={cn(
             'rounded-full border px-2.5 py-0.5 text-xs transition-opacity',
             showCharacterCounter
-              ? 'border-border bg-muted text-muted-foreground opacity-100'
+              ? 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-100'
               : 'border-transparent text-muted-foreground/60 opacity-70'
           )}
         >
@@ -102,13 +102,13 @@ export function Composer({
             disabled
             aria-disabled="true"
             title={t('searchDisabledHint')}
-            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
+            className="cursor-not-allowed border border-dashed border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-80"
           >
             <span>{t('search')}</span>
             <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
           </Button>
 
-          <label className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground shadow-sm">
+          <label className="flex min-w-0 items-center gap-2 rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2.5 py-1.5 text-sm text-[hsl(var(--field-foreground))] shadow-sm">
             <span className="hidden whitespace-nowrap text-xs text-muted-foreground sm:inline">
               {t('thinkingLevel.label')}
             </span>
@@ -120,7 +120,7 @@ export function Composer({
               disabled={disabled}
               aria-label={t('thinkingLevel.label')}
               title={t('thinkingLevel.description')}
-              className="max-w-[150px] bg-transparent text-xs font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-none"
+              className="max-w-[150px] bg-transparent text-xs font-medium outline-none disabled:cursor-not-allowed disabled:text-muted-foreground sm:max-w-none"
             >
               {thinkingLevels.map((level) => (
                 <option key={level} value={level}>
@@ -137,7 +137,7 @@ export function Composer({
             aria-label={t('attachment.label')}
             title={t('attachment.notAvailableYet')}
             disabled={true}
-            className="cursor-not-allowed border border-dashed border-border bg-muted/60 text-muted-foreground opacity-80"
+            className="cursor-not-allowed border border-dashed border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-80"
           >
             {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}
             <Paperclip className="h-4 w-4" />
