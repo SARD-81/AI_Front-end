@@ -334,7 +334,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                         setEditingChatId(null);
                                       }
                                     }}
-                                    className="h-7 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
+                                    className="h-7 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
                                     dir="rtl"
                                     aria-label={t('sidebar.renameInput')}
                                   />
@@ -371,7 +371,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                   </DropdownMenuItem>
                                 ) : null}
                                 <DropdownMenuItem
-                                  className="text-destructive"
+                                  className="text-danger-text focus:bg-danger-surface focus:text-danger-text data-[highlighted]:bg-danger-surface data-[highlighted]:text-danger-text"
                                   onClick={() => setDeleteChatId(chat.id)}
                                 >
                                   {t('delete')}
@@ -427,7 +427,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   {t('sidebar.editProfile')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive"
+                  className="text-danger-text focus:bg-danger-surface focus:text-danger-text data-[highlighted]:bg-danger-surface data-[highlighted]:text-danger-text"
                   onClick={() => setLogoutConfirmOpen(true)}
                 >
                   <LogOut className="ms-2 h-4 w-4" />

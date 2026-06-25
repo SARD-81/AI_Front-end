@@ -148,7 +148,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                   <FormControl>
                     <textarea
                       id="feedback-comment"
-                      className="flex min-h-24 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
+                      className="flex min-h-24 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
                       maxLength={1000}
                       placeholder={t('placeholder')}
                       {...field}
@@ -167,7 +167,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                   exit={{opacity: 0, scale: 0.98}}
                   transition={{duration: 0.2, ease: 'easeOut'}}
                 >
-                  <Button type="button" variant="ghost" className="px-0 text-destructive hover:text-destructive" onClick={onClear} disabled={isSubmitting}>
+                  <Button type="button" variant="ghost" className="px-0 text-danger-text hover:bg-danger-surface hover:text-danger-text focus-visible:ring-danger" onClick={onClear} disabled={isSubmitting}>
                     {t('clear')}
                   </Button>
                 </motion.div>

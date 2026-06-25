@@ -64,7 +64,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-40 w-full resize-none rounded-xl border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-[15px] leading-7 text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+        className="max-h-40 w-full resize-none rounded-xl border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-[15px] leading-7 text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -120,7 +120,7 @@ export function Composer({
               disabled={disabled}
               aria-label={t('thinkingLevel.label')}
               title={t('thinkingLevel.description')}
-              className="max-w-[150px] bg-transparent text-xs font-medium outline-none disabled:cursor-not-allowed disabled:text-muted-foreground sm:max-w-none"
+              className="max-w-[150px] bg-transparent text-xs font-medium text-[hsl(var(--field-foreground))] outline-none disabled:cursor-not-allowed disabled:text-muted-foreground sm:max-w-none [&>option]:bg-[hsl(var(--menu))] [&>option]:text-[hsl(var(--menu-foreground))]"
             >
               {thinkingLevels.map((level) => (
                 <option key={level} value={level}>
