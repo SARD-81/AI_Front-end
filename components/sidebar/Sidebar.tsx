@@ -1,11 +1,11 @@
 'use client';
 
-import {AnimatePresence, LayoutGroup, motion} from 'motion/react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import {usePathname, useRouter} from 'next/navigation';
-import {useEffect, useMemo, useState} from 'react';
-import {useQuery, useQueryClient} from '@tanstack/react-query';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronsRight,
   EllipsisVertical,
@@ -15,30 +15,50 @@ import {
   Settings,
   UserCircle2
 } from 'lucide-react';
-import {useTranslations} from 'next-intl';
-import {toast} from 'sonner';
-import {Button} from '@/components/ui/button';
-import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Sidebar as SidebarRoot, SidebarContent, SidebarFooter, SidebarHeader} from '@/components/ui/sidebar';
-import {useChatActions, useChats, useGroupedChats} from '@/hooks/use-chat-data';
-import {SettingsModal, useAppSettings} from '@/components/settings/SettingsModal';
-import {getMe, logout} from '@/lib/services/auth-service';
-import {useMediaQuery} from '@/hooks/use-media-query';
-import {cn} from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sidebar as SidebarRoot,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader
+} from '@/components/ui/sidebar';
+import {
+  useChatActions,
+  useChats,
+  useGroupedChats
+} from '@/hooks/use-chat-data';
+import type { ChatDetail, ChatSummary } from '@/lib/api/chat';
+import {
+  SettingsModal,
+  useAppSettings
+} from '@/components/settings/SettingsModal';
+import { getMe, logout } from '@/lib/services/auth-service';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 304;
 const MAX_CONVERSATION_TITLE_LENGTH = 100;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () => void}) {
+export function Sidebar({
+  locale,
+  onNavigate
+}: {
+  locale: string;
+  onNavigate?: () => void;
+}) {
   const t = useTranslations('app');
   const pathname = usePathname();
   const router = useRouter();
@@ -52,6 +72,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const chatsQuery = useChats();
   const groups = useGroupedChats(chatsQuery.data);
   const actions = useChatActions();
+  const isRtl = locale === 'fa';
 
   const currentChatId = useMemo(() => {
     const match = pathname?.match(/\/chat[s]?\/([^/?#]+)/);
@@ -67,7 +88,7 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
-  const {settings, setSettings} = useAppSettings();
+  const { settings, setSettings } = useAppSettings();
 
   useEffect(() => {
     if (isMobile) {
@@ -89,8 +110,62 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     });
   };
 
+  const isDefaultNewChatTitle = (title?: string) => {
+    const normalizedTitle = title?.trim();
+
+    if (!normalizedTitle) return true;
+
+    return [
+      t('newChat'),
+      t('chat.defaultTitle'),
+      'New chat',
+      'Conversation',
+      'گفت‌وگوی جدید',
+      'گفت‌وگو'
+    ].includes(normalizedTitle);
+  };
+
+  const focusCurrentChat = (href: string, message: string) => {
+    router.push(`${href}?focus=1`);
+    toast.info(message);
+    onNavigate?.();
+  };
+
   const createNewChat = async () => {
-    const created = await actions.create.mutateAsync({title: t('newChat')});
+    if (pathname === `/${locale}/chat`) {
+      focusCurrentChat(`/${locale}/chat`, t('sidebar.alreadyInNewChat'));
+      return;
+    }
+
+    if (currentChatId) {
+      const cachedChat = queryClient.getQueryData<ChatDetail>([
+        'chat',
+        currentChatId
+      ]);
+      const summaryChat = queryClient
+        .getQueryData<ChatSummary[]>(['chats'])
+        ?.find((chat) => chat.id === currentChatId);
+      const currentTitle = cachedChat?.title ?? summaryChat?.title;
+      const hasCachedMessages = (cachedChat?.messages?.length ?? 0) > 0;
+      const isEmptyCachedChat =
+        Boolean(cachedChat) &&
+        !hasCachedMessages &&
+        isDefaultNewChatTitle(currentTitle);
+      const isLikelyEmptySummaryChat =
+        !cachedChat &&
+        Boolean(summaryChat) &&
+        isDefaultNewChatTitle(currentTitle);
+
+      if (isEmptyCachedChat || isLikelyEmptySummaryChat) {
+        focusCurrentChat(
+          `/${locale}/chat/${currentChatId}`,
+          t('sidebar.focusCurrentEmptyChat')
+        );
+        return;
+      }
+    }
+
+    const created = await actions.create.mutateAsync({ title: t('newChat') });
     // TODO(BACKEND): confirm created chat id shape from POST /conversations/.
     router.push(`/${locale}/chat/${created.id}?focus=1`);
     onNavigate?.();
@@ -106,7 +181,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     }
 
     if (title.length > MAX_CONVERSATION_TITLE_LENGTH) {
-      toast.error(t('sidebar.renameTitleTooLong', {max: MAX_CONVERSATION_TITLE_LENGTH}));
+      toast.error(
+        t('sidebar.renameTitleTooLong', { max: MAX_CONVERSATION_TITLE_LENGTH })
+      );
       return;
     }
 
@@ -116,10 +193,11 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     }
 
     try {
-      await actions.rename.mutateAsync({chatId, title});
+      await actions.rename.mutateAsync({ chatId, title });
       setEditingChatId(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : t('sidebar.renameError');
+      const message =
+        error instanceof Error ? error.message : t('sidebar.renameError');
       toast.error(message);
       setEditingTitle(previousTitle);
     }
@@ -133,7 +211,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
       setDeleteChatId(null);
       if (currentChatId !== deleteChatId) return;
 
-      const remainingChats = (queryClient.getQueryData(['chats']) as {id: string}[] | undefined) ?? [];
+      const remainingChats =
+        (queryClient.getQueryData(['chats']) as { id: string }[] | undefined) ??
+        [];
       const nextChatId = remainingChats[0]?.id;
 
       if (nextChatId) {
@@ -143,7 +223,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
       }
 
       try {
-        const created = await actions.create.mutateAsync({title: t('newChat')});
+        const created = await actions.create.mutateAsync({
+          title: t('newChat')
+        });
         router.replace(`/${locale}/chat/${created.id}?focus=1`);
         onNavigate?.();
         return;
@@ -152,33 +234,41 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
         onNavigate?.();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : t('sidebar.deleteError');
+      const message =
+        error instanceof Error ? error.message : t('sidebar.deleteError');
       toast.error(message);
     }
   };
 
   const chatGroups = useMemo(
     () => [
-      {title: t('today'), ids: groups.today.map((item) => item.id)},
-      {title: t('month'), ids: groups.month.map((item) => item.id)},
-      {title: t('older'), ids: groups.older.map((item) => item.id)}
+      { title: t('today'), ids: groups.today.map((item) => item.id) },
+      { title: t('month'), ids: groups.month.map((item) => item.id) },
+      { title: t('older'), ids: groups.older.map((item) => item.id) }
     ],
     [groups.month, groups.older, groups.today, t]
   );
 
   const chatsById = useMemo(() => {
-    const entries = (chatsQuery.data ?? []).map((chat) => [chat.id, chat] as const);
+    const entries = (chatsQuery.data ?? []).map(
+      (chat) => [chat.id, chat] as const
+    );
     return new Map(entries);
   }, [chatsQuery.data]);
 
   const hasChats = (chatsQuery.data?.length ?? 0) > 0;
-  const deleteTargetTitle = deleteChatId ? chatsById.get(deleteChatId)?.title : undefined;
+  const deleteTargetTitle = deleteChatId
+    ? chatsById.get(deleteChatId)?.title
+    : undefined;
 
   const user = profileQuery.data?.user;
   const fullName = user?.fullName?.trim();
-  const firstLastName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
-  const profileName = fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
-  const profileSubtitle = user?.studentId || user?.email || t('sidebar.demoVersion');
+  const firstLastName =
+    `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+  const profileName =
+    fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
+  const profileSubtitle =
+    user?.studentId || user?.email || t('sidebar.demoVersion');
 
   const handleLogout = async () => {
     try {
@@ -197,12 +287,23 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
     <LayoutGroup>
       <motion.div
         layout
-        transition={{duration: 0.2, ease: 'easeOut'}}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="h-full"
-        style={{width: isMobile ? EXPANDED_WIDTH : collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}}
+        style={{
+          width: isMobile
+            ? EXPANDED_WIDTH
+            : collapsed
+              ? COLLAPSED_WIDTH
+              : EXPANDED_WIDTH
+        }}
       >
         <SidebarRoot className="h-full w-full">
-          <SidebarHeader className={cn('space-y-3 px-4 py-4', collapsed && 'flex flex-col items-center space-y-3 px-2 py-4')}>
+          <SidebarHeader
+            className={cn(
+              'space-y-3 px-4 py-4',
+              collapsed && 'flex flex-col items-center space-y-3 px-2 py-4'
+            )}
+          >
             <Link
               href={`/${locale}`}
               aria-label={t('sidebar.home')}
@@ -212,18 +313,33 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               )}
               onClick={onNavigate}
             >
-              <Image src="/Logo.png" alt={t('sidebar.logoAlt')} width={60} height={60} className="h-15 w-15" />
-              {!collapsed ? <span className="truncate whitespace-nowrap text-sm mr-16">{t('sidebar.universityName')}</span> : null}
+              <Image
+                src="/Logo.png"
+                alt={t('sidebar.logoAlt')}
+                width={60}
+                height={60}
+                className="h-15 w-15"
+              />
+              {!collapsed ? (
+                <span className="mr-16 truncate whitespace-nowrap text-sm">
+                  {t('sidebar.universityName')}
+                </span>
+              ) : null}
             </Link>
 
-            <motion.div layout className={cn('flex items-center gap-3', collapsed && 'flex-col')}>
+            <motion.div
+              layout
+              className={cn('flex items-center gap-3', collapsed && 'flex-col')}
+            >
               <Button
                 type="button"
                 onClick={createNewChat}
                 variant="secondary"
                 className={cn(
-                  'transition-all duration-200 active:scale-[0.98] shadow-sm',
-                  collapsed ? 'h-10 w-10 p-0' : 'h-10 flex-1 justify-start gap-2'
+                  'shadow-sm transition-all duration-200 active:scale-[0.98]',
+                  collapsed
+                    ? 'h-10 w-10 p-0'
+                    : 'h-10 flex-1 justify-start gap-2'
                 )}
                 aria-label={t('newChat')}
                 title={collapsed ? t('newChat') : undefined}
@@ -232,10 +348,10 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 <AnimatePresence initial={false}>
                   {!collapsed ? (
                     <motion.span
-                      initial={{opacity: 0, x: -8}}
-                      animate={{opacity: 1, x: 0}}
-                      exit={{opacity: 0, x: -8}}
-                      transition={{duration: 0.18, ease: 'easeOut'}}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
                     >
                       {t('newChat')}
                     </motion.span>
@@ -249,11 +365,22 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   variant="ghost"
                   size="icon"
                   onClick={toggleCollapsed}
-                  aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+                  aria-label={
+                    collapsed ? t('sidebar.expand') : t('sidebar.collapse')
+                  }
                   className="h-10 w-10 shrink-0 border border-transparent transition-transform duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.98]"
-                  title={collapsed ? t('sidebar.expandShort') : t('sidebar.collapseShort')}
+                  title={
+                    collapsed
+                      ? t('sidebar.expandShort')
+                      : t('sidebar.collapseShort')
+                  }
                 >
-                  <ChevronsRight className={cn('h-4 w-4 transition-transform duration-200', collapsed && 'rotate-180')} />
+                  <ChevronsRight
+                    className={cn(
+                      'h-4 w-4 transition-transform duration-200',
+                      (isRtl ? collapsed : !collapsed) && 'rotate-180'
+                    )}
+                  />
                 </Button>
               ) : null}
             </motion.div>
@@ -266,8 +393,17 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 <Skeleton className="h-8 w-full" />
               </div>
             ) : chatsQuery.isError ? (
-              <div className={cn('space-y-2 px-2 py-3', collapsed && 'px-1 text-center')}>
-                {!collapsed ? <p className="text-xs text-muted-foreground">{t('sidebar.loadError')}</p> : null}
+              <div
+                className={cn(
+                  'space-y-2 px-2 py-3',
+                  collapsed && 'px-1 text-center'
+                )}
+              >
+                {!collapsed ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t('sidebar.loadError')}
+                  </p>
+                ) : null}
                 <Button
                   type="button"
                   variant="ghost"
@@ -277,38 +413,57 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   aria-label={t('sidebar.retry')}
                   title={collapsed ? t('sidebar.retry') : undefined}
                 >
-                  {collapsed ? <MessageCircle className="h-4 w-4" /> : t('sidebar.retry')}
+                  {collapsed ? (
+                    <MessageCircle className="h-4 w-4" />
+                  ) : (
+                    t('sidebar.retry')
+                  )}
                 </Button>
               </div>
             ) : !hasChats ? (
               <div className={cn('px-2 py-3', collapsed && 'px-1 text-center')}>
-                {!collapsed ? <p className="text-xs text-muted-foreground">{t('sidebar.emptyHistory')}</p> : null}
+                {!collapsed ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t('sidebar.emptyHistory')}
+                  </p>
+                ) : null}
               </div>
             ) : (
               chatGroups.map((group) => {
                 if (!group.ids.length) return null;
                 return (
                   <section key={group.title} className="space-y-1">
-                    {!collapsed ? <p className="px-2 text-xs text-muted-foreground">{group.title}</p> : null}
+                    {!collapsed ? (
+                      <p className="px-2 text-xs text-muted-foreground">
+                        {group.title}
+                      </p>
+                    ) : null}
                     {group.ids.map((id) => {
                       const chat = chatsById.get(id);
                       if (!chat) return null;
 
                       const href = `/${locale}/chat/${chat.id}`;
-                      const isActive = pathname === href || openMenuChatId === chat.id;
-                      const canRenameConversation = UUID_PATTERN.test(chat.id) && Boolean(chat.title.trim());
+                      const isActive =
+                        pathname === href || openMenuChatId === chat.id;
+                      const canRenameConversation =
+                        UUID_PATTERN.test(chat.id) &&
+                        Boolean(chat.title.trim());
 
                       return (
                         <motion.div layout key={chat.id} className="group">
                           <div
                             className={cn(
-                              'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-foreground transition-all duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:bg-[hsl(var(--surface-subtle))] active:scale-[0.99]',
-                              isActive && 'border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-foreground shadow-sm'
+                              'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-foreground transition-all duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99] active:bg-[hsl(var(--surface-subtle))]',
+                              isActive &&
+                                'border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-foreground shadow-sm'
                             )}
                           >
                             <Link
                               href={href}
-                              className={cn('flex min-w-0 flex-1 items-center gap-2', collapsed && 'justify-center')}
+                              className={cn(
+                                'flex min-w-0 flex-1 items-center gap-2',
+                                collapsed && 'justify-center'
+                              )}
                               onClick={onNavigate}
                               title={collapsed ? chat.title : undefined}
                             >
@@ -319,7 +474,9 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                     autoFocus
                                     value={editingTitle}
                                     maxLength={MAX_CONVERSATION_TITLE_LENGTH}
-                                    onChange={(event) => setEditingTitle(event.target.value)}
+                                    onChange={(event) =>
+                                      setEditingTitle(event.target.value)
+                                    }
                                     onBlur={() => {
                                       void commitRename(chat.id, chat.title);
                                     }}
@@ -338,19 +495,27 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                     aria-label={t('sidebar.renameInput')}
                                   />
                                 ) : (
-                                  <span className="truncate text-sm">{chat.title}</span>
+                                  <span className="truncate text-sm">
+                                    {chat.title}
+                                  </span>
                                 )
                               ) : null}
                             </Link>
 
-                            <DropdownMenu onOpenChange={(open) => setOpenMenuChatId(open ? chat.id : null)}>
+                            <DropdownMenu
+                              onOpenChange={(open) =>
+                                setOpenMenuChatId(open ? chat.id : null)
+                              }
+                            >
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className={cn(
                                     'h-7 w-7 transition-opacity duration-150 active:scale-[0.98]',
-                                    collapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                                    collapsed
+                                      ? 'opacity-100'
+                                      : 'opacity-0 group-hover:opacity-100',
                                     isActive && 'opacity-100'
                                   )}
                                   aria-label={t('sidebar.chatOptions')}
@@ -358,7 +523,11 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                                   <EllipsisVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" side="left" className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card">
+                              <DropdownMenuContent
+                                align="start"
+                                side="left"
+                                className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card"
+                              >
                                 {canRenameConversation ? (
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -392,7 +561,10 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={cn('h-11 w-full justify-start gap-2 border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99]', collapsed && 'h-10 w-10 justify-center p-0')}
+                  className={cn(
+                    'h-11 w-full justify-start gap-2 border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99]',
+                    collapsed && 'h-10 w-10 justify-center p-0'
+                  )}
                   aria-label={t('sidebar.profile')}
                   title={collapsed ? t('sidebar.profile') : undefined}
                 >
@@ -400,13 +572,21 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                   {!collapsed ? (
                     <div className="flex min-w-0 flex-col items-start">
                       <span className="truncate text-sm">{profileName}</span>
-                      <span className="text-xs text-muted-foreground">{profileSubtitle}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {profileSubtitle}
+                      </span>
                     </div>
                   ) : null}
-                  {!collapsed ? <EllipsisVertical className="ms-auto h-4 w-4" /> : null}
+                  {!collapsed ? (
+                    <EllipsisVertical className="ms-auto h-4 w-4" />
+                  ) : null}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="left" className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card">
+              <DropdownMenuContent
+                align="start"
+                side="left"
+                className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card"
+              >
                 <DropdownMenuItem
                   onClick={() => {
                     setSettingsOpen(true);
@@ -439,11 +619,22 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
       />
 
       <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
-        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
-          <DialogTitle className="text-base font-semibold">{t('sidebar.logoutConfirmTitle')}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{t('sidebar.logoutConfirmDescription')}</p>
+        <DialogContent
+          className="max-w-sm"
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+        >
+          <DialogTitle className="text-base font-semibold">
+            {t('sidebar.logoutConfirmTitle')}
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {t('sidebar.logoutConfirmDescription')}
+          </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setLogoutConfirmOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setLogoutConfirmOpen(false)}
+            >
               {t('sidebar.cancelLogout')}
             </Button>
             <Button type="button" variant="destructive" onClick={handleLogout}>
@@ -453,18 +644,43 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(deleteChatId)} onOpenChange={(open) => !actions.remove.isPending && setDeleteChatId(open ? deleteChatId : null)}>
-        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
-          <DialogTitle className="text-base font-semibold">{t('sidebar.deleteConfirmTitle')}</DialogTitle>
+      <Dialog
+        open={Boolean(deleteChatId)}
+        onOpenChange={(open) =>
+          !actions.remove.isPending &&
+          setDeleteChatId(open ? deleteChatId : null)
+        }
+      >
+        <DialogContent
+          className="max-w-sm"
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+        >
+          <DialogTitle className="text-base font-semibold">
+            {t('sidebar.deleteConfirmTitle')}
+          </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {t('sidebar.deleteConfirmDescription', {title: deleteTargetTitle ?? t('chat.defaultTitle')})}
+            {t('sidebar.deleteConfirmDescription', {
+              title: deleteTargetTitle ?? t('chat.defaultTitle')
+            })}
           </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setDeleteChatId(null)} disabled={actions.remove.isPending}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteChatId(null)}
+              disabled={actions.remove.isPending}
+            >
               {t('sidebar.cancelDelete')}
             </Button>
-            <Button type="button" variant="destructive" onClick={handleDeleteConversation} disabled={actions.remove.isPending}>
-              {actions.remove.isPending ? t('sidebar.deleting') : t('sidebar.confirmDelete')}
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteConversation}
+              disabled={actions.remove.isPending}
+            >
+              {actions.remove.isPending
+                ? t('sidebar.deleting')
+                : t('sidebar.confirmDelete')}
             </Button>
           </div>
         </DialogContent>

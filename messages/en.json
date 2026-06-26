@@ -22,6 +22,8 @@
       "collapse": "Collapse sidebar",
       "expandShort": "Expand",
       "collapseShort": "Collapse",
+      "alreadyInNewChat": "Already in a new chat.",
+      "focusCurrentEmptyChat": "Focused the current empty chat.",
       "renameInput": "Rename conversation",
       "renameTitleTooLong": "Conversation title must be {max} characters or fewer.",
       "renameError": "Could not rename the conversation.",
@@ -191,11 +193,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",
