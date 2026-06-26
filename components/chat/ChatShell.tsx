@@ -18,6 +18,7 @@ import { copyToClipboard } from '@/lib/utils/clipboard';
 import { uid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
 import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
+import { ApiError } from '@/lib/api/client';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
 
 export function ChatShell({
@@ -121,6 +122,85 @@ export function ChatShell({
       : compactTitle;
   }, [chat?.messages, chat?.title, t]);
 
+  const getChatUserErrorMessage = (error: unknown) => {
+    if (error instanceof ChatWebSocketError) {
+      if (error.shouldRedirectToProfile || error.code === 'PROFILE_INCOMPLETE') {
+        return t('chat.profileIncomplete');
+      }
+
+      if (error.isLocked || error.code === 'LOCKED') {
+        return t('chat.accountLocked');
+      }
+
+      const normalizedCode = error.code?.toUpperCase() ?? '';
+      if (
+        error.closeCode === 4401 ||
+        normalizedCode.includes('UNAUTHORIZED') ||
+        normalizedCode.includes('AUTH')
+      ) {
+        return t('chat.sessionExpired');
+      }
+
+      if (
+        error.closeCode === 4404 ||
+        normalizedCode.includes('NOT_FOUND') ||
+        normalizedCode.includes('CONVERSATION')
+      ) {
+        return t('chat.conversationNotFound');
+      }
+
+      if (normalizedCode.includes('TIMEOUT')) {
+        return t('chat.timeout');
+      }
+
+      return t('chat.connectionError');
+    }
+
+    if (error instanceof ApiError) {
+      if (error.status === 401 || error.status === 403) {
+        return t('chat.sessionExpired');
+      }
+
+      if (error.status === 404) {
+        return t('chat.conversationNotFound');
+      }
+
+      if (error.status === 408 || error.status === 504) {
+        return t('chat.timeout');
+      }
+
+      return t('chat.unknownSendError');
+    }
+
+    if (
+      typeof DOMException !== 'undefined' &&
+      error instanceof DOMException &&
+      error.name === 'AbortError'
+    ) {
+      return t('chat.timeout');
+    }
+
+    if (error instanceof Error) {
+      const normalizedMessage = error.message.toLowerCase();
+
+      if (error.name === 'AbortError' || normalizedMessage.includes('timeout')) {
+        return t('chat.timeout');
+      }
+
+      if (
+        error.name === 'TypeError' ||
+        normalizedMessage.includes('fetch') ||
+        normalizedMessage.includes('network') ||
+        normalizedMessage.includes('websocket') ||
+        normalizedMessage.includes('connection')
+      ) {
+        return t('chat.connectionError');
+      }
+    }
+
+    return t('chat.unknownSendError');
+  };
+
   const submitMessage = async (nextValue: string, clientMessageId?: string) => {
     const trimmedValue = nextValue.trim();
     if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
@@ -169,15 +249,15 @@ export function ChatShell({
       setValue('');
     } catch (error) {
       clearStreamingState();
-      const fallback = t('chat.connectionError');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Chat send failed', error);
+      }
+
       if (error instanceof ChatWebSocketError && error.shouldRedirectToProfile) {
         router.push(`/${locale}/profile`);
-        setErrorMessage(t('chat.profileIncomplete'));
-      } else if (error instanceof ChatWebSocketError && error.isLocked) {
-        setErrorMessage(t('chat.accountLocked'));
-      } else {
-        setErrorMessage(error instanceof Error ? error.message : fallback);
       }
+
+      setErrorMessage(getChatUserErrorMessage(error));
     }
   };
 
