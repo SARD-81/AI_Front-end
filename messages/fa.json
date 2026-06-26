@@ -22,6 +22,8 @@
       "collapse": "بستن نوار کناری",
       "expandShort": "باز کردن",
       "collapseShort": "بستن",
+      "alreadyInNewChat": "هم‌اکنون در گفت‌وگوی جدید هستید.",
+      "focusCurrentEmptyChat": "روی گفت‌وگوی خالی فعلی متمرکز شد.",
       "renameInput": "تغییر نام گفتگو",
       "renameTitleTooLong": "عنوان گفتگو باید حداکثر {max} کاراکتر باشد.",
       "renameError": "تغییر نام گفتگو ممکن نبود.",
@@ -191,11 +193,7 @@
       "studentIdLabel": "شماره دانشجویی",
       "degreeLevelLabel": "مقطع تحصیلی",
       "selectOption": "انتخاب کنید",
-      "degreeOptions": [
-        "کارشناسی",
-        "کارشناسی ارشد",
-        "دکتری"
-      ],
+      "degreeOptions": ["کارشناسی", "کارشناسی ارشد", "دکتری"],
       "facultyLabel": "دانشکده",
       "majorLabel": "رشته تحصیلی",
       "passwordLabel": "رمز عبور",
