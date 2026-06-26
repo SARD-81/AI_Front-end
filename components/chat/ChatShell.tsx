@@ -15,6 +15,7 @@ import { MessageList } from './MessageList';
 import { ChatEmptyState } from './ChatEmptyState';
 import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
+import { uid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
 import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
@@ -125,7 +126,7 @@ export function ChatShell({
     if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
       return;
 
-    const stableClientMessageId = clientMessageId ?? crypto.randomUUID();
+    const stableClientMessageId = clientMessageId ?? uid('client-message');
     const payload = {
       content: nextValue,
       thinkLevel,
