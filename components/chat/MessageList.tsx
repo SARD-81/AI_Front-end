@@ -14,7 +14,7 @@ type MessageListProps = {
   typing: boolean;
   onCopyMessage: (content: string) => void;
   onEditMessage: (message: ChatMessage) => void;
-  onRegenerate: () => void;
+  onRegenerate: (message: ChatMessage) => void;
   onRetryMessage: (message: ChatMessage) => void;
   onRestoreMessage: (message: ChatMessage) => void;
 };

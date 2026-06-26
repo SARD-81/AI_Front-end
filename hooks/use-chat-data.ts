@@ -79,11 +79,15 @@ export function useSendMessage() {
     mutationFn: async ({
       chatId,
       payload,
-      clientMessageId
+      clientMessageId,
+      replaceAssistantMessageId,
+      restoreAssistantMessage
     }: {
       chatId: string;
       payload: SendMessagePayload;
       clientMessageId?: string;
+      replaceAssistantMessageId?: string;
+      restoreAssistantMessage?: ChatMessage;
       onToken?: (chunk: string) => void;
     }) => {
       const nowIso = new Date().toISOString();
@@ -97,13 +101,16 @@ export function useSendMessage() {
 
       queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
         const base = previous ?? { id: chatId, title: 'گفت‌وگو', messages: [] };
-        const existing = base.messages.find(
+        const messagesWithoutTarget = replaceAssistantMessageId
+          ? base.messages.filter((message) => message.id !== replaceAssistantMessageId)
+          : base.messages;
+        const existing = messagesWithoutTarget.find(
           (message) => message.id === userMessage.id
         );
         if (existing) {
           return {
             ...base,
-            messages: base.messages.map((message) =>
+            messages: messagesWithoutTarget.map((message) =>
               message.id === userMessage.id
                 ? {
                     ...message,
@@ -114,7 +121,7 @@ export function useSendMessage() {
             )
           };
         }
-        return { ...base, messages: [...base.messages, userMessage] };
+        return { ...base, messages: [...messagesWithoutTarget, userMessage] };
       });
       queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
         upsertChatSummary(previous, chatId)
@@ -173,18 +180,32 @@ export function useSendMessage() {
             title: 'گفت‌وگو',
             messages: []
           };
+          const messagesWithSentUser = base.messages.map((message) =>
+            message.id === userMessage.id
+              ? { ...message, sendStatus: 'sent' as const }
+              : message
+          );
+          if (messagesWithSentUser.some((message) => message.id === assistantMessage.id)) {
+            return { ...base, messages: messagesWithSentUser };
+          }
+
+          const userIndex = messagesWithSentUser.findIndex(
+            (message) => message.id === userMessage.id
+          );
+          if (replaceAssistantMessageId && userIndex >= 0) {
+            return {
+              ...base,
+              messages: [
+                ...messagesWithSentUser.slice(0, userIndex + 1),
+                assistantMessage,
+                ...messagesWithSentUser.slice(userIndex + 1)
+              ]
+            };
+          }
+
           return {
             ...base,
-            messages: [
-              ...base.messages.map((message) =>
-                message.id === userMessage.id
-                  ? { ...message, sendStatus: 'sent' as const }
-                  : message
-              ),
-              ...(base.messages.some((message) => message.id === assistantMessage.id)
-                ? []
-                : [assistantMessage])
-            ]
+            messages: [...messagesWithSentUser, assistantMessage]
           };
         });
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
@@ -199,13 +220,37 @@ export function useSendMessage() {
             title: 'گفت‌وگو',
             messages: []
           };
+          const messagesWithUserRestored = base.messages.map((message) =>
+            message.id === userMessage.id
+              ? {
+                  ...message,
+                  sendStatus: replaceAssistantMessageId ? ('sent' as const) : ('failed' as const)
+                }
+              : message
+          );
+
+          if (replaceAssistantMessageId && restoreAssistantMessage) {
+            const userIndex = messagesWithUserRestored.findIndex(
+              (message) => message.id === userMessage.id
+            );
+            const alreadyRestored = messagesWithUserRestored.some(
+              (message) => message.id === restoreAssistantMessage.id
+            );
+            if (userIndex >= 0 && !alreadyRestored) {
+              return {
+                ...base,
+                messages: [
+                  ...messagesWithUserRestored.slice(0, userIndex + 1),
+                  restoreAssistantMessage,
+                  ...messagesWithUserRestored.slice(userIndex + 1)
+                ]
+              };
+            }
+          }
+
           return {
             ...base,
-            messages: base.messages.map((message) =>
-              message.id === userMessage.id
-                ? { ...message, sendStatus: 'failed' as const }
-                : message
-            )
+            messages: messagesWithUserRestored
           };
         });
         throw error;
