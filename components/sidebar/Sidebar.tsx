@@ -81,8 +81,9 @@ export function Sidebar({
 
   const [collapsed, setCollapsed] = useState(false);
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // keep row selected while menu stays open
-  const [editingChatId, setEditingChatId] = useState<string | null>(null); // inline rename state
-  const [editingTitle, setEditingTitle] = useState('');
+  const [renameChatId, setRenameChatId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
@@ -171,35 +172,71 @@ export function Sidebar({
     onNavigate?.();
   };
 
-  const commitRename = async (chatId: string, previousTitle: string) => {
-    const title = editingTitle.trim();
+  const isSafeBackendRenameMessage = (message: string) => {
+    const normalizedMessage = message.trim();
+
+    return (
+      normalizedMessage.length > 0 &&
+      normalizedMessage.length <= 160 &&
+      !/[<>]/.test(normalizedMessage)
+    );
+  };
+
+  const isRenameLimitError = (message: string) =>
+    /limit|rate|quota|too many|maximum|exceed/i.test(message);
+
+  const openRenameDialog = (chat: ChatSummary) => {
+    setRenameChatId(chat.id);
+    setRenameTitle(chat.title);
+    setRenameError(null);
+  };
+
+  const closeRenameDialog = () => {
+    if (actions.rename.isPending) return;
+
+    setRenameChatId(null);
+    setRenameTitle('');
+    setRenameError(null);
+  };
+
+  const commitRename = async () => {
+    if (!renameTarget) return;
+
+    const title = renameTitle.trim();
 
     if (!title) {
-      setEditingTitle(previousTitle);
-      setEditingChatId(null);
+      setRenameError(t('sidebar.renameTitleRequired'));
       return;
     }
 
     if (title.length > MAX_CONVERSATION_TITLE_LENGTH) {
-      toast.error(
+      setRenameError(
         t('sidebar.renameTitleTooLong', { max: MAX_CONVERSATION_TITLE_LENGTH })
       );
       return;
     }
 
-    if (title === previousTitle.trim()) {
-      setEditingChatId(null);
+    if (title === renameTarget.title.trim()) {
+      closeRenameDialog();
       return;
     }
 
     try {
-      await actions.rename.mutateAsync({ chatId, title });
-      setEditingChatId(null);
+      await actions.rename.mutateAsync({ chatId: renameTarget.id, title });
+      setRenameChatId(null);
+      setRenameTitle('');
+      setRenameError(null);
     } catch (error) {
+      const backendMessage = error instanceof Error ? error.message : '';
       const message =
-        error instanceof Error ? error.message : t('sidebar.renameError');
+        backendMessage && isRenameLimitError(backendMessage)
+          ? isSafeBackendRenameMessage(backendMessage)
+            ? backendMessage
+            : t('sidebar.renameLimitError')
+          : backendMessage || t('sidebar.renameError');
+
+      setRenameError(message);
       toast.error(message);
-      setEditingTitle(previousTitle);
     }
   };
 
@@ -260,6 +297,7 @@ export function Sidebar({
   const deleteTargetTitle = deleteChatId
     ? chatsById.get(deleteChatId)?.title
     : undefined;
+  const renameTarget = renameChatId ? chatsById.get(renameChatId) : undefined;
 
   const user = profileQuery.data?.user;
   const fullName = user?.fullName?.trim();
@@ -469,36 +507,9 @@ export function Sidebar({
                             >
                               <MessageCircle className="h-4 w-4 shrink-0" />
                               {!collapsed ? (
-                                editingChatId === chat.id ? (
-                                  <input
-                                    autoFocus
-                                    value={editingTitle}
-                                    maxLength={MAX_CONVERSATION_TITLE_LENGTH}
-                                    onChange={(event) =>
-                                      setEditingTitle(event.target.value)
-                                    }
-                                    onBlur={() => {
-                                      void commitRename(chat.id, chat.title);
-                                    }}
-                                    onKeyDown={(event) => {
-                                      if (event.key === 'Enter') {
-                                        event.preventDefault();
-                                        event.currentTarget.blur();
-                                      }
-                                      if (event.key === 'Escape') {
-                                        setEditingTitle(chat.title);
-                                        setEditingChatId(null);
-                                      }
-                                    }}
-                                    className="h-7 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
-                                    dir="rtl"
-                                    aria-label={t('sidebar.renameInput')}
-                                  />
-                                ) : (
-                                  <span className="truncate text-sm">
-                                    {chat.title}
-                                  </span>
-                                )
+                                <span className="truncate text-sm">
+                                  {chat.title}
+                                </span>
                               ) : null}
                             </Link>
 
@@ -530,10 +541,7 @@ export function Sidebar({
                               >
                                 {canRenameConversation ? (
                                   <DropdownMenuItem
-                                    onClick={() => {
-                                      setEditingChatId(chat.id);
-                                      setEditingTitle(chat.title);
-                                    }}
+                                    onClick={() => openRenameDialog(chat)}
                                   >
                                     {t('rename')}
                                   </DropdownMenuItem>
@@ -667,6 +675,88 @@ export function Sidebar({
               {t('sidebar.confirmLogout')}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(renameChatId)}
+        onOpenChange={(open) => {
+          if (!open) closeRenameDialog();
+        }}
+      >
+        <DialogContent
+          className="max-w-sm"
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              closeRenameDialog();
+            }
+          }}
+        >
+          <DialogTitle className="text-base font-semibold">
+            {t('sidebar.renameDialogTitle')}
+          </DialogTitle>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void commitRename();
+            }}
+          >
+            <div className="space-y-2">
+              <label
+                htmlFor="rename-conversation-title"
+                className="text-sm font-medium"
+              >
+                {t('sidebar.renameInput')}
+              </label>
+              <input
+                id="rename-conversation-title"
+                autoFocus
+                value={renameTitle}
+                maxLength={MAX_CONVERSATION_TITLE_LENGTH}
+                onChange={(event) => {
+                  setRenameTitle(event.target.value);
+                  setRenameError(null);
+                }}
+                className="h-10 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
+                dir={locale === 'fa' ? 'rtl' : 'ltr'}
+                aria-invalid={Boolean(renameError)}
+                aria-describedby="rename-conversation-help"
+              />
+              <div
+                id="rename-conversation-help"
+                className="flex items-center justify-between gap-3 text-xs"
+              >
+                <span className="text-danger-text">{renameError}</span>
+                <span className="ms-auto shrink-0 text-muted-foreground">
+                  {renameTitle.length} / {MAX_CONVERSATION_TITLE_LENGTH}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={closeRenameDialog}
+                disabled={actions.rename.isPending}
+              >
+                {t('sidebar.cancelRename')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  actions.rename.isPending ||
+                  renameTitle.trim().length > MAX_CONVERSATION_TITLE_LENGTH
+                }
+              >
+                {actions.rename.isPending
+                  ? t('sidebar.savingRename')
+                  : t('sidebar.saveRename')}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
