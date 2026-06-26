@@ -82,7 +82,7 @@ type MessageBubbleProps = {
   message: ChatMessage;
   onCopyMessage: (content: string) => void;
   onEditMessage?: (message: ChatMessage) => void;
-  onRegenerate?: () => void;
+  onRegenerate?: (message: ChatMessage) => void;
   onRetryMessage?: (message: ChatMessage) => void;
   onRestoreMessage?: (message: ChatMessage) => void;
   isLastAssistant?: boolean;
@@ -319,7 +319,7 @@ function MessageBubbleComponent({
                 <MessageActions
                   role={message.role}
                   onCopy={() => onCopyMessage(message.content)}
-                  onRegenerate={onRegenerate}
+                  onRegenerate={() => onRegenerate?.(message)}
                   onLike={handleLike}
                   onDislike={() => setDialogOpen(true)}
                   feedbackState={feedbackState}

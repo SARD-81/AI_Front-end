@@ -42,6 +42,7 @@ export function ChatShell({
   const [errorMessage, setErrorMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
+  const regenerateTargetRef = useRef<{ userId: string; assistantId: string } | null>(null);
 
   const chatQuery = useChat(chatId);
   const chat = chatQuery.data;
@@ -51,15 +52,28 @@ export function ChatShell({
   const messages = useMemo(() => {
     const list = chat?.messages ?? [];
     if (!streamContent) return list;
-    return [
-      ...list,
-      {
-        id: 'streaming',
-        role: 'assistant' as const,
-        content: streamContent,
-        createdAt: streamCreatedAtRef.current ?? new Date().toISOString()
+
+    const streamingMessage = {
+      id: 'streaming',
+      role: 'assistant' as const,
+      content: streamContent,
+      createdAt: streamCreatedAtRef.current ?? new Date().toISOString()
+    };
+    const regenerateTarget = regenerateTargetRef.current;
+    if (regenerateTarget) {
+      const userIndex = list.findIndex(
+        (message) => message.id === regenerateTarget.userId
+      );
+      if (userIndex >= 0) {
+        return [
+          ...list.slice(0, userIndex + 1),
+          streamingMessage,
+          ...list.slice(userIndex + 1)
+        ];
       }
-    ];
+    }
+
+    return [...list, streamingMessage];
   }, [chat?.messages, streamContent]);
 
   const flushStreamBuffer = () => {
@@ -201,7 +215,14 @@ export function ChatShell({
     return t('chat.unknownSendError');
   };
 
-  const submitMessage = async (nextValue: string, clientMessageId?: string) => {
+  const submitMessage = async (
+    nextValue: string,
+    clientMessageId?: string,
+    options?: {
+      replaceAssistantMessageId?: string;
+      restoreAssistantMessage?: ChatMessage;
+    }
+  ) => {
     const trimmedValue = nextValue.trim();
     if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
       return;
@@ -232,6 +253,8 @@ export function ChatShell({
         chatId: activeChatId,
         payload,
         clientMessageId: stableClientMessageId,
+        replaceAssistantMessageId: options?.replaceAssistantMessageId,
+        restoreAssistantMessage: options?.restoreAssistantMessage,
         onToken: (chunk) => {
           streamChunksRef.current.push(chunk);
           scheduleStreamFlush();
@@ -258,6 +281,10 @@ export function ChatShell({
       }
 
       setErrorMessage(getChatUserErrorMessage(error));
+    } finally {
+      if (options?.replaceAssistantMessageId) {
+        regenerateTargetRef.current = null;
+      }
     }
   };
 
@@ -307,13 +334,27 @@ export function ChatShell({
     router
   ]);
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (targetMessage: ChatMessage) => {
+    if (targetMessage.role !== 'assistant' || sendMutation.isPending) return;
+
     const currentMessages = chat?.messages ?? [];
-    const lastUserMessage = [...currentMessages]
-      .reverse()
-      .find((message) => message.role === 'user');
-    if (!lastUserMessage) return;
-    await submitMessage(lastUserMessage.content);
+    const targetIndex = currentMessages.findIndex(
+      (message) => message.id === targetMessage.id
+    );
+    if (targetIndex <= 0) return;
+
+    const previousUserMessage = currentMessages[targetIndex - 1];
+    if (previousUserMessage?.role !== 'user') return;
+
+    regenerateTargetRef.current = {
+      userId: previousUserMessage.id,
+      assistantId: targetMessage.id
+    };
+
+    await submitMessage(previousUserMessage.content, previousUserMessage.id, {
+      replaceAssistantMessageId: targetMessage.id,
+      restoreAssistantMessage: targetMessage
+    });
   };
 
   return (
