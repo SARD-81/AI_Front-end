@@ -358,7 +358,10 @@
     "editableSectionTitle": "Editable information",
     "readOnlySectionTitle": "Read-only profile details",
     "incompleteHelp": "Most academic/employment fields are fixed from registration. If anything is missing or incorrect, contact support or your administrator.",
-    "notProvided": "Not provided"
+    "notProvided": "Not provided",
+    "completionTitle": "Complete your profile",
+    "completionDescription": "Add the required profile details once to continue using the AI assistant.",
+    "cancelLabel": "Close profile editing"
   },
   "settings": {
     "title": "Settings",
@@ -382,8 +385,18 @@
       "roles": {
         "student": "Student",
         "professor": "Professor",
-        "staff": "Staff"
-      }
+        "staff": "Staff",
+        "admin": "Admin"
+      },
+      "personnelId": "Personnel ID",
+      "faculty": "Faculty",
+      "major": "Major",
+      "degreeLevel": "Degree level",
+      "department": "Department",
+      "academicRank": "Academic rank",
+      "jobTitle": "Job title",
+      "editNotice": "Only your first and last name can be edited. Academic and employment details are read-only.",
+      "editProfile": "Edit profile"
     },
     "options": {
       "appearance": {

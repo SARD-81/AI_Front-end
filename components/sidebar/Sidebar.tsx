@@ -13,8 +13,7 @@ import {
   MessageCircle,
   MessageSquarePlus,
   Settings,
-  UserCircle2,
-  UserPen
+  UserCircle2
 } from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {toast} from 'sonner';
@@ -416,15 +415,6 @@ export function Sidebar({locale, onNavigate}: {locale: string; onNavigate?: () =
                 >
                   <Settings className="ms-2 h-4 w-4" />
                   {t('sidebar.settings')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    router.push(`/${locale}/profile`);
-                    onNavigate?.();
-                  }}
-                >
-                  <UserPen className="ms-2 h-4 w-4" />
-                  {t('sidebar.editProfile')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-danger-text focus:bg-danger-surface focus:text-danger-text data-[highlighted]:bg-danger-surface data-[highlighted]:text-danger-text"
