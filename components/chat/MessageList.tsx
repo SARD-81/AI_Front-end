@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso, type ListRange, type VirtuosoHandle } from 'react-virtuoso';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Bot, Sparkles } from 'lucide-react';
 import type { ChatMessage } from '@/lib/api/chat';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,86 @@ type MessageListProps = {
   onRestoreMessage: (message: ChatMessage) => void;
 };
 
+type MessageListItem =
+  | ChatMessage
+  | {
+      id: 'assistant-pending';
+      role: 'assistant-pending';
+    };
+
 type UserAnchor = {
   anchorId: string;
   messageIndex: number;
   messageId: string;
   snippet: string;
 };
+
+function AssistantPendingBubble() {
+  const t = useTranslations('app');
+  const statuses = useMemo(
+    () => [
+      t('message.pendingStatus.connecting'),
+      t('message.pendingStatus.thinking'),
+      t('message.pendingStatus.generating')
+    ],
+    [t]
+  );
+  const [statusIndex, setStatusIndex] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    if (reduceMotion) return undefined;
+
+    const interval = window.setInterval(() => {
+      setStatusIndex((current) => (current + 1) % statuses.length);
+    }, 1500);
+
+    return () => window.clearInterval(interval);
+  }, [statuses.length]);
+
+  return (
+    <article
+      className="mr-auto w-full max-w-[min(40rem,92%)]"
+      aria-live="polite"
+      aria-label={statuses[statusIndex]}
+    >
+      <div className="flex items-center gap-3 rounded-3xl border border-[hsl(var(--surface-subtle))]/80 bg-[hsl(var(--surface-card))]/80 px-4 py-3 shadow-card backdrop-blur-sm dark:bg-[hsl(var(--surface-elevated))]/60">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
+          <Bot className="h-5 w-5" aria-hidden />
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-background text-primary shadow-sm ring-1 ring-primary/20">
+            <Sparkles className="h-2.5 w-2.5 motion-safe:animate-pulse motion-reduce:animate-none" aria-hidden />
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <span className="transition-opacity duration-300 motion-reduce:transition-none">
+              {statuses[statusIndex]}
+            </span>
+            <span className="flex items-center gap-1" aria-hidden>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary/80 motion-safe:animate-bounce motion-reduce:animate-none" />
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-primary/70 motion-safe:animate-bounce motion-reduce:animate-none"
+                style={{ animationDelay: '120ms' }}
+              />
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-primary/60 motion-safe:animate-bounce motion-reduce:animate-none"
+                style={{ animationDelay: '240ms' }}
+              />
+            </span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted/70" aria-hidden>
+            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-transparent via-primary/35 to-transparent motion-safe:animate-pulse motion-reduce:animate-none" />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function MessageList({
   messages,
@@ -46,15 +120,13 @@ export function MessageList({
   );
   const [hoveredAnchorId, setHoveredAnchorId] = useState<string | null>(null);
 
-  const items = useMemo(() => {
+  const items = useMemo<MessageListItem[]>(() => {
     if (!typing) return messages;
     return [
       ...messages,
       {
-        id: 'typing',
-        role: 'assistant' as const,
-        content: '...',
-        createdAt: new Date().toISOString()
+        id: 'assistant-pending',
+        role: 'assistant-pending'
       }
     ];
   }, [messages, typing]);
@@ -199,6 +271,14 @@ export function MessageList({
         atBottomThreshold={80}
         rangeChanged={syncActiveFromRange}
         itemContent={(index, message) => {
+          if (message.role === 'assistant-pending') {
+            return (
+              <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+                <AssistantPendingBubble />
+              </div>
+            );
+          }
+
           const anchorId =
             message.role === 'user' ? `msg-${message.id}` : undefined;
           return (

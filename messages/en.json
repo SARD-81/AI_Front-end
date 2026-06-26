@@ -73,7 +73,12 @@
       "copyLinkError": "Could not copy the link",
       "scrollToBottom": "Scroll to bottom",
       "pending": "Sending…",
-      "failed": "Not sent"
+      "failed": "Not sent",
+      "pendingStatus": {
+        "connecting": "Connecting…",
+        "thinking": "Thinking…",
+        "generating": "Generating answer…"
+      }
     },
     "emptyState": {
       "logoAlt": "Logo",
