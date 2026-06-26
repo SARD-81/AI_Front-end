@@ -1,7 +1,7 @@
 'use client';
 
 import {type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState} from 'react';
-import {Check, ChevronDown, CircleUserRound, SlidersHorizontal} from 'lucide-react';
+import {Check, ChevronDown, CircleUserRound, SlidersHorizontal, UserPen} from 'lucide-react';
 import {useTheme} from 'next-themes';
 import {useLocale, useTranslations} from 'next-intl';
 import {usePathname, useRouter, useSearchParams} from 'next/navigation';
@@ -153,6 +153,7 @@ export function SettingsModal({
   const [tab, setTab] = useState<'general' | 'account'>('general');
   const t = useTranslations('settings');
   const locale = useLocale();
+  const router = useRouter();
   const isRtl = locale === 'fa';
 
   const appearanceOptions = [
@@ -181,9 +182,63 @@ export function SettingsModal({
       name: fullName || firstLastName || user?.studentId?.trim() || '—',
       email: user?.email?.trim() || '—',
       studentId: user?.studentId?.trim() || '—',
+      personnelId: user?.personnelId?.trim() || '—',
+      faculty: user?.faculty?.trim() || '—',
+      major: user?.major?.trim() || '—',
+      degreeLevel: user?.degreeLevel?.trim() || '—',
+      department: user?.department?.trim() || '—',
+      academicRank: user?.academicRank?.trim() || '—',
+      jobTitle: user?.jobTitle?.trim() || '—',
       role: user?.role ? t(`account.roles.${user.role}`) : '—'
     };
-  }, [t, user?.email, user?.firstName, user?.fullName, user?.lastName, user?.role, user?.studentId]);
+  }, [
+    t,
+    user?.academicRank,
+    user?.degreeLevel,
+    user?.department,
+    user?.email,
+    user?.faculty,
+    user?.firstName,
+    user?.fullName,
+    user?.jobTitle,
+    user?.lastName,
+    user?.major,
+    user?.personnelId,
+    user?.role,
+    user?.studentId
+  ]);
+
+
+  const readOnlyDetails = useMemo(() => {
+    if (!user?.role) return [];
+
+    const detailsByRole = {
+      student: [
+        ['studentId', profile.studentId],
+        ['faculty', profile.faculty],
+        ['major', profile.major],
+        ['degreeLevel', profile.degreeLevel]
+      ],
+      professor: [
+        ['personnelId', profile.personnelId],
+        ['faculty', profile.faculty],
+        ['academicRank', profile.academicRank]
+      ],
+      staff: [
+        ['personnelId', profile.personnelId],
+        ['department', profile.department],
+        ['jobTitle', profile.jobTitle]
+      ],
+      admin: []
+    } satisfies Record<NonNullable<AuthUserDTO['role']>, [string, string][]>;
+
+    return detailsByRole[user.role] ?? [];
+  }, [profile, user?.role]);
+
+  const handleEditProfile = () => {
+    onOpenChange(false);
+    router.push(`/${locale}/profile`);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -268,12 +323,27 @@ export function SettingsModal({
                   <SettingRow label={t('account.email')} isRtl={isRtl}>
                     <span className="text-sm font-medium text-foreground">{profile.email}</span>
                   </SettingRow>
-                  <SettingRow label={t('account.studentId')} isRtl={isRtl}>
-                    <span className="text-sm font-medium text-foreground" dir="ltr">{profile.studentId}</span>
-                  </SettingRow>
                   <SettingRow label={t('account.role')} isRtl={isRtl}>
                     <span className="text-sm font-medium text-foreground">{profile.role}</span>
                   </SettingRow>
+                  {readOnlyDetails.map(([field, value]) => (
+                    <SettingRow key={field} label={t(`account.${field}`)} isRtl={isRtl}>
+                      <span className="text-sm font-medium text-foreground" dir={field === 'studentId' || field === 'personnelId' ? 'ltr' : undefined}>
+                        {value}
+                      </span>
+                    </SettingRow>
+                  ))}
+                  <div className="mt-5 rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-4 shadow-sm">
+                    <p className="text-sm text-muted-foreground">{t('account.editNotice')}</p>
+                    <button
+                      type="button"
+                      onClick={handleEditProfile}
+                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-full border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-4 text-sm font-medium text-[hsl(var(--field-foreground))] shadow-sm transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <UserPen className="h-4 w-4" />
+                      {t('account.editProfile')}
+                    </button>
+                  </div>
                 </>
               )}
             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -101,6 +101,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   const profile = profileQuery.data?.user;
   const role = profile?.role ?? 'admin';
   const readOnlyFields = useMemo(() => roleReadOnlyFields[role], [role]);
+  const isProfileIncomplete = profile?.isProfileCompleted === false;
 
   useEffect(() => {
     if (profile) {
@@ -144,6 +145,10 @@ export function ProfileForm({ locale }: ProfileFormProps) {
 
   const setFieldValue = (field: EditableFieldName, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCancel = () => {
+    router.replace(`/${locale}/chat`);
   };
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -211,14 +216,32 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   return (
     <Card className="w-full max-w-2xl border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-card">
       <CardHeader className="space-y-4">
-        <div className="rounded-2xl border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] p-4 text-sm text-[hsl(var(--info-text))]">
-          <p className="font-semibold">{t('bannerTitle')}</p>
-          <p className="mt-1 text-[hsl(var(--info-text))]/80">{t('bannerDescription')}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle>{isProfileIncomplete ? t('completionTitle') : t('title')}</CardTitle>
+            <CardDescription className="mt-2">
+              {isProfileIncomplete ? t('completionDescription') : t('description')}
+            </CardDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleCancel}
+            aria-label={t('cancelLabel')}
+            title={t('cancelLabel')}
+            disabled={mutation.isPending || logoutMutation.isPending}
+            className="shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        <div>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription className="mt-2">{t('description')}</CardDescription>
-        </div>
+        {isProfileIncomplete ? (
+          <div className="rounded-2xl border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] p-4 text-sm text-[hsl(var(--info-text))]">
+            <p className="font-semibold">{t('bannerTitle')}</p>
+            <p className="mt-1 text-[hsl(var(--info-text))]/80">{t('bannerDescription')}</p>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-2 text-sm text-muted-foreground">
           <p className="inline-flex w-fit rounded-full border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-3 py-1 text-xs font-medium">
             {t('roleLabel')}: {t(`roles.${role}`)}
