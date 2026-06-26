@@ -73,7 +73,12 @@
       "copyLinkError": "کپی لینک ممکن نبود",
       "scrollToBottom": "رفتن به پایین",
       "pending": "در حال ارسال…",
-      "failed": "ارسال نشد"
+      "failed": "ارسال نشد",
+      "pendingStatus": {
+        "connecting": "در حال اتصال…",
+        "thinking": "در حال فکر کردن…",
+        "generating": "در حال تولید پاسخ…"
+      }
     },
     "emptyState": {
       "logoAlt": "لوگو",
