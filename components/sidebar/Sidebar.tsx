@@ -268,7 +268,7 @@ export function Sidebar({
   const profileName =
     fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
   const profileSubtitle =
-    user?.studentId || user?.email || t('sidebar.demoVersion');
+    user?.email || user?.studentId || t('sidebar.demoVersion');
 
   const handleLogout = async () => {
     try {
@@ -562,47 +562,73 @@ export function Sidebar({
                 <Button
                   variant="ghost"
                   className={cn(
-                    'h-11 w-full justify-start gap-2 border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99]',
+                    'group h-11 w-full justify-start gap-2 overflow-hidden border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm transition-all duration-200 hover:border-[hsl(var(--menu-border))] hover:bg-[hsl(var(--surface-elevated))] hover:shadow-card focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 active:scale-[0.99]',
                     collapsed && 'h-10 w-10 justify-center p-0'
                   )}
                   aria-label={t('sidebar.profile')}
                   title={collapsed ? t('sidebar.profile') : undefined}
                 >
-                  <UserCircle2 className="h-5 w-5" />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-sm transition-transform duration-200 group-hover:scale-105">
+                    <UserCircle2 className="h-5 w-5" />
+                  </span>
                   {!collapsed ? (
                     <div className="flex min-w-0 flex-col items-start">
-                      <span className="truncate text-sm">{profileName}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="truncate text-sm font-medium">
+                        {profileName}
+                      </span>
+                      <span className="max-w-44 truncate text-xs text-muted-foreground">
                         {profileSubtitle}
                       </span>
                     </div>
                   ) : null}
                   {!collapsed ? (
-                    <EllipsisVertical className="ms-auto h-4 w-4" />
+                    <EllipsisVertical className="ms-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:rotate-90 group-hover:text-foreground" />
                   ) : null}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="start"
+                align={collapsed ? 'center' : 'start'}
                 side="left"
-                className="border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-card"
+                className={cn(
+                  'w-72 overflow-hidden rounded-2xl border border-[hsl(var(--menu-border))] bg-[hsl(var(--menu)/0.92)] p-2 text-[hsl(var(--menu-foreground))] shadow-[0_22px_70px_-28px_hsl(var(--shadow-color)/0.75),0_0_0_1px_hsl(var(--foreground)/0.04)] backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+                  collapsed && 'w-56',
+                  isRtl ? '[direction:rtl]' : '[direction:ltr]'
+                )}
               >
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSettingsOpen(true);
-                    onNavigate?.();
-                  }}
-                >
-                  <Settings className="ms-2 h-4 w-4" />
-                  {t('sidebar.settings')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-danger-text focus:bg-danger-surface focus:text-danger-text data-[highlighted]:bg-danger-surface data-[highlighted]:text-danger-text"
-                  onClick={() => setLogoutConfirmOpen(true)}
-                >
-                  <LogOut className="ms-2 h-4 w-4" />
-                  {t('sidebar.logoutNow')}
-                </DropdownMenuItem>
+                {!collapsed ? (
+                  <div className="mb-2 flex items-center gap-3 rounded-xl border border-[hsl(var(--menu-border))] bg-[hsl(var(--surface-elevated)/0.72)] p-3 shadow-sm">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--menu-hover))] text-[hsl(var(--menu-hover-foreground))] shadow-inner">
+                      <UserCircle2 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {profileName}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {profileSubtitle}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="space-y-1">
+                  <DropdownMenuItem
+                    className="group/item h-11 gap-3 rounded-xl px-3 font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 data-[highlighted]:translate-x-0.5 rtl:data-[highlighted]:-translate-x-0.5"
+                    onClick={() => {
+                      setSettingsOpen(true);
+                      onNavigate?.();
+                    }}
+                  >
+                    <Settings className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-data-[highlighted]/item:text-[hsl(var(--menu-hover-foreground))]" />
+                    <span>{t('sidebar.settings')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="group/item h-11 gap-3 rounded-xl px-3 font-medium text-danger-text transition-all duration-150 focus-visible:ring-2 focus-visible:ring-danger-text/30 focus-visible:ring-offset-2 data-[highlighted]:translate-x-0.5 data-[highlighted]:bg-danger-surface data-[highlighted]:text-danger-text rtl:data-[highlighted]:-translate-x-0.5"
+                    onClick={() => setLogoutConfirmOpen(true)}
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span>{t('sidebar.logoutNow')}</span>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarFooter>
