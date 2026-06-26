@@ -100,7 +100,12 @@
       "restoreToInput": "Restore to input",
       "connecting": "Connecting...",
       "profileIncomplete": "Please complete your profile to continue chatting.",
-      "accountLocked": "Your account is locked. Please contact support."
+      "accountLocked": "Your account is locked. Please contact support.",
+      "sendFailed": "Message could not be sent.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "conversationNotFound": "This conversation could not be found. Please start a new chat.",
+      "timeout": "The request took too long. Please try again.",
+      "unknownSendError": "Something went wrong while sending your message. Please try again."
     },
     "thinkingLevel": {
       "label": "Response depth / thinking level",
