@@ -400,6 +400,7 @@
       "studentId": "شماره دانشجویی",
       "role": "نقش",
       "loading": "در حال بارگذاری پروفایل حساب...",
+      "unknownRole": "نامشخص",
       "roles": {
         "student": "دانشجو",
         "professor": "استاد",
