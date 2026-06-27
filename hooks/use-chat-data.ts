@@ -18,7 +18,7 @@ import {
   sendMessageWithWebSocket,
   ChatWebSocketError
 } from '@/lib/services/chat-service';
-import { uid } from '@/lib/utils/uid';
+import { uuid } from '@/lib/utils/uid';
 
 export function useChats() {
   return useQuery({
@@ -92,7 +92,7 @@ export function useSendMessage() {
     }) => {
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
-        id: clientMessageId ?? uid('user'),
+        id: clientMessageId ?? uuid(),
         role: 'user',
         content: payload.content,
         createdAt: nowIso,
