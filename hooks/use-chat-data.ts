@@ -20,6 +20,9 @@ import {
 } from '@/lib/services/chat-service';
 import { uuid } from '@/lib/utils/uid';
 
+const isChatRestFallbackEnabled = () =>
+  process.env.NEXT_PUBLIC_CHAT_REST_FALLBACK !== 'false';
+
 export function useChats() {
   return useQuery({
     queryKey: ['chats'],
@@ -168,6 +171,10 @@ export function useSendMessage() {
               error.closeCode === 4401 ||
               error.closeCode === 4404)
           ) {
+            throw error;
+          }
+
+          if (!isChatRestFallbackEnabled()) {
             throw error;
           }
 
