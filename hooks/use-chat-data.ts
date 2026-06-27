@@ -163,7 +163,10 @@ export function useSendMessage() {
 
           if (
             error instanceof ChatWebSocketError &&
-            (error.shouldRedirectToProfile || error.isLocked)
+            (error.shouldRedirectToProfile ||
+              error.isLocked ||
+              error.closeCode === 4401 ||
+              error.closeCode === 4404)
           ) {
             throw error;
           }
