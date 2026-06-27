@@ -203,7 +203,7 @@ export class ChatWebSocketError extends Error {
 }
 
 function resolveChatWebSocketUrl(conversationId: string, ticket: string) {
-  const configuredBase = getApiBaseUrl();
+  const configuredBase = process.env.NEXT_PUBLIC_WS_BASE_URL?.trim() || getApiBaseUrl();
   const base = configuredBase || (typeof window !== 'undefined' ? window.location.origin : '');
   const url = new URL(base || 'http://localhost');
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
