@@ -220,6 +220,12 @@ function mapCloseError(event: CloseEvent) {
   if (event.code === 4403) {
     return new ChatWebSocketError('Account is locked.', 'LOCKED', event.code, false, true);
   }
+  if (event.code === 4401) {
+    return new ChatWebSocketError('Session authentication failed.', 'UNAUTHORIZED', event.code);
+  }
+  if (event.code === 4404) {
+    return new ChatWebSocketError('Conversation was not found.', 'CONVERSATION_NOT_FOUND', event.code);
+  }
   return new ChatWebSocketError(event.reason || 'WebSocket connection closed before an answer.', undefined, event.code);
 }
 
