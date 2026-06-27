@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { callWithAutoRefresh } from '@/lib/server/with-refresh';
+import type { AuthRoleDTO } from '@/lib/types/auth';
 
 type BackendProfile = Record<string, unknown>;
 
@@ -14,46 +15,106 @@ type ProfileBody = {
   studentId?: string;
 };
 
+const AUTH_ROLES = ['student', 'professor', 'staff', 'admin'] as const;
+
+function isRecord(value: unknown): value is BackendProfile {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isAuthRole(value: unknown): value is AuthRoleDTO {
+  return typeof value === 'string' && AUTH_ROLES.includes(value as AuthRoleDTO);
+}
+
+function profileSources(profile: BackendProfile): BackendProfile[] {
+  const user = profile.user;
+
+  return [
+    profile,
+    isRecord(user) ? user : undefined,
+    isRecord(profile.profile) ? profile.profile : undefined,
+    isRecord(profile.data) ? profile.data : undefined,
+    isRecord(user) && isRecord(user.profile) ? user.profile : undefined
+  ].filter(isRecord);
+}
+
+function pickString(sources: BackendProfile[], ...keys: string[]): string | undefined {
+  for (const source of sources) {
+    for (const key of keys) {
+      const value = source[key];
+      if (typeof value === 'string') {
+        return value;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function pickRole(sources: BackendProfile[]): AuthRoleDTO | undefined {
+  const roleKeys = [
+    'role',
+    'user_role',
+    'userRole',
+    'account_type',
+    'accountType',
+    'user_type',
+    'userType'
+  ];
+
+  for (const source of sources) {
+    for (const key of roleKeys) {
+      const value = source[key];
+      if (isAuthRole(value)) {
+        return value;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function fallbackRole(sources: BackendProfile[]): AuthRoleDTO | undefined {
+  const studentId = pickString(sources, 'student_id', 'studentId');
+  const email = pickString(sources, 'email')?.trim().toLowerCase();
+  const personnelId = pickString(sources, 'personnel_id', 'personnelId');
+  const academicRank = pickString(sources, 'academic_rank', 'academicRank');
+  const jobTitle = pickString(sources, 'job_title', 'jobTitle');
+  const department = pickString(sources, 'department');
+
+  if (studentId || email?.endsWith('@mail.sbu.ac.ir')) {
+    return 'student';
+  }
+
+  if (personnelId && academicRank) {
+    return 'professor';
+  }
+
+  if (personnelId && (jobTitle || department)) {
+    return 'staff';
+  }
+
+  return undefined;
+}
+
 function normalizeProfile(profile: BackendProfile) {
+  const sources = profileSources(profile);
+  const role = pickRole(sources) ?? fallbackRole(sources);
+
   return {
     user: {
-      studentId:
-        typeof (profile.student_id ?? profile.studentId) === 'string'
-          ? (profile.student_id ?? profile.studentId)
-          : '',
-      fullName:
-        typeof (profile.full_name ?? profile.fullName) === 'string'
-          ? (profile.full_name ?? profile.fullName)
-          : '',
-      firstName:
-        typeof (profile.first_name ?? profile.firstName) === 'string'
-          ? (profile.first_name ?? profile.firstName)
-          : '',
-      lastName:
-        typeof (profile.last_name ?? profile.lastName) === 'string'
-          ? (profile.last_name ?? profile.lastName)
-          : '',
-      email: typeof profile.email === 'string' ? profile.email : '',
-      faculty: typeof profile.faculty === 'string' ? profile.faculty : '',
-      major: typeof profile.major === 'string' ? profile.major : '',
-      degreeLevel:
-        typeof (profile.degree_level ?? profile.degreeLevel) === 'string'
-          ? (profile.degree_level ?? profile.degreeLevel)
-          : '',
-      role: typeof profile.role === 'string' ? profile.role : undefined,
-      personnelId:
-        typeof (profile.personnel_id ?? profile.personnelId) === 'string'
-          ? (profile.personnel_id ?? profile.personnelId)
-          : undefined,
-      department: typeof profile.department === 'string' ? profile.department : undefined,
-      academicRank:
-        typeof (profile.academic_rank ?? profile.academicRank) === 'string'
-          ? (profile.academic_rank ?? profile.academicRank)
-          : undefined,
-      jobTitle:
-        typeof (profile.job_title ?? profile.jobTitle) === 'string'
-          ? (profile.job_title ?? profile.jobTitle)
-          : undefined,
+      studentId: pickString(sources, 'student_id', 'studentId') ?? '',
+      fullName: pickString(sources, 'full_name', 'fullName') ?? '',
+      firstName: pickString(sources, 'first_name', 'firstName') ?? '',
+      lastName: pickString(sources, 'last_name', 'lastName') ?? '',
+      email: pickString(sources, 'email') ?? '',
+      faculty: pickString(sources, 'faculty') ?? '',
+      major: pickString(sources, 'major') ?? '',
+      degreeLevel: pickString(sources, 'degree_level', 'degreeLevel') ?? '',
+      role,
+      personnelId: pickString(sources, 'personnel_id', 'personnelId'),
+      department: pickString(sources, 'department'),
+      academicRank: pickString(sources, 'academic_rank', 'academicRank'),
+      jobTitle: pickString(sources, 'job_title', 'jobTitle'),
       isProfileCompleted:
         typeof profile.is_profile_completed === 'boolean'
           ? profile.is_profile_completed

@@ -189,7 +189,7 @@ export function SettingsModal({
       department: user?.department?.trim() || '—',
       academicRank: user?.academicRank?.trim() || '—',
       jobTitle: user?.jobTitle?.trim() || '—',
-      role: user?.role ? t(`account.roles.${user.role}`) : '—'
+      role: user?.role ? t(`account.roles.${user.role}`) : t('account.unknownRole')
     };
   }, [
     t,
