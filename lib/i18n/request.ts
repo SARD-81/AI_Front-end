@@ -9,7 +9,11 @@ export default getRequestConfig(async ({requestLocale}) => {
     locale: activeLocale,
     messages: (await import(`../../messages/${activeLocale}.json`)).default,
     timeZone: 'Asia/Tehran',
-    onError() {},
+    onError(error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[i18n]', error.message);
+      }
+    },
     getMessageFallback({namespace, key}) {
       return namespace ? `${namespace}.${key}` : key;
     }

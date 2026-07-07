@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
 import { ApiError } from '@/lib/api/client';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 export function ChatShell({
   locale,
@@ -38,8 +39,10 @@ export function ChatShell({
   const streamChunksRef = useRef<string[]>([]);
   const streamFrameRef = useRef<number | null>(null);
   const streamCreatedAtRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
+  const isOnline = useOnlineStatus();
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
   const regenerateTargetRef = useRef<{ userId: string; assistantId: string } | null>(null);
@@ -249,12 +252,17 @@ export function ChatShell({
         router.push(`/${locale}/chat/${activeChatId}`);
       }
 
+      abortControllerRef.current?.abort();
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       const result = await sendMutation.mutateAsync({
         chatId: activeChatId,
         payload,
         clientMessageId: stableClientMessageId,
         replaceAssistantMessageId: options?.replaceAssistantMessageId,
         restoreAssistantMessage: options?.restoreAssistantMessage,
+        signal: abortController.signal,
         onToken: (chunk) => {
           streamChunksRef.current.push(chunk);
           scheduleStreamFlush();
@@ -269,9 +277,14 @@ export function ChatShell({
       if (result?.assistantCommitted) {
         clearStreamingState();
       }
+      abortControllerRef.current = null;
       setValue('');
     } catch (error) {
       clearStreamingState();
+      if (abortControllerRef.current?.signal.aborted) {
+        abortControllerRef.current = null;
+        return;
+      }
       if (process.env.NODE_ENV === 'development') {
         console.error('Chat send failed', error);
       }
@@ -289,6 +302,10 @@ export function ChatShell({
   };
 
   const submit = async () => submitMessage(value);
+
+  const handleStopGeneration = () => {
+    abortControllerRef.current?.abort();
+  };
 
   const handleRetryFailedMessage = async () => {
     if (!failedMessage) return;
@@ -368,7 +385,7 @@ export function ChatShell({
           <Sidebar locale={locale} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="relative flex min-h-14 items-center border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] py-1 sm:h-14 sm:py-0">
             <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
@@ -391,8 +408,14 @@ export function ChatShell({
             </div>
           </header>
 
-          {isSendingOrStreaming && !errorMessage ? (
-            <div className="border-b border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] px-4 py-2 text-sm text-[hsl(var(--info-text))]">
+          {!isOnline ? (
+            <div role="status" className="border-b border-[hsl(var(--warning-border,var(--info-border)))] bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]">
+              <div className="mx-auto w-full max-w-3xl">{t('chat.offline')}</div>
+            </div>
+          ) : null}
+
+          {sendMutation.isPending && !streamContent && !errorMessage ? (
+            <div role="status" className="border-b border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] px-4 py-2 text-sm text-[hsl(var(--info-text))]">
               <div className="mx-auto w-full max-w-3xl">{t('chat.connecting')}</div>
             </div>
           ) : null}
@@ -485,6 +508,8 @@ export function ChatShell({
                     disabled={
                       sendMutation.isPending || actions.create.isPending
                     }
+                    isSending={sendMutation.isPending}
+                    onStop={handleStopGeneration}
                     focusTrigger={focusTrigger}
                     thinkLevel={thinkLevel}
                     onThinkLevelChange={setThinkLevel}

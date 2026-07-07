@@ -6,7 +6,10 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -35,16 +38,28 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
     "eslint-config-next": "15.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }

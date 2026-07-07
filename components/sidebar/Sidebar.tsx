@@ -12,6 +12,7 @@ import {
   LogOut,
   MessageCircle,
   MessageSquarePlus,
+  Search,
   Settings,
   UserCircle2
 } from 'lucide-react';
@@ -38,13 +39,19 @@ import {
   useGroupedChats
 } from '@/hooks/use-chat-data';
 import type { ChatDetail, ChatSummary } from '@/lib/api/chat';
-import {
-  SettingsModal,
-  useAppSettings
-} from '@/components/settings/SettingsModal';
+import dynamic from 'next/dynamic';
+import { useAppSettings } from '@/hooks/use-app-settings';
 import { getMe, logout } from '@/lib/services/auth-service';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
+
+const SettingsModal = dynamic(
+  () =>
+    import('@/components/settings/SettingsModal').then(
+      (mod) => mod.SettingsModal
+    ),
+  { ssr: false }
+);
 
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 304;
@@ -70,7 +77,15 @@ export function Sidebar({
     retry: false
   });
   const chatsQuery = useChats();
-  const groups = useGroupedChats(chatsQuery.data);
+  const [searchQuery, setSearchQuery] = useState('');
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredChats = useMemo(() => {
+    if (!normalizedSearchQuery) return chatsQuery.data;
+    return (chatsQuery.data ?? []).filter((chat) =>
+      chat.title.toLowerCase().includes(normalizedSearchQuery)
+    );
+  }, [chatsQuery.data, normalizedSearchQuery]);
+  const groups = useGroupedChats(filteredChats);
   const actions = useChatActions();
   const isRtl = locale === 'fa';
 
@@ -106,6 +121,7 @@ export function Sidebar({
 
     setCollapsed((prev) => {
       const next = !prev;
+      if (next) setSearchQuery('');
       localStorage.setItem('sidebar-collapsed', String(next));
       return next;
     });
@@ -294,6 +310,7 @@ export function Sidebar({
   }, [chatsQuery.data]);
 
   const hasChats = (chatsQuery.data?.length ?? 0) > 0;
+  const hasSearchResults = (filteredChats?.length ?? 0) > 0;
   const deleteTargetTitle = deleteChatId
     ? chatsById.get(deleteChatId)?.title
     : undefined;
@@ -356,7 +373,7 @@ export function Sidebar({
                 alt={t('sidebar.logoAlt')}
                 width={60}
                 height={60}
-                className="h-15 w-15"
+                className="h-[3.75rem] w-[3.75rem]"
               />
               {!collapsed ? (
                 <span className="mr-16 truncate whitespace-nowrap text-sm">
@@ -422,13 +439,36 @@ export function Sidebar({
                 </Button>
               ) : null}
             </motion.div>
+
+            {!collapsed ? (
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={t('sidebar.searchPlaceholder')}
+                  aria-label={t('sidebar.searchPlaceholder')}
+                  className="h-9 w-full rounded-lg border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] pe-3 ps-9 text-sm text-[hsl(var(--field-foreground))] outline-none transition placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
+                />
+              </div>
+            ) : null}
           </SidebarHeader>
 
           <SidebarContent className={cn('space-y-3', collapsed && 'px-1')}>
             {chatsQuery.isLoading ? (
-              <div className="space-y-2 px-1">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+              <div className="space-y-3 px-1" aria-hidden="true">
+                <Skeleton className="h-3.5 w-16" />
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-11/12" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-10/12" />
+                  <Skeleton className="h-8 w-9/12" />
+                </div>
               </div>
             ) : chatsQuery.isError ? (
               <div
@@ -463,6 +503,14 @@ export function Sidebar({
                 {!collapsed ? (
                   <p className="text-xs text-muted-foreground">
                     {t('sidebar.emptyHistory')}
+                  </p>
+                ) : null}
+              </div>
+            ) : normalizedSearchQuery && !hasSearchResults ? (
+              <div className={cn('px-2 py-3', collapsed && 'px-1 text-center')}>
+                {!collapsed ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t('sidebar.noSearchResults')}
                   </p>
                 ) : null}
               </div>

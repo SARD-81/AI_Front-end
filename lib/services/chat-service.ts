@@ -233,19 +233,40 @@ export async function requestChatWsTicket() {
   return apiFetch<WsTicketResponse>(API_ENDPOINTS.chat.wsTicket, {method: 'POST'});
 }
 
-export async function sendMessageWithWebSocket(
+const WS_CONNECT_TIMEOUT_MS = 15_000;
+const WS_ANSWER_TIMEOUT_MS = 120_000;
+const WS_MAX_ATTEMPTS = 3;
+const WS_RETRY_BASE_DELAY_MS = 750;
+
+function wsRetryDelay(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new ChatWebSocketError('WebSocket send was aborted.'));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, {once: true});
+  });
+}
+
+function attemptSendMessageOverWebSocket(
   conversationId: string,
+  wsTicket: string,
   payload: SendMessagePayload,
+  state: {opened: boolean},
   opts?: {onAck?: () => void; signal?: AbortSignal}
 ) {
-  const ticket = await requestChatWsTicket();
-
   return new Promise<ChatMessage>((resolve, reject) => {
     let settled = false;
     let answered = false;
-    const socket = new WebSocket(resolveChatWebSocketUrl(conversationId, ticket.ticket));
+    const socket = new WebSocket(resolveChatWebSocketUrl(conversationId, wsTicket));
 
     const cleanup = () => {
+      clearTimeout(connectTimer);
+      clearTimeout(answerTimer);
       opts?.signal?.removeEventListener('abort', handleAbort);
       socket.onopen = null;
       socket.onmessage = null;
@@ -267,7 +288,16 @@ export async function sendMessageWithWebSocket(
 
     opts?.signal?.addEventListener('abort', handleAbort, {once: true});
 
+    const connectTimer = setTimeout(() => {
+      fail(new ChatWebSocketError('WebSocket connection timed out.', 'TIMEOUT'));
+    }, WS_CONNECT_TIMEOUT_MS);
+    const answerTimer = setTimeout(() => {
+      fail(new ChatWebSocketError('Timed out while waiting for the answer.', 'TIMEOUT'));
+    }, WS_ANSWER_TIMEOUT_MS);
+
     socket.onopen = () => {
+      state.opened = true;
+      clearTimeout(connectTimer);
       socket.send(
         JSON.stringify({
           message: payload.content,
@@ -313,6 +343,36 @@ export async function sendMessageWithWebSocket(
       }
     };
   });
+}
+
+export async function sendMessageWithWebSocket(
+  conversationId: string,
+  payload: SendMessagePayload,
+  opts?: {onAck?: () => void; signal?: AbortSignal}
+) {
+  let lastError: unknown = new ChatWebSocketError('WebSocket connection failed.');
+
+  for (let attempt = 1; attempt <= WS_MAX_ATTEMPTS; attempt += 1) {
+    const state = {opened: false};
+    try {
+      const ticket = await requestChatWsTicket();
+      return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, payload, state, opts);
+    } catch (error) {
+      lastError = error;
+      const canRetry =
+        !opts?.signal?.aborted &&
+        !state.opened &&
+        attempt < WS_MAX_ATTEMPTS &&
+        error instanceof ChatWebSocketError &&
+        (error.code === undefined || error.code === 'TIMEOUT');
+      if (!canRetry) {
+        throw error;
+      }
+      await wsRetryDelay(WS_RETRY_BASE_DELAY_MS * attempt, opts?.signal);
+    }
+  }
+
+  throw lastError;
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {

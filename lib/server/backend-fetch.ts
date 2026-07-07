@@ -50,7 +50,7 @@ export async function backendFetch<T = unknown>(
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
     const code = typeof data?.code === 'string' ? data.code : undefined;
-    throw new ApiError(message, response.status, code);
+    throw new ApiError(message, response.status, code, data);
   }
 
   return data as T;

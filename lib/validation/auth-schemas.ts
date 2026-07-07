@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {isEmployeeEmail, isStudentEmail} from '@/lib/config/email-domains';
 
 export type AuthSchemaMessageKey =
   | 'studentId.required'
@@ -33,14 +34,6 @@ export type AuthSchemaMessageKey =
   | 'profile.confirmPasswordMismatch';
 
 export type AuthSchemaTranslator = (key: AuthSchemaMessageKey) => string;
-
-function isStudentEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
-}
-
-function isEmployeeEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith('@sbu.ac.ir');
-}
 
 function isAllowedRegisterEmail(email: string): boolean {
   return isStudentEmail(email) || isEmployeeEmail(email);

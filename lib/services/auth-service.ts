@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isEmployeeEmail, isStudentEmail } from '@/lib/config/email-domains';
 import { apiFetch, ApiError } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
 import type {
@@ -145,14 +146,6 @@ export function isAbortError(error: unknown): boolean {
     typeof error === 'object' &&
     (error as { name?: string }).name === 'AbortError'
   );
-}
-
-function isStudentEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
-}
-
-function isEmployeeEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith('@sbu.ac.ir');
 }
 
 function addOptionalString(

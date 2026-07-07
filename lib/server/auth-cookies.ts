@@ -11,6 +11,11 @@ const cookieOptions = {
   path: '/'
 };
 
+// Explicit lifetimes so the session survives browser restarts and the
+// cookies don't silently outlive the tokens they carry.
+const ACCESS_COOKIE_MAX_AGE = 60 * 60 * 24; // 1 day
+const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
 export async function getAuthCookies(): Promise<{access?: string; refresh?: string}> {
   const store = await cookies();
   return {
@@ -21,9 +26,15 @@ export async function getAuthCookies(): Promise<{access?: string; refresh?: stri
 
 export async function setAuthCookies(tokens: {access: string; refresh?: string}): Promise<void> {
   const store = await cookies();
-  store.set(ACCESS_COOKIE, tokens.access, cookieOptions);
+  store.set(ACCESS_COOKIE, tokens.access, {
+    ...cookieOptions,
+    maxAge: ACCESS_COOKIE_MAX_AGE
+  });
   if (tokens.refresh) {
-    store.set(REFRESH_COOKIE, tokens.refresh, cookieOptions);
+    store.set(REFRESH_COOKIE, tokens.refresh, {
+      ...cookieOptions,
+      maxAge: REFRESH_COOKIE_MAX_AGE
+    });
   }
 }
 

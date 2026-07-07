@@ -38,14 +38,30 @@ export function AppProviders({
   locale: string;
   messages: AbstractIntlMessages;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
+            retry: 1,
+            refetchOnWindowFocus: false
+          }
+        }
+      })
+  );
 
   return (
     <NextIntlClientProvider
       locale={locale}
       messages={messages}
       timeZone="Asia/Tehran"
-      onError={() => {}}
+      onError={(error) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[i18n]', error.message);
+        }
+      }}
       getMessageFallback={({namespace, key}) => (namespace ? `${namespace}.${key}` : key)}
     >
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

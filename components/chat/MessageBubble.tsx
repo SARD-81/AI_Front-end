@@ -1,11 +1,11 @@
 'use client';
 
 import { memo, useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, {type Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,10 @@ import { putMessageFeedback } from '@/lib/services/chat-service';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import type { ChatDetail, ChatMessage, MessageFeedbackPayload } from '@/lib/api/chat';
+import { CodeHighlight } from './CodeHighlight';
 import { MessageActions } from './MessageActions';
 
-function CodeBlock({ value }: { value: string }) {
+function CodeBlock({ value, language }: { value: string; language?: string }) {
   const t = useTranslations('app');
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -30,8 +31,8 @@ function CodeBlock({ value }: { value: string }) {
   return (
     <div className="my-3 overflow-hidden rounded-md border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">
-          {t('message.codeLabel')}
+        <span className="font-mono text-xs text-muted-foreground" dir="ltr">
+          {language ?? t('message.codeLabel')}
         </span>
         <Button
           variant="ghost"
@@ -52,7 +53,9 @@ function CodeBlock({ value }: { value: string }) {
         dir="ltr"
         className="overflow-x-auto bg-[hsl(var(--surface-elevated))] p-3 text-sm leading-6 text-foreground"
       >
-        <code dir="ltr">{value}</code>
+        <code dir="ltr" className="code-highlight">
+          <CodeHighlight code={value} language={language} />
+        </code>
       </pre>
     </div>
   );
@@ -77,6 +80,32 @@ function ThinkingIndicator() {
     </div>
   );
 }
+
+const markdownComponents: Components = {
+  p: ({ children }) => <p className="my-2 leading-8">{children}</p>,
+  code: ({ className, children, ...props }) => {
+    const text = String(children).replace(/\n$/, '');
+    const languageMatch = /language-([\w+-]+)/.exec(className ?? '');
+    if (languageMatch) {
+      return <CodeBlock value={text} language={languageMatch[1]} />;
+    }
+    return (
+      <code
+        dir="ltr"
+        className="rounded border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-1.5 py-0.5 text-sm"
+        {...props}
+      >
+        {text}
+      </code>
+    );
+  },
+  pre: ({ children }) => <>{children}</>,
+  table: ({ children }) => (
+    <div className="my-3 overflow-x-auto rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]">
+      <table>{children}</table>
+    </div>
+  )
+};
 
 type MessageBubbleProps = {
   message: ChatMessage;
@@ -117,6 +146,13 @@ function MessageBubbleComponent({
     () => message.role === 'assistant' && isMostlyEnglish(message.content),
     [message.role, message.content]
   );
+  const format = useFormatter();
+  const timeLabel = useMemo(() => {
+    if (!message.createdAt || isTyping || isStreaming) return '';
+    const date = new Date(message.createdAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return format.dateTime(date, { hour: '2-digit', minute: '2-digit' });
+  }, [format, message.createdAt, isTyping, isStreaming]);
 
   const feedbackMutation = useMutation({
     mutationFn: ({
@@ -184,7 +220,10 @@ function MessageBubbleComponent({
     !message.id || isTyping || isStreaming || feedbackMutation.isPending;
 
   return (
-    <article className="group/message w-full" aria-live={isTyping ? 'polite' : 'off'}>
+    <article
+      className="group/message w-full motion-safe:animate-message-in"
+      aria-live={isTyping ? 'polite' : 'off'}
+    >
       <div className="flex w-full flex-col">
         {isTyping ? (
           <div className="mr-auto w-full max-w-[min(40rem,92%)]">
@@ -280,32 +319,7 @@ function MessageBubbleComponent({
                   ) : (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({ children }) => (
-                          <p className="my-2 leading-8">{children}</p>
-                        ),
-                        code: ({ className, children, ...props }) => {
-                          const text = String(children).replace(/\n$/, '');
-                          if (className?.includes('language-')) {
-                            return <CodeBlock value={text} />;
-                          }
-                          return (
-                            <code
-                              dir="ltr"
-                              className="rounded border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-1.5 py-0.5 text-sm"
-                              {...props}
-                            >
-                              {text}
-                            </code>
-                          );
-                        },
-                        pre: ({ children }) => <>{children}</>,
-                        table: ({ children }) => (
-                          <div className="my-3 overflow-x-auto rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]">
-                            <table>{children}</table>
-                          </div>
-                        )
-                      }}
+                      components={markdownComponents}
                     >
                       {message.content}
                     </ReactMarkdown>
@@ -313,6 +327,18 @@ function MessageBubbleComponent({
                 </div>
               )}
             </div>
+
+            {timeLabel ? (
+              <time
+                dateTime={message.createdAt}
+                className={cn(
+                  'mt-1 block text-[11px] text-muted-foreground/70 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100',
+                  isUser ? 'ml-auto' : 'mr-auto'
+                )}
+              >
+                {timeLabel}
+              </time>
+            ) : null}
 
             {!isUser ? (
               <>

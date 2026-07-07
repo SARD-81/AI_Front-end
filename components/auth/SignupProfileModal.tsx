@@ -4,6 +4,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Check, Loader2} from 'lucide-react';
+import {isStudentEmail} from '@/lib/config/email-domains';
 import {useLocale, useTranslations} from 'next-intl';
 import {useForm} from 'react-hook-form';
 import {toast} from 'sonner';
@@ -27,10 +28,6 @@ type Props = {
 const inputClassName = 'h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75';
 const selectClassName = 'flex h-11 w-full rounded-xl border border-field-border bg-field/90 px-3 text-sm text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus dark:bg-field/75';
 const chipClassName = 'inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-sky-50 shadow-sm';
-
-function isStudentEmail(email: string) {
-  return email.trim().toLowerCase().endsWith('@mail.sbu.ac.ir');
-}
 
 type StepKey = 'personal' | 'role' | 'academic' | 'password';
 

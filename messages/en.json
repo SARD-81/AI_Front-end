@@ -53,7 +53,9 @@
       "logoutConfirmTitle": "Sign out?",
       "logoutConfirmDescription": "You will be signed out immediately and returned to the sign-in page.",
       "cancelLogout": "Stay signed in",
-      "confirmLogout": "Sign out"
+      "confirmLogout": "Sign out",
+      "searchPlaceholder": "Search conversations",
+      "noSearchResults": "No conversations match your search."
     },
     "dialog": {
       "close": "Close"
@@ -110,6 +112,7 @@
       "retryFailed": "Retry",
       "restoreToInput": "Restore to input",
       "connecting": "Connecting...",
+      "offline": "You are offline. Reconnect to the internet and try again.",
       "profileIncomplete": "Please complete your profile to continue chatting.",
       "accountLocked": "Your account is locked. Please contact support.",
       "sendFailed": "Message could not be sent.",
@@ -164,7 +167,8 @@
         "length_issue": "It was too short / too long",
         "source_issue": "There was a source issue"
       }
-    }
+    },
+    "stop": "Stop generating"
   },
   "auth": {
     "hero": {
@@ -439,5 +443,10 @@
     "title": "Sorry, this route is wrong.",
     "description": "The page you are looking for may have been renamed, removed, or you may have typed the address incorrectly.",
     "backHome": "Back to home / chat"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Please try again.",
+    "retry": "Try again"
   }
 }

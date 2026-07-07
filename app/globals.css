@@ -134,3 +134,67 @@ html.dark[data-accent='green'] {
   --primary: 152 62% 50%;
   --ring: 152 62% 50%;
 }
+/* Code syntax highlighting tokens (light + dark) */
+.code-highlight .tok-comment {
+  color: hsl(220 10% 48%);
+  font-style: italic;
+}
+
+.code-highlight .tok-string {
+  color: hsl(140 55% 30%);
+}
+
+.code-highlight .tok-number {
+  color: hsl(25 80% 38%);
+}
+
+.code-highlight .tok-keyword {
+  color: hsl(261 55% 46%);
+  font-weight: 600;
+}
+
+.code-highlight .tok-literal {
+  color: hsl(210 85% 40%);
+}
+
+.dark .code-highlight .tok-comment {
+  color: hsl(220 10% 62%);
+}
+
+.dark .code-highlight .tok-string {
+  color: hsl(140 45% 66%);
+}
+
+.dark .code-highlight .tok-number {
+  color: hsl(25 85% 68%);
+}
+
+.dark .code-highlight .tok-keyword {
+  color: hsl(261 75% 78%);
+}
+
+.dark .code-highlight .tok-literal {
+  color: hsl(210 90% 72%);
+}
+
+/* Subtle entry animation for chat messages */
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.motion-safe\:animate-message-in {
+  animation: message-in 0.22s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-message-in {
+    animation: none;
+  }
+}

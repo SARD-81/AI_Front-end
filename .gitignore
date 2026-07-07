@@ -1,8 +1,4 @@
-node_modules
-.next
-out
-dist
-.DS_Store
-.env*
-!.env.example
-pnpm-debug.log*
+node_modules/
+.next/
+.data/
+.env*.local

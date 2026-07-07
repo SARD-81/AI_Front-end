@@ -23,6 +23,40 @@ import { uuid } from '@/lib/utils/uid';
 const isChatRestFallbackEnabled = () =>
   process.env.NEXT_PUBLIC_CHAT_REST_FALLBACK !== 'false';
 
+const STREAM_REVEAL_TICK_MS = 28;
+const STREAM_REVEAL_MAX_MS = 2200;
+const STREAM_REVEAL_MIN_LENGTH = 48;
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+/**
+ * The backend WebSocket delivers the whole answer in a single message.
+ * To keep the UI feeling live (like ChatGPT), reveal the received answer
+ * progressively before committing it to the cache. Skipped for short
+ * answers and for users who prefer reduced motion.
+ */
+async function revealAnswerProgressively(
+  text: string,
+  onToken?: (chunk: string) => void
+) {
+  if (!onToken || text.length < STREAM_REVEAL_MIN_LENGTH) return;
+  if (prefersReducedMotion()) return;
+
+  const maxSteps = Math.floor(STREAM_REVEAL_MAX_MS / STREAM_REVEAL_TICK_MS);
+  const steps = Math.max(1, Math.min(maxSteps, Math.ceil(text.length / 3)));
+  const chunkSize = Math.ceil(text.length / steps);
+
+  for (let index = 0; index < text.length; index += chunkSize) {
+    onToken(text.slice(index, index + chunkSize));
+    await new Promise((resolve) => setTimeout(resolve, STREAM_REVEAL_TICK_MS));
+  }
+}
+
 export function useChats() {
   return useQuery({
     queryKey: ['chats'],
@@ -63,12 +97,16 @@ export function useGroupedChats(chats: ChatSummary[] | undefined) {
   }, [chats]);
 }
 
-function upsertChatSummary(chats: ChatSummary[] | undefined, chatId: string) {
+function upsertChatSummary(
+  chats: ChatSummary[] | undefined,
+  chatId: string,
+  fallbackTitle = ''
+) {
   const updatedAt = new Date().toISOString();
   const next = chats ?? [];
   const existing = next.find((item) => item.id === chatId);
   if (!existing) {
-    return [{ id: chatId, title: 'گفت‌وگو', updatedAt }, ...next];
+    return [{ id: chatId, title: fallbackTitle, updatedAt }, ...next];
   }
 
   const rest = next.filter((item) => item.id !== chatId);
@@ -84,7 +122,10 @@ export function useSendMessage() {
       payload,
       clientMessageId,
       replaceAssistantMessageId,
-      restoreAssistantMessage
+      restoreAssistantMessage,
+      onToken,
+      signal,
+      fallbackTitle = ''
     }: {
       chatId: string;
       payload: SendMessagePayload;
@@ -92,6 +133,8 @@ export function useSendMessage() {
       replaceAssistantMessageId?: string;
       restoreAssistantMessage?: ChatMessage;
       onToken?: (chunk: string) => void;
+      signal?: AbortSignal;
+      fallbackTitle?: string;
     }) => {
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
@@ -103,7 +146,7 @@ export function useSendMessage() {
       };
 
       queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
-        const base = previous ?? { id: chatId, title: 'گفت‌وگو', messages: [] };
+        const base = previous ?? { id: chatId, title: fallbackTitle, messages: [] };
         const messagesWithoutTarget = replaceAssistantMessageId
           ? base.messages.filter((message) => message.id !== replaceAssistantMessageId)
           : base.messages;
@@ -142,11 +185,12 @@ export function useSendMessage() {
               clientMessageId: userMessage.id
             },
             {
+              signal,
               onAck: () => {
                 queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
                   const base = previous ?? {
                     id: chatId,
-                    title: 'گفت‌وگو',
+                    title: fallbackTitle,
                     messages: []
                   };
                   return {
@@ -174,7 +218,7 @@ export function useSendMessage() {
             throw error;
           }
 
-          if (!isChatRestFallbackEnabled()) {
+          if (signal?.aborted || !isChatRestFallbackEnabled()) {
             throw error;
           }
 
@@ -184,10 +228,14 @@ export function useSendMessage() {
           });
         }
 
+        if (!signal?.aborted) {
+          await revealAnswerProgressively(assistantMessage.content, onToken);
+        }
+
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
             id: chatId,
-            title: 'گفت‌وگو',
+            title: fallbackTitle,
             messages: []
           };
           const messagesWithSentUser = base.messages.map((message) =>
@@ -219,7 +267,7 @@ export function useSendMessage() {
           };
         });
         queryClient.setQueryData<ChatSummary[]>(['chats'], (previous) =>
-          upsertChatSummary(previous, chatId)
+          upsertChatSummary(previous, chatId, fallbackTitle)
         );
 
         return { assistantCommitted: true, usedRestFallback: Boolean(wsError) };
@@ -227,7 +275,7 @@ export function useSendMessage() {
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
             id: chatId,
-            title: 'گفت‌وگو',
+            title: fallbackTitle,
             messages: []
           };
           const messagesWithUserRestored = base.messages.map((message) =>
