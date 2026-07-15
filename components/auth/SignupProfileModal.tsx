@@ -23,6 +23,8 @@ type Props = {
   registerRef: React.MutableRefObject<AbortController | null>;
   onOpenChange: (open: boolean) => void;
   onRegistered: (payload: {email: string; password: string}) => Promise<void> | void;
+  flowToken?: string;
+  onFlowExpired?: () => void;
 };
 
 const inputClassName = 'h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75';
@@ -31,7 +33,7 @@ const chipClassName = 'inline-flex items-center gap-1.5 rounded-full border bord
 
 type StepKey = 'personal' | 'role' | 'academic' | 'password';
 
-export function SignupProfileModal({email, open, busy, setBusy, registerRef, onOpenChange, onRegistered}: Props) {
+export function SignupProfileModal({email, open, busy, setBusy, registerRef, onOpenChange, onRegistered, flowToken, onFlowExpired}: Props) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
@@ -106,7 +108,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
     try {
       setBusy(true);
       const resolvedRole = studentDomain ? 'student' : values.role;
-      const base = {email, password: values.password, firstName: values.firstName, lastName: values.lastName, faculty: values.faculty};
+      const base = {email, otpToken: flowToken, password: values.password, firstName: values.firstName, lastName: values.lastName, faculty: values.faculty};
       const payload = resolvedRole === 'student'
         ? {...base, role: 'student' as const, studentId: values.studentId, major: values.major, degreeLevel: values.degreeLevel, entryYear: Number(values.entryYear)}
         : resolvedRole === 'professor'
@@ -121,6 +123,11 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
       const message = error instanceof ServiceError ? error.message : t('signup.registerErrorFallback');
       setRegisterError(message);
       toast.error(message);
+      if (error instanceof ServiceError && error.status === 403) {
+        // Flow token expired or already consumed: restart the OTP flow.
+        onOpenChange(false);
+        onFlowExpired?.();
+      }
     } finally {
       setBusy(false);
     }

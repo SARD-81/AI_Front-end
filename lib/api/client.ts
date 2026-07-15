@@ -50,6 +50,8 @@ function redirectToProfile() {
   if (typeof window === 'undefined') return;
 
   const {pathname} = window.location;
+  if (pathname.includes('/auth')) return;
+
   const locale = pathname.split('/').filter(Boolean)[0] || 'fa';
   const target = `/${locale}/profile`;
 

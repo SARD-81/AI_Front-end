@@ -7,7 +7,10 @@ export function routeErrorResponse(error: unknown) {
       error.status === 429
         ? 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.'
         : error.message;
-    return NextResponse.json({message}, {status: error.status});
+    return NextResponse.json(
+      error.code ? {message, code: error.code} : {message},
+      {status: error.status}
+    );
   }
 
   return NextResponse.json({message: 'خطای داخلی سرور رخ داد.'}, {status: 500});

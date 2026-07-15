@@ -44,12 +44,24 @@ export async function backendFetch<T = unknown>(
   }
 
   if (!response.ok) {
+    const joinStrings = (value: unknown) =>
+      Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string').join(' ')
+        : '';
     const message =
       (typeof data?.detail === 'string' && data.detail) ||
+      joinStrings(data?.detail) ||
       (typeof data?.error === 'string' && data.error) ||
+      joinStrings(data?.error) ||
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
-    const code = typeof data?.code === 'string' ? data.code : undefined;
+    const rawCode = data?.code;
+    const code =
+      typeof rawCode === 'string'
+        ? rawCode
+        : Array.isArray(rawCode) && typeof rawCode[0] === 'string'
+          ? rawCode[0]
+          : undefined;
     throw new ApiError(message, response.status, code, data);
   }
 

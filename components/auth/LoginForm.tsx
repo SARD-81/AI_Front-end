@@ -19,14 +19,21 @@ import { Input } from '@/components/ui/input';
 import {
   isAbortError,
   loginUser,
-  ServiceError
+  ServiceError,
+  setInitialPassword
 } from '@/lib/services/auth-service';
 import type { LoginResultDTO } from '@/lib/types/auth';
 import {
   createLoginSchema,
+  createPasswordResetCompleteSchema,
   type AuthSchemaTranslator,
   type LoginFormValues,
 } from '@/lib/validation/auth-schemas';
+
+type SetPasswordFormValues = {
+  password: string;
+  confirmPassword: string;
+};
 
 const authInputClassName =
   'h-12 rounded-2xl border-field-border bg-field/90 text-field-foreground shadow-inner shadow-black/15 outline-none placeholder:text-field-placeholder focus-visible:ring-field-focus focus-visible:ring-offset-0 dark:bg-field/70';
@@ -50,6 +57,10 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingPasswordChange, setPendingPasswordChange] = useState<{
+    email: string;
+    temporaryPassword: string;
+  } | null>(null);
   const inFlightRef = useRef(false);
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
@@ -60,6 +71,11 @@ export function LoginForm({
       email: initialIdentifier ?? '',
       password: ''
     }
+  });
+
+  const setPasswordForm = useForm<SetPasswordFormValues>({
+    resolver: zodResolver(createPasswordResetCompleteSchema(schemaT)),
+    defaultValues: { password: '', confirmPassword: '' }
   });
 
   useEffect(() => {
@@ -87,6 +103,19 @@ export function LoginForm({
       onSuccess(result);
     } catch (error) {
       if (isAbortError(error)) return;
+      if (
+        error instanceof ServiceError &&
+        error.code === 'password_change_required'
+      ) {
+        // Temporary-password accounts must set a permanent password first.
+        setPendingPasswordChange({
+          email: values.email,
+          temporaryPassword: values.password
+        });
+        setPasswordForm.reset({ password: '', confirmPassword: '' });
+        setFormError(null);
+        return;
+      }
       const message =
         error instanceof ServiceError
           ? error.message
@@ -98,6 +127,134 @@ export function LoginForm({
       setBusy(false);
     }
   });
+
+  const onSubmitNewPassword = setPasswordForm.handleSubmit(async (values) => {
+    if (!pendingPasswordChange || inFlightRef.current) return;
+    inFlightRef.current = true;
+    setBusy(true);
+    setFormError(null);
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      await setInitialPassword(
+        {
+          email: pendingPasswordChange.email,
+          temporaryPassword: pendingPasswordChange.temporaryPassword,
+          newPassword: values.password,
+          newPasswordConfirm: values.confirmPassword
+        },
+        { signal: controller.signal }
+      );
+      toast.success(t('setPassword.success'));
+      const result = await loginUser(
+        { email: pendingPasswordChange.email, password: values.password },
+        { signal: controller.signal }
+      );
+      onSuccess(result);
+    } catch (error) {
+      if (isAbortError(error)) return;
+      const message =
+        error instanceof ServiceError
+          ? error.message
+          : t('setPassword.errorFallback');
+      setFormError(message);
+      toast.error(message);
+    } finally {
+      inFlightRef.current = false;
+      setBusy(false);
+    }
+  });
+
+  if (pendingPasswordChange) {
+    return (
+      <Form {...setPasswordForm}>
+        <form onSubmit={onSubmitNewPassword} className="space-y-5" noValidate>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <p className="text-sm font-bold text-sky-100">
+              {t('setPassword.title')}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-300">
+              {t('setPassword.description')}
+            </p>
+          </div>
+
+          <FormField
+            control={setPasswordForm.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-slate-200/90">
+                  {t('setPassword.newPasswordLabel')}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="password"
+                    autoComplete="new-password"
+                    className={authInputClassName}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={setPasswordForm.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-slate-200/90">
+                  {t('setPassword.confirmPasswordLabel')}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="password"
+                    autoComplete="new-password"
+                    className={authInputClassName}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {formError ? (
+            <p className="rounded-2xl border border-danger-border bg-danger-surface px-3 py-2 text-sm font-medium text-danger-text shadow-sm">
+              {formError}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            className="h-12 w-full rounded-2xl bg-primary text-sm font-bold shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99]"
+            disabled={busy || setPasswordForm.formState.isSubmitting}
+          >
+            {busy || setPasswordForm.formState.isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : null}
+            {t('setPassword.submit')}
+          </Button>
+
+          <button
+            type="button"
+            className="w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => {
+              setPendingPasswordChange(null);
+              setFormError(null);
+            }}
+            disabled={busy || setPasswordForm.formState.isSubmitting}
+          >
+            {t('setPassword.back')}
+          </button>
+        </form>
+      </Form>
+    );
+  }
 
   return (
     <Form {...form}>

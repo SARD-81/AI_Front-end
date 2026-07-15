@@ -14,14 +14,10 @@ import {
   getConversation,
   listConversations,
   renameConversation,
-  sendMessage,
   sendMessageWithWebSocket,
   ChatWebSocketError
 } from '@/lib/services/chat-service';
 import { uuid } from '@/lib/utils/uid';
-
-const isChatRestFallbackEnabled = () =>
-  process.env.NEXT_PUBLIC_CHAT_REST_FALLBACK !== 'false';
 
 const STREAM_REVEAL_TICK_MS = 28;
 const STREAM_REVEAL_MAX_MS = 2200;
@@ -174,59 +170,33 @@ export function useSendMessage() {
       );
 
       try {
-        let assistantMessage: ChatMessage;
-        let wsError: unknown;
-
-        try {
-          assistantMessage = await sendMessageWithWebSocket(
-            chatId,
-            {
-              ...payload,
-              clientMessageId: userMessage.id
-            },
-            {
-              signal,
-              onAck: () => {
-                queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
-                  const base = previous ?? {
-                    id: chatId,
-                    title: fallbackTitle,
-                    messages: []
-                  };
-                  return {
-                    ...base,
-                    messages: base.messages.map((message) =>
-                      message.id === userMessage.id
-                        ? { ...message, sendStatus: 'pending' as const }
-                        : message
-                    )
-                  };
-                });
-              }
-            }
-          );
-        } catch (error) {
-          wsError = error;
-
-          if (
-            error instanceof ChatWebSocketError &&
-            (error.shouldRedirectToProfile ||
-              error.isLocked ||
-              error.closeCode === 4401 ||
-              error.closeCode === 4404)
-          ) {
-            throw error;
-          }
-
-          if (signal?.aborted || !isChatRestFallbackEnabled()) {
-            throw error;
-          }
-
-          assistantMessage = await sendMessage(chatId, {
+        const assistantMessage = await sendMessageWithWebSocket(
+          chatId,
+          {
             ...payload,
             clientMessageId: userMessage.id
-          });
-        }
+          },
+          {
+            signal,
+            onAck: () => {
+              queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
+                const base = previous ?? {
+                  id: chatId,
+                  title: fallbackTitle,
+                  messages: []
+                };
+                return {
+                  ...base,
+                  messages: base.messages.map((message) =>
+                    message.id === userMessage.id
+                      ? { ...message, sendStatus: 'pending' as const }
+                      : message
+                  )
+                };
+              });
+            }
+          }
+        );
 
         if (!signal?.aborted) {
           await revealAnswerProgressively(assistantMessage.content, onToken);
@@ -270,7 +240,7 @@ export function useSendMessage() {
           upsertChatSummary(previous, chatId, fallbackTitle)
         );
 
-        return { assistantCommitted: true, usedRestFallback: Boolean(wsError) };
+        return { assistantCommitted: true };
       } catch (error) {
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {

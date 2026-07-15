@@ -14,6 +14,7 @@ import type {
   RegisterResultDTO,
   SendOtpInputDTO,
   SendOtpResultDTO,
+  SetInitialPasswordInputDTO,
   VerifyOtpInputDTO,
   VerifyOtpResultDTO
 } from '@/lib/types/auth';
@@ -118,14 +119,23 @@ const messageSchema = z
 const otpTokenSchema = z
   .object({
     message: z.string().optional(),
+    flow_token: z.string().optional(),
+    flowToken: z.string().optional(),
     otp_token: z.string().optional(),
     otpToken: z.string().optional(),
-    token: z.string().optional()
+    token: z.string().optional(),
+    expires_in: z.number().optional()
   })
   .passthrough()
   .transform((value) => ({
     message: value.message ?? 'کد تأیید شد.',
-    otpToken: value.otp_token ?? value.otpToken ?? value.token
+    otpToken:
+      value.flow_token ??
+      value.flowToken ??
+      value.otp_token ??
+      value.otpToken ??
+      value.token,
+    expiresIn: value.expires_in
   }));
 
 export class ServiceError extends Error {
@@ -162,6 +172,7 @@ function addOptionalString(
 function toRegisterCompletePayload(input: RegisterInputDTO) {
   const basePayload = {
     email: input.email,
+    flowToken: input.otpToken,
     password: input.password,
     firstName: input.firstName,
     lastName: input.lastName,
@@ -229,7 +240,14 @@ function toServiceError(error: unknown): ServiceError {
       error.message && error.message !== 'API request failed'
         ? error.message
         : 'در ارتباط با سرور خطایی رخ داد. لطفاً دوباره تلاش کنید.';
-    return new ServiceError(message, error.status, 'API_ERROR');
+    const payloadCode =
+      error.payload &&
+      typeof error.payload === 'object' &&
+      'code' in error.payload &&
+      typeof (error.payload as {code?: unknown}).code === 'string'
+        ? (error.payload as {code: string}).code
+        : undefined;
+    return new ServiceError(message, error.status, payloadCode ?? 'API_ERROR');
   }
   return new ServiceError('خطای غیرمنتظره رخ داد.', 500, 'UNEXPECTED');
 }
@@ -246,6 +264,26 @@ export async function loginUser(
     });
 
     return loginSchema.parse(result);
+  } catch (error) {
+    throw toServiceError(error);
+  }
+}
+
+export async function setInitialPassword(
+  input: SetInitialPasswordInputDTO,
+  opts?: { signal?: AbortSignal }
+): Promise<void> {
+  try {
+    await apiFetch<unknown>(API_ENDPOINTS.auth.setInitialPassword, {
+      method: 'POST',
+      signal: opts?.signal,
+      body: JSON.stringify({
+        email: input.email,
+        temporary_password: input.temporaryPassword,
+        new_password: input.newPassword,
+        new_password_confirm: input.newPasswordConfirm
+      })
+    });
   } catch (error) {
     throw toServiceError(error);
   }
@@ -421,6 +459,7 @@ export async function completePasswordReset(
         signal: opts?.signal,
         body: JSON.stringify({
           email: input.email,
+          flow_token: input.otpToken,
           new_password: input.newPassword
         })
       }

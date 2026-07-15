@@ -1,5 +1,6 @@
 import {ApiError, apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
+import {uuid} from '@/lib/utils/uid';
 import type {ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
@@ -11,6 +12,8 @@ type PaginatedMessages = {
 type BackendConversation = {
   id: string;
   title?: string | null;
+  last_message_at?: string | null;
+  lastMessageAt?: string | null;
   updatedAt?: string | null;
   updated_at?: string | null;
   createdAt?: string | null;
@@ -62,7 +65,14 @@ function normalizeConversation(item: BackendConversation): ChatSummary {
   return {
     id: item.id,
     title: item.title?.trim() || 'گفت‌وگو',
-    updatedAt: normalizeDate(item.updatedAt ?? item.updated_at ?? item.createdAt ?? item.created_at)
+    updatedAt: normalizeDate(
+      item.last_message_at ??
+        item.lastMessageAt ??
+        item.updatedAt ??
+        item.updated_at ??
+        item.createdAt ??
+        item.created_at
+    )
   };
 }
 
@@ -95,10 +105,11 @@ export async function listConversations() {
   return normalizeConversationList(data);
 }
 
-export async function createConversation(title = 'گفت‌وگو') {
+export async function createConversation(title?: string) {
   const data = await apiFetch<BackendConversation>(API_ENDPOINTS.conversations.list, {
     method: 'POST',
-    body: JSON.stringify({title})
+    // A null title lets the backend generate one after the first answer.
+    body: JSON.stringify({title: title?.trim() || null})
   });
   return normalizeConversation(data);
 }
@@ -157,20 +168,6 @@ export async function listMessages(conversationId: string, cursor?: string) {
   } satisfies PaginatedMessages;
 }
 
-export async function sendMessage(conversationId: string, payload: SendMessagePayload) {
-  const data = await apiFetch<BackendMessage>(API_ENDPOINTS.chat.send, {
-    method: 'POST',
-    body: JSON.stringify({
-      conversation_id: conversationId,
-      message: payload.content,
-      client_message_id: payload.clientMessageId,
-      think_level: payload.thinkLevel
-    })
-  });
-
-  return normalizeMessage(data);
-}
-
 type WsTicketResponse = {
   ticket: string;
   expires_in: number;
@@ -185,10 +182,10 @@ type WsAnswerMessage = {
 };
 
 type WsServerMessage =
-  | {type: 'connected'; conversation_id: string}
-  | {type: 'ack'; message_id: string}
-  | {type: 'answer'; data: WsAnswerMessage; idempotent: boolean}
-  | {type: 'error'; code: string; error: string};
+  | {type: 'connected'; conversation_id?: string}
+  | {type: 'ack'; message_id: string; duplicate_in_progress?: boolean}
+  | {type: 'answer'; data: WsAnswerMessage; idempotent?: boolean}
+  | {type: 'error'; code?: string; error: string};
 
 export class ChatWebSocketError extends Error {
   constructor(
@@ -236,7 +233,21 @@ export async function requestChatWsTicket() {
 const WS_CONNECT_TIMEOUT_MS = 15_000;
 const WS_ANSWER_TIMEOUT_MS = 120_000;
 const WS_MAX_ATTEMPTS = 3;
-const WS_RETRY_BASE_DELAY_MS = 750;
+// Backend allows 1 frame/second (6 per minute); keep retries above that.
+const WS_RETRY_BASE_DELAY_MS = 1_500;
+
+// Error codes the backend documents as safe to retry with the SAME
+// client_message_id (server-side deduplication makes the replay idempotent).
+const RETRYABLE_WS_ERROR_CODES = new Set([
+  'TIMEOUT',
+  'server_busy',
+  'ai_starting',
+  'ai_unavailable',
+  'ai_timeout',
+  'ai_error',
+  'internal_error',
+  'invalid_ai_response'
+]);
 
 function wsRetryDelay(ms: number, signal?: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -296,15 +307,9 @@ function attemptSendMessageOverWebSocket(
     }, WS_ANSWER_TIMEOUT_MS);
 
     socket.onopen = () => {
+      // The ticket is consumed by the handshake, but the backend contract
+      // requires waiting for the `connected` frame before sending.
       state.opened = true;
-      clearTimeout(connectTimer);
-      socket.send(
-        JSON.stringify({
-          message: payload.content,
-          client_message_id: payload.clientMessageId,
-          think_level: payload.thinkLevel
-        })
-      );
     };
 
     socket.onmessage = (event) => {
@@ -313,6 +318,18 @@ function attemptSendMessageOverWebSocket(
         message = JSON.parse(String(event.data)) as WsServerMessage;
       } catch {
         fail(new ChatWebSocketError('Invalid WebSocket message.'));
+        return;
+      }
+
+      if (message.type === 'connected') {
+        clearTimeout(connectTimer);
+        socket.send(
+          JSON.stringify({
+            message: payload.content,
+            client_message_id: payload.clientMessageId,
+            think_level: payload.thinkLevel
+          })
+        );
         return;
       }
 
@@ -350,21 +367,28 @@ export async function sendMessageWithWebSocket(
   payload: SendMessagePayload,
   opts?: {onAck?: () => void; signal?: AbortSignal}
 ) {
+  // client_message_id must be a UUID and must stay identical across retries
+  // so the backend can deduplicate replays of the same logical message.
+  const stablePayload: SendMessagePayload = {
+    ...payload,
+    clientMessageId: payload.clientMessageId ?? uuid()
+  };
   let lastError: unknown = new ChatWebSocketError('WebSocket connection failed.');
 
   for (let attempt = 1; attempt <= WS_MAX_ATTEMPTS; attempt += 1) {
     const state = {opened: false};
     try {
       const ticket = await requestChatWsTicket();
-      return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, payload, state, opts);
+      return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, stablePayload, state, opts);
     } catch (error) {
       lastError = error;
       const canRetry =
         !opts?.signal?.aborted &&
-        !state.opened &&
         attempt < WS_MAX_ATTEMPTS &&
         error instanceof ChatWebSocketError &&
-        (error.code === undefined || error.code === 'TIMEOUT');
+        (error.code === undefined
+          ? !state.opened
+          : RETRYABLE_WS_ERROR_CODES.has(error.code));
       if (!canRetry) {
         throw error;
       }

@@ -1,6 +1,7 @@
 export const API_ENDPOINTS = {
   auth: {
     login: '/api/app/auth/login',
+    setInitialPassword: '/api/app/auth/set-initial-password',
     me: '/api/app/auth/me',
     profile: '/api/app/auth/profile',
     logout: '/api/app/auth/logout',
@@ -21,7 +22,6 @@ export const API_ENDPOINTS = {
     messages: (id: string) => `/api/app/conversations/${id}/messages`
   },
   chat: {
-    send: '/api/app/chat/send',
     wsTicket: '/api/app/chat/ws-ticket'
   },
   messages: {

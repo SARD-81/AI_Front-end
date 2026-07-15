@@ -199,6 +199,16 @@
       "emailLabel": "University email",
       "emailPlaceholder": "Example: user@sbu.ac.ir"
     },
+    "setPassword": {
+      "title": "Set a new password",
+      "description": "Your current password is temporary. Set a new password to continue.",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "submit": "Save password and sign in",
+      "success": "Your password has been set successfully.",
+      "errorFallback": "Could not set the password. Please try again.",
+      "back": "Back to sign in"
+    },
     "signup": {
       "sendOtpErrorFallback": "Failed to send verification code.",
       "verifyErrorFallback": "Verification failed.",

@@ -54,6 +54,7 @@ export function SignupWizard({
 }: SignupWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
+  const [flowToken, setFlowToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
   const [pendingAction, setPendingAction] = useState<
@@ -70,6 +71,7 @@ export function SignupWizard({
   useEffect(() => {
     setStep(1);
     setVerifiedEmail('');
+    setFlowToken(undefined);
     setOtpSent(false);
     setResendSeconds(0);
     setPendingAction(null);
@@ -91,6 +93,7 @@ export function SignupWizard({
     setOtpSent(false);
     setResendSeconds(0);
     setVerifiedEmail('');
+    setFlowToken(undefined);
     step1Form.setValue('otpCode', '');
     step1Form.clearErrors('otpCode');
   };
@@ -138,6 +141,7 @@ export function SignupWizard({
         { signal: controller.signal }
       );
       setVerifiedEmail(values.email);
+      setFlowToken(result.otpToken);
       setStep(2);
       toast.success(result.message);
     } catch (error) {
@@ -320,6 +324,11 @@ export function SignupWizard({
       </AnimatePresence>
       <SignupProfileModal
         email={verifiedEmail}
+        flowToken={flowToken}
+        onFlowExpired={() => {
+          resetOtpState();
+          setStep(1);
+        }}
         open={step === 2 && Boolean(verifiedEmail)}
         busy={busy}
         setBusy={setBusy}

@@ -7,6 +7,9 @@ type RegisterRole = 'professor' | 'staff';
 
 type RegisterCompleteBody = {
   email?: string;
+  flow_token?: string;
+  flowToken?: string;
+  otpToken?: string;
   first_name?: string;
   firstName?: string;
   last_name?: string;
@@ -63,11 +66,20 @@ export async function POST(request: Request) {
     const lastName = body.last_name ?? body.lastName ?? '';
     const password = body.password ?? '';
     const faculty = body.faculty ?? '';
+    const flowToken = (body.flow_token ?? body.flowToken ?? body.otpToken ?? '').trim();
 
     if (!isStudentEmail(email) && !isEmployeeEmail(email)) {
       return NextResponse.json(
         { message: UNIVERSITY_EMAIL_HINT },
         { status: 400 }
+      );
+    }
+
+    if (!flowToken) {
+      // The single-use verification token is required by the backend contract.
+      return NextResponse.json(
+        { message: 'نشست تأیید ایمیل منقضی شده است. لطفاً کد تأیید را دوباره دریافت کنید.' },
+        { status: 403 }
       );
     }
 
@@ -80,6 +92,7 @@ export async function POST(request: Request) {
 
     const basePayload = {
       email,
+      flow_token: flowToken,
       password,
       first_name: firstName,
       last_name: lastName,

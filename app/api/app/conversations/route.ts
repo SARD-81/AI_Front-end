@@ -17,7 +17,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({} as {title?: unknown}));
-    const title = typeof body?.title === 'string' && body.title.trim() ? body.title : 'گفت‌وگو';
+    // A null title lets the backend auto-generate one after the first answer.
+    const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : null;
 
     const data = await callWithAutoRefresh((access) =>
       backendFetch('/conversations/', {

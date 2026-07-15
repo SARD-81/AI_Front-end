@@ -155,6 +155,7 @@ export type SendOtpResultDTO = {
 export type VerifyOtpResultDTO = {
   message: string;
   otpToken?: string;
+  expiresIn?: number;
 };
 
 export type RegisterResultDTO = {
@@ -172,4 +173,11 @@ export type ProfileResponseDTO = {
 export type ProfileUpdateDTO = {
   firstName: string;
   lastName: string;
+};
+
+export type SetInitialPasswordInputDTO = {
+  email: string;
+  temporaryPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
 };

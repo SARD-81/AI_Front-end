@@ -199,6 +199,16 @@
       "emailLabel": "ایمیل دانشگاهی",
       "emailPlaceholder": "مثال: user@sbu.ac.ir"
     },
+    "setPassword": {
+      "title": "تعیین رمز عبور جدید",
+      "description": "رمز عبور فعلی شما موقتی است. برای ادامه، یک رمز عبور جدید تعیین کنید.",
+      "newPasswordLabel": "رمز عبور جدید",
+      "confirmPasswordLabel": "تکرار رمز عبور جدید",
+      "submit": "ثبت رمز جدید و ورود",
+      "success": "رمز عبور با موفقیت تنظیم شد.",
+      "errorFallback": "تنظیم رمز عبور ناموفق بود. لطفاً دوباره تلاش کنید.",
+      "back": "بازگشت به ورود"
+    },
     "signup": {
       "sendOtpErrorFallback": "ارسال کد تایید ناموفق بود.",
       "verifyErrorFallback": "تایید کد ناموفق بود.",

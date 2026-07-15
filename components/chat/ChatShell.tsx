@@ -22,6 +22,19 @@ import { ApiError } from '@/lib/api/client';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 
+// WS error codes for which the backend sends a user-facing Persian message
+// that the integration guide says can be shown verbatim.
+const BACKEND_WS_USER_FACING_CODES = new Set([
+  'rate_limited',
+  'server_busy',
+  'ai_starting',
+  'ai_unavailable',
+  'ai_timeout',
+  'ai_error',
+  'invalid_ai_response',
+  'internal_error'
+]);
+
 export function ChatShell({
   locale,
   chatId
@@ -147,6 +160,14 @@ export function ChatShell({
 
       if (error.isLocked || error.code === 'LOCKED') {
         return t('chat.accountLocked');
+      }
+
+      if (
+        error.code &&
+        BACKEND_WS_USER_FACING_CODES.has(error.code) &&
+        error.message.trim()
+      ) {
+        return error.message;
       }
 
       const normalizedCode = error.code?.toUpperCase() ?? '';
