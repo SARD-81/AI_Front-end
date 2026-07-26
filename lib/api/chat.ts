@@ -36,5 +36,7 @@ export type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'inc
 export type MessageFeedbackPayload = {
   is_liked: boolean | null;
   reason_category: FeedbackReasonCategory | null;
-  text_comment: string;
+  // Nullable per the backend contract: null (or an omitted value) clears the
+  // stored comment, and empty strings are stored as null server-side.
+  text_comment: string | null;
 };

@@ -27,10 +27,14 @@ export function OtpInput({value, onChange, disabled, className}: OtpInputProps) 
   };
 
   return (
+    // Only the digit boxes are ordered left-to-right here; the inputs
+    // themselves carry no forced direction, so the typing language is never
+    // overridden.
     <div className={cn('flex items-center justify-center gap-2', className)} dir="ltr">
       {digits.map((digit, index) => (
         <Input
           key={index}
+          aria-label={`${index + 1}`}
           ref={(node) => {
             refs.current[index] = node;
           }}

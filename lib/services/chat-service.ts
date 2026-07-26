@@ -187,6 +187,11 @@ type WsServerMessage =
   | {type: 'answer'; data: WsAnswerMessage; idempotent?: boolean}
   | {type: 'error'; code?: string; error: string};
 
+// Client-side frame constraints from the backend contract. Violating them
+// produces server error frames WITHOUT a `code`, so they are prevented here.
+const WS_MESSAGE_MAX_LENGTH = 2500;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class ChatWebSocketError extends Error {
   constructor(
     message: string,
@@ -231,8 +236,16 @@ export async function requestChatWsTicket() {
 }
 
 const WS_CONNECT_TIMEOUT_MS = 15_000;
-const WS_ANSWER_TIMEOUT_MS = 120_000;
+// The AI upstream timeout is 120s; the client timeout must stay above it so a
+// slow-but-valid answer is not cut off locally.
+const WS_ANSWER_TIMEOUT_MS = 150_000;
 const WS_MAX_ATTEMPTS = 3;
+// `duplicate_in_progress` means another worker owns the reply lock and will
+// push the answer to the previous socket, so the same client_message_id is
+// replayed with bounded backoff (10s, 20s, 30s, 60s) until the stored answer
+// arrives as an idempotent replay.
+const WS_DUPLICATE_RETRY_DELAYS_MS = [10_000, 20_000, 30_000, 60_000];
+const WS_DUPLICATE_MAX_ATTEMPTS = WS_DUPLICATE_RETRY_DELAYS_MS.length + 1;
 // Backend allows 1 frame/second (6 per minute); keep retries above that.
 const WS_RETRY_BASE_DELAY_MS = 1_500;
 
@@ -247,6 +260,16 @@ const RETRYABLE_WS_ERROR_CODES = new Set([
   'ai_error',
   'internal_error',
   'invalid_ai_response'
+]);
+
+// Codes that must never be retried automatically: `rate_limited` would burn
+// the remaining budget (1/s, 6/60s, 30/h), `locked` closes the socket with
+// 4403, and the client_message_id codes indicate a client-side bug.
+const NON_RETRYABLE_WS_ERROR_CODES = new Set([
+  'rate_limited',
+  'locked',
+  'missing_client_message_id',
+  'invalid_client_message_id'
 ]);
 
 function wsRetryDelay(ms: number, signal?: AbortSignal) {
@@ -335,6 +358,17 @@ function attemptSendMessageOverWebSocket(
 
       if (message.type === 'ack') {
         opts?.onAck?.();
+        if (message.duplicate_in_progress) {
+          // Another worker owns the reply lock for this client_message_id and
+          // will push the answer to a different socket, so this attempt has to
+          // be replayed with bounded backoff using the same id.
+          fail(
+            new ChatWebSocketError(
+              'The answer is already being generated.',
+              'duplicate_in_progress'
+            )
+          );
+        }
         return;
       }
 
@@ -349,7 +383,16 @@ function attemptSendMessageOverWebSocket(
       }
 
       if (message.type === 'error') {
-        fail(new ChatWebSocketError(message.error, message.code));
+        // `locked` arrives mid-session and is followed by a 4403 close.
+        fail(
+          new ChatWebSocketError(
+            message.error,
+            message.code,
+            undefined,
+            false,
+            message.code === 'locked'
+          )
+        );
       }
     };
 
@@ -367,25 +410,63 @@ export async function sendMessageWithWebSocket(
   payload: SendMessagePayload,
   opts?: {onAck?: () => void; signal?: AbortSignal}
 ) {
+  // The backend does not type-check `message`: empty or over-long text is
+  // rejected with an error frame that carries no `code`, so both are prevented
+  // locally before a ticket is spent.
+  if (!payload.content.trim()) {
+    throw new ChatWebSocketError('Message text is empty.', 'message_empty');
+  }
+  if (payload.content.length > WS_MESSAGE_MAX_LENGTH) {
+    throw new ChatWebSocketError('Message is too long.', 'message_too_long');
+  }
+
   // client_message_id must be a UUID and must stay identical across retries
   // so the backend can deduplicate replays of the same logical message.
+  const requestedClientMessageId = payload.clientMessageId;
   const stablePayload: SendMessagePayload = {
     ...payload,
-    clientMessageId: payload.clientMessageId ?? uuid()
+    clientMessageId:
+      requestedClientMessageId && UUID_PATTERN.test(requestedClientMessageId)
+        ? requestedClientMessageId
+        : uuid()
   };
-  let lastError: unknown = new ChatWebSocketError('WebSocket connection failed.');
+  let attempt = 0;
+  let duplicateAttempts = 0;
 
-  for (let attempt = 1; attempt <= WS_MAX_ATTEMPTS; attempt += 1) {
+  for (;;) {
+    attempt += 1;
     const state = {opened: false};
     try {
       const ticket = await requestChatWsTicket();
       return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, stablePayload, state, opts);
     } catch (error) {
-      lastError = error;
+      if (opts?.signal?.aborted) {
+        throw error;
+      }
+
+      // The ticket store can be temporarily unavailable (503); the contract
+      // asks for a backoff retry instead of failing the send.
+      if (error instanceof ApiError && error.status === 503 && attempt < WS_MAX_ATTEMPTS) {
+        await wsRetryDelay(WS_RETRY_BASE_DELAY_MS * attempt, opts?.signal);
+        continue;
+      }
+
+      // Bounded replay of the same client_message_id while another worker is
+      // still computing the answer (10s, 20s, 30s, 60s).
+      if (error instanceof ChatWebSocketError && error.code === 'duplicate_in_progress') {
+        if (duplicateAttempts + 1 >= WS_DUPLICATE_MAX_ATTEMPTS) {
+          throw error;
+        }
+        const delay = WS_DUPLICATE_RETRY_DELAYS_MS[duplicateAttempts];
+        duplicateAttempts += 1;
+        await wsRetryDelay(delay, opts?.signal);
+        continue;
+      }
+
       const canRetry =
-        !opts?.signal?.aborted &&
         attempt < WS_MAX_ATTEMPTS &&
         error instanceof ChatWebSocketError &&
+        !(error.code !== undefined && NON_RETRYABLE_WS_ERROR_CODES.has(error.code)) &&
         (error.code === undefined
           ? !state.opened
           : RETRYABLE_WS_ERROR_CODES.has(error.code));
@@ -395,8 +476,6 @@ export async function sendMessageWithWebSocket(
       await wsRetryDelay(WS_RETRY_BASE_DELAY_MS * attempt, opts?.signal);
     }
   }
-
-  throw lastError;
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {
