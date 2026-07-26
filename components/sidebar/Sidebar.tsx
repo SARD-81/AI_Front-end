@@ -701,10 +701,7 @@ export function Sidebar({
       />
 
       <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
-        <DialogContent
-          className="max-w-sm"
-          dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        >
+        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
           <DialogTitle className="text-base font-semibold">
             {t('sidebar.logoutConfirmTitle')}
           </DialogTitle>
@@ -769,7 +766,6 @@ export function Sidebar({
                   setRenameError(null);
                 }}
                 className="h-10 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2"
-                dir={locale === 'fa' ? 'rtl' : 'ltr'}
                 aria-invalid={Boolean(renameError)}
                 aria-describedby="rename-conversation-help"
               />
@@ -815,10 +811,7 @@ export function Sidebar({
           setDeleteChatId(open ? deleteChatId : null)
         }
       >
-        <DialogContent
-          className="max-w-sm"
-          dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        >
+        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
           <DialogTitle className="text-base font-semibold">
             {t('sidebar.deleteConfirmTitle')}
           </DialogTitle>

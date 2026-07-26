@@ -269,8 +269,11 @@ export function LoginForm({
                 <Input
                   {...field}
                   placeholder={t('login.emailPlaceholder')}
+                  type="email"
                   autoComplete="email"
-                  dir="ltr"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className={authInputClassName}
                 />
               </FormControl>

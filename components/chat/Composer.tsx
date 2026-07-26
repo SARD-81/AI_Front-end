@@ -48,6 +48,9 @@ export function Composer({
   const thinkingLevels: ThinkingLevel[] = ['low', 'medium', 'high'];
   const characterCount = value.length;
   const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
+  // Once the cap is reached the browser silently drops further keystrokes, so
+  // the counter switches to a warning style to explain why typing "stopped".
+  const isAtCharacterLimit = characterCount >= MAX_MESSAGE_LENGTH;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -99,7 +102,9 @@ export function Composer({
             'rounded-full border px-2.5 py-0.5 text-xs transition-opacity',
             showCharacterCounter
               ? 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-100'
-              : 'border-transparent text-muted-foreground/60 opacity-70'
+              : 'border-transparent text-muted-foreground/60 opacity-70',
+            isAtCharacterLimit &&
+              'border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] font-medium text-[hsl(var(--danger-text))]'
           )}
         >
           {characterCount} / {MAX_MESSAGE_LENGTH}

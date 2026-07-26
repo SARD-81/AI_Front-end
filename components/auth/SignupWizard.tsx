@@ -241,7 +241,7 @@ export function SignupWizard({
                         ) : null}
                       </div>
                       <FormControl>
-                        <Input {...field} autoComplete="email" dir="ltr" readOnly={isStep1Locked} className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
+                        <Input {...field} type="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} readOnly={isStep1Locked} className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -273,7 +273,7 @@ export function SignupWizard({
                         <FormItem>
                           <FormLabel className="text-slate-200/90">{t('signup.otpLabel')}</FormLabel>
                           <FormControl>
-                            <Input {...field} inputMode="numeric" dir="ltr" className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
+                            <Input {...field} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

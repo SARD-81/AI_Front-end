@@ -77,9 +77,13 @@ async function parseResponse<T>(response: Response): Promise<T> {
     const errorMessage = payloadMessage || 'API request failed';
     const error = new ApiError(errorMessage, response.status, data);
 
+    // Admin endpoints answer 403 when the caller simply is not an admin; that
+    // is not an incomplete-profile signal, so it must not bounce to /profile.
+    const isAdminRequest = response.url.includes('/api/app/admin/');
+
     if (response.status === 401) {
       redirectToLogin();
-    } else if (response.status === 403) {
+    } else if (response.status === 403 && !isAdminRequest) {
       redirectToProfile();
     }
 

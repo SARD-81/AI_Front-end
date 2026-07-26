@@ -18,6 +18,14 @@ body {
   font-feature-settings: 'ss01';
 }
 
+/* Text fields take their direction from what the user actually typed instead of
+   a hard-coded LTR/RTL, so typing Persian in an "English" field (or the other
+   way round) is never fought by the field itself. */
+input,
+textarea {
+  unicode-bidi: plaintext;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -196,5 +204,18 @@ html.dark[data-accent='green'] {
 @media (prefers-reduced-motion: reduce) {
   .motion-safe\:animate-message-in {
     animation: none;
+  }
+}
+
+/* Accessibility safety net: honour the OS "reduce motion" setting everywhere,
+   including third-party animations we do not control. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

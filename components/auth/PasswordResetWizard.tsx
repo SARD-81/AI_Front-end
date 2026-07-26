@@ -208,7 +208,15 @@ export function PasswordResetWizard({
                     <FormItem>
                       <FormLabel className="text-slate-200/90">{t('reset.emailLabel')}</FormLabel>
                       <FormControl>
-                        <Input {...field} dir="ltr" className={authInputClassName} />
+                        <Input
+                          {...field}
+                          type="email"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          className={authInputClassName}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -237,7 +245,13 @@ export function PasswordResetWizard({
                     <FormItem>
                       <FormLabel className="text-slate-200/90">{t('reset.otpLabel')}</FormLabel>
                       <FormControl>
-                        <Input {...field} inputMode="numeric" dir="ltr" className={authInputClassName} />
+                        <Input
+                          {...field}
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          maxLength={6}
+                          className={authInputClassName}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -270,7 +284,7 @@ export function PasswordResetWizard({
                       <FormLabel className="text-slate-200/90">{t('reset.newPasswordLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input {...field} type={showPassword ? 'text' : 'password'} dir="ltr" className={`${authInputClassName} pl-11`} />
+                          <Input {...field} type={showPassword ? 'text' : 'password'} className={`${authInputClassName} pl-11`} />
                           <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus" onClick={() => setShowPassword((prev) => !prev)} aria-label={showPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -288,7 +302,7 @@ export function PasswordResetWizard({
                       <FormLabel className="text-slate-200/90">{t('reset.confirmPasswordLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input {...field} type={showConfirmPassword ? 'text' : 'password'} dir="ltr" className={`${authInputClassName} pl-11`} />
+                          <Input {...field} type={showConfirmPassword ? 'text' : 'password'} className={`${authInputClassName} pl-11`} />
                           <button type="button" className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus" onClick={() => setShowConfirmPassword((prev) => !prev)} aria-label={showConfirmPassword ? t('reset.hidePassword') : t('reset.showPassword')}>
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>

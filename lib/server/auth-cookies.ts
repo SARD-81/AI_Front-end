@@ -13,8 +13,8 @@ const cookieOptions = {
 
 // Explicit lifetimes so the session survives browser restarts and the
 // cookies don't silently outlive the tokens they carry.
-const ACCESS_COOKIE_MAX_AGE = 60 * 60 * 24; // 1 day
-const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+const ACCESS_COOKIE_MAX_AGE = 60 * 60; // 60 minutes (backend access token TTL)
+const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours (backend refresh token TTL)
 
 export async function getAuthCookies(): Promise<{access?: string; refresh?: string}> {
   const store = await cookies();

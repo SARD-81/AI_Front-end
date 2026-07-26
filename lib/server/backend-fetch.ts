@@ -62,7 +62,18 @@ export async function backendFetch<T = unknown>(
         : Array.isArray(rawCode) && typeof rawCode[0] === 'string'
           ? rawCode[0]
           : undefined;
-    throw new ApiError(message, response.status, code, data);
+    // Rate-limit responses carry `retry_after` in the body and the same value
+    // in the `Retry-After` header. Edge (Nginx/CDN) 429s may carry neither a
+    // JSON body nor `retry_after`, so the header is used as a fallback.
+    const rawRetryAfter = data?.retry_after;
+    const headerRetryAfter = Number(response.headers.get('Retry-After'));
+    const retryAfter =
+      typeof rawRetryAfter === 'number' && Number.isFinite(rawRetryAfter)
+        ? rawRetryAfter
+        : Number.isFinite(headerRetryAfter) && headerRetryAfter > 0
+          ? headerRetryAfter
+          : undefined;
+    throw new ApiError(message, response.status, code, data, retryAfter);
   }
 
   return data as T;

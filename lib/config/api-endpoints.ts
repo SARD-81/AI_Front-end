@@ -26,5 +26,20 @@ export const API_ENDPOINTS = {
   },
   messages: {
     feedback: (id: string) => `/api/app/messages/${id}/feedback`
+  },
+  health: {
+    live: '/api/app/health',
+    ready: '/api/app/ready'
+  },
+  admin: {
+    reports: {
+      feedback: '/api/app/admin/reports/feedback',
+      suspiciousUsers: '/api/app/admin/reports/suspicious-users'
+    },
+    users: {
+      toggleLockById: (userId: string) => `/api/app/admin/users/by-id/${userId}/toggle-lock`,
+      toggleLockByStudentId: (studentId: string) =>
+        `/api/app/admin/users/${encodeURIComponent(studentId)}/toggle-lock`
+    }
   }
 };
