@@ -4,8 +4,7 @@ import {isEmployeeEmail, isStudentEmail} from '@/lib/config/email-domains';
 export type AuthSchemaMessageKey =
   | 'studentId.required'
   | 'studentId.numeric'
-  | 'studentId.min'
-  | 'studentId.max'
+  | 'studentId.length'
   | 'login.emailRequired'
   | 'login.emailInvalid'
   | 'login.passwordRequired'
@@ -44,8 +43,8 @@ export const createStudentIdSchema = (t: AuthSchemaTranslator) =>
     .string()
     .min(1, t('studentId.required'))
     .regex(/^\d+$/, t('studentId.numeric'))
-    .min(5, t('studentId.min'))
-    .max(12, t('studentId.max'));
+    // Contract: university student IDs are always exactly 9 digits.
+    .regex(/^\d{9}$/, t('studentId.length'));
 
 export const createLoginSchema = (t: AuthSchemaTranslator) =>
   z.object({
@@ -84,7 +83,7 @@ const entryYearSchema = (t: AuthSchemaTranslator) =>
   z
     .number({message: t('profile.entryYearRequired')})
     .int(t('profile.entryYearInvalid'))
-    .min(1300, t('profile.entryYearInvalid'))
+    .min(1399, t('profile.entryYearInvalid'))
     .max(1500, t('profile.entryYearInvalid'));
 
 export const createSignupStep2Schema = (t: AuthSchemaTranslator) =>

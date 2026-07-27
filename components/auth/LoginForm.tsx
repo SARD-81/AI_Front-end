@@ -16,6 +16,12 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ValidationChecklist, type ChecklistRule } from '@/components/auth/ValidationChecklist';
+import {
+  evaluatePasswordRules,
+  passwordsMatch,
+  PASSWORD_RULE_IDS
+} from '@/lib/validation/password-rules';
 import {
   isAbortError,
   loginUser,
@@ -56,6 +62,8 @@ export function LoginForm({
   onForgotPassword
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [pendingPasswordChange, setPendingPasswordChange] = useState<{
     email: string;
@@ -168,6 +176,27 @@ export function LoginForm({
     }
   });
 
+  // Live checklist for the initial-password flow, mirroring the zod rules so
+  // the user sees which requirements are already satisfied while typing.
+  const newPasswordValue = setPasswordForm.watch('password') ?? '';
+  const confirmNewPasswordValue = setPasswordForm.watch('confirmPassword') ?? '';
+  const newPasswordRuleState = evaluatePasswordRules(newPasswordValue);
+  const newPasswordChecklistRules: ChecklistRule[] = [
+    ...PASSWORD_RULE_IDS.map((ruleId) => ({
+      id: ruleId,
+      label: t(`passwordRules.${ruleId}`),
+      met: newPasswordRuleState[ruleId]
+    })),
+    {
+      id: 'match',
+      label: t('passwordRules.match'),
+      met: passwordsMatch(newPasswordValue, confirmNewPasswordValue)
+    }
+  ];
+  const newPasswordRulesMetCount = newPasswordChecklistRules.filter((rule) => rule.met).length;
+  const passwordToggleClassName =
+    'absolute inset-y-0 end-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus';
+
   if (pendingPasswordChange) {
     return (
       <Form {...setPasswordForm}>
@@ -190,12 +219,31 @@ export function LoginForm({
                   {t('setPassword.newPasswordLabel')}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="password"
-                    autoComplete="new-password"
-                    className={authInputClassName}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showNewPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      className={`${authInputClassName} pe-12`}
+                    />
+                    <button
+                      type="button"
+                      className={passwordToggleClassName}
+                      onClick={() => setShowNewPassword((previous) => !previous)}
+                      aria-label={
+                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                      }
+                      title={
+                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                      }
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -211,16 +259,44 @@ export function LoginForm({
                   {t('setPassword.confirmPasswordLabel')}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="password"
-                    autoComplete="new-password"
-                    className={authInputClassName}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showConfirmNewPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      className={`${authInputClassName} pe-12`}
+                    />
+                    <button
+                      type="button"
+                      className={passwordToggleClassName}
+                      onClick={() => setShowConfirmNewPassword((previous) => !previous)}
+                      aria-label={
+                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                      }
+                      title={
+                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                      }
+                    >
+                      {showConfirmNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
+          />
+
+          <ValidationChecklist
+            title={t('passwordRules.title')}
+            counterLabel={t('passwordRules.counter', {
+              met: newPasswordRulesMetCount,
+              total: newPasswordChecklistRules.length
+            })}
+            rules={newPasswordChecklistRules}
           />
 
           {formError ? (

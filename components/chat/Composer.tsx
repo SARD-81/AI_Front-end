@@ -1,11 +1,10 @@
 'use client';
 
 import {motion} from 'motion/react';
-import {Check, ChevronDown, Paperclip, SendHorizontal, Square} from 'lucide-react';
-import {useLocale, useTranslations} from 'next-intl';
+import {ArrowUp, Check, ChevronDown, Square} from 'lucide-react';
+import {useTranslations} from 'next-intl';
 import {useEffect, useRef} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import {Button} from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,14 +42,13 @@ export function Composer({
   onThinkLevelChange
 }: ComposerProps) {
   const t = useTranslations('app');
-  const locale = useLocale();
-  const comingSoonLabel = locale === 'fa' ? 'به‌زودی' : 'Coming soon';
   const thinkingLevels: ThinkingLevel[] = ['low', 'medium', 'high'];
   const characterCount = value.length;
   const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
   // Once the cap is reached the browser silently drops further keystrokes, so
   // the counter switches to a warning style to explain why typing "stopped".
   const isAtCharacterLimit = characterCount >= MAX_MESSAGE_LENGTH;
+  const canSend = !disabled && value.trim().length > 0;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -66,18 +64,23 @@ export function Composer({
     <motion.div
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
-      className="mx-auto w-full max-w-[800px] rounded-2xl border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] p-2 shadow-card"
+      /*
+       * Gemini-style single pill: one rounded container owns the border, the
+       * textarea inside is completely chrome-less so focusing it does not draw
+       * a second box or ring.
+       */
+      className="mx-auto w-full max-w-[800px] rounded-[28px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-4 py-3 shadow-card"
     >
       <TextareaAutosize
         minRows={1}
-        maxRows={7}
+        maxRows={8}
         maxLength={MAX_MESSAGE_LENGTH}
         value={value}
         ref={textareaRef}
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-40 w-full resize-none rounded-xl border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-[15px] leading-7 text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full resize-none border-0 bg-transparent px-1 py-1 text-[15px] leading-7 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             // Don't submit while an IME composition session is active
@@ -91,128 +94,87 @@ export function Composer({
         aria-describedby="composer-keyboard-hint composer-character-counter"
       />
 
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 px-2">
-        <p id="composer-keyboard-hint" className="text-xs leading-5 text-muted-foreground/80">
-          {t('composerKeyboardHint')}
-        </p>
+      <div className="mt-1.5 flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              aria-label={t('thinkingLevel.label')}
+              title={t('thinkingLevel.description')}
+              className="flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground"
+            >
+              <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" sideOffset={8} className="min-w-[17rem] rounded-2xl p-1.5">
+            {thinkingLevels.map((level) => (
+              <DropdownMenuItem
+                key={level}
+                onSelect={() => onThinkLevelChange(level)}
+                className="flex items-start gap-2 rounded-xl px-3 py-2.5"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className={cn('text-sm', level === thinkLevel && 'font-semibold')}>
+                    {t(`thinkingLevel.options.${level}.title`)}
+                  </span>
+                  <span className="text-xs leading-5 text-muted-foreground">
+                    {t(`thinkingLevel.options.${level}.subtitle`)}
+                  </span>
+                </div>
+                {level === thinkLevel ? <Check className="ms-auto mt-0.5 h-4 w-4 shrink-0" /> : null}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Counter only appears near the cap so the bar stays clean. */}
         <div
           id="composer-character-counter"
           aria-live="polite"
           className={cn(
-            'rounded-full border px-2.5 py-0.5 text-xs transition-opacity',
-            showCharacterCounter
-              ? 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-100'
-              : 'border-transparent text-muted-foreground/60 opacity-70',
-            isAtCharacterLimit &&
-              'border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] font-medium text-[hsl(var(--danger-text))]'
+            'text-xs tabular-nums transition-opacity',
+            showCharacterCounter ? 'text-muted-foreground opacity-100' : 'sr-only opacity-0',
+            isAtCharacterLimit && 'font-medium text-[hsl(var(--danger-text))]'
           )}
         >
           {characterCount} / {MAX_MESSAGE_LENGTH}
         </div>
-      </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled
-            aria-disabled="true"
-            title={t('searchDisabledHint')}
-            className="cursor-not-allowed border border-dashed border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-80"
-          >
-            <span>{t('search')}</span>
-            <span className="text-xs text-muted-foreground">{comingSoonLabel}</span>
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                disabled={disabled}
-                aria-label={t('thinkingLevel.label')}
-                title={t('thinkingLevel.description')}
-                className="flex min-w-0 items-center gap-2 rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-2.5 py-1.5 text-sm text-[hsl(var(--field-foreground))] shadow-sm transition-colors hover:bg-[hsl(var(--surface-elevated))] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <span className="hidden whitespace-nowrap text-xs text-muted-foreground sm:inline">
-                  {t('thinkingLevel.label')}
-                </span>
-                <span className="max-w-[150px] truncate text-xs font-medium sm:max-w-none">
-                  {t(`thinkingLevel.options.${thinkLevel}.title`)}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-52">
-              {thinkingLevels.map((level) => (
-                <DropdownMenuItem
-                  key={level}
-                  onSelect={() => onThinkLevelChange(level)}
-                  className="flex items-start gap-2"
-                >
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span
-                      className={cn(
-                        'text-sm',
-                        level === thinkLevel && 'font-semibold'
-                      )}
-                    >
-                      {t(`thinkingLevel.options.${level}.title`)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {t(`thinkingLevel.options.${level}.subtitle`)}
-                    </span>
-                  </div>
-                  {level === thinkLevel ? (
-                    <Check className="ms-auto mt-0.5 h-4 w-4 shrink-0" />
-                  ) : null}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={t('attachment.label')}
-            title={t('attachment.notAvailableYet')}
-            disabled={true}
-            className="cursor-not-allowed border border-dashed border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-muted-foreground opacity-80"
-          >
-            {/* TODO(BACKEND): add upload endpoint integration and file constraints for attachments. */}
-            <Paperclip className="h-4 w-4" />
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {comingSoonLabel}
-            </span>
-          </Button>
-        </div>
         {isSending && onStop ? (
-          <Button
+          <button
             type="button"
-            size="icon"
             onClick={onStop}
             aria-label={t('stop')}
             title={t('stop')}
-            className="ms-auto shrink-0 transition-all duration-200 active:scale-[0.98]"
+            className="ms-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
-          </Button>
+          </button>
         ) : (
-          <Button
+          <button
             type="button"
-            size="icon"
             onClick={onSubmit}
-            disabled={disabled || !value.trim()}
+            disabled={!canSend}
             aria-label={t('send')}
             title={t('send')}
-            className="ms-auto shrink-0 transition-all duration-200 active:scale-[0.98]"
+            className={cn(
+              'ms-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]',
+              canSend
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'cursor-not-allowed bg-[hsl(var(--surface-elevated))] text-muted-foreground/60'
+            )}
           >
-            <SendHorizontal className="h-4 w-4" />
-          </Button>
+            <ArrowUp className="h-4 w-4" />
+          </button>
         )}
       </div>
+
+      {/* Kept for screen readers and aria-describedby, no longer visual noise. */}
+      <p id="composer-keyboard-hint" className="sr-only">
+        {t('composerKeyboardHint')}
+      </p>
     </motion.div>
   );
 }

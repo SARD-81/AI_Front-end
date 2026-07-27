@@ -185,18 +185,6 @@ function MessageBubbleComponent({
 
   const feedbackState = message.is_liked ?? null;
 
-  const handleCopyLink = async () => {
-    if (!anchorId || typeof window === 'undefined') return;
-    const deepLink = `${window.location.origin}${window.location.pathname}#${anchorId}`;
-    const copied = await copyToClipboard(deepLink);
-    if (copied) {
-      toast.success(t('message.copyLinkSuccess'));
-      window.history.replaceState(null, '', `#${anchorId}`);
-      return;
-    }
-    toast.error(t('message.copyLinkError'));
-  };
-
   const handleLike = async () => {
     if (!message.id || isTyping || isStreaming || feedbackMutation.isPending)
       return;
@@ -299,7 +287,6 @@ function MessageBubbleComponent({
                   <MessageActions
                     role={message.role}
                     onCopy={() => onCopyMessage(message.content)}
-                    onCopyLink={handleCopyLink}
                     onEdit={() => onEditMessage?.(message)}
                     className="pointer-events-none absolute right-0 top-full z-10 mt-2 translate-y-1 opacity-0 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
                   />

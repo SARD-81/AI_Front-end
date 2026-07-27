@@ -17,6 +17,12 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ValidationChecklist, type ChecklistRule } from '@/components/auth/ValidationChecklist';
+import {
+  evaluatePasswordRules,
+  passwordsMatch,
+  PASSWORD_RULE_IDS
+} from '@/lib/validation/password-rules';
 import {
   completePasswordReset,
   isAbortError,
@@ -194,6 +200,25 @@ export function PasswordResetWizard({
     }
   });
 
+  // Live rule state for stage 3. Watching the fields (instead of relying on
+  // submit-time errors) lets the checklist update on every keystroke.
+  const passwordValue = passwordForm.watch('password') ?? '';
+  const confirmPasswordValue = passwordForm.watch('confirmPassword') ?? '';
+  const passwordRuleState = evaluatePasswordRules(passwordValue);
+  const passwordChecklistRules: ChecklistRule[] = [
+    ...PASSWORD_RULE_IDS.map((ruleId) => ({
+      id: ruleId,
+      label: t(`passwordRules.${ruleId}`),
+      met: passwordRuleState[ruleId]
+    })),
+    {
+      id: 'match',
+      label: t('passwordRules.match'),
+      met: passwordsMatch(passwordValue, confirmPasswordValue)
+    }
+  ];
+  const passwordRulesMetCount = passwordChecklistRules.filter((rule) => rule.met).length;
+
   return (
     <div className="space-y-5">
       <AnimatePresence mode="wait" initial={false}>
@@ -293,6 +318,14 @@ export function PasswordResetWizard({
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+                <ValidationChecklist
+                  title={t('passwordRules.title')}
+                  counterLabel={t('passwordRules.counter', {
+                    met: passwordRulesMetCount,
+                    total: passwordChecklistRules.length
+                  })}
+                  rules={passwordChecklistRules}
                 />
                 <FormField
                   control={passwordForm.control}

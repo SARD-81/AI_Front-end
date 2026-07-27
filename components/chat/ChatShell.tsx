@@ -141,16 +141,16 @@ export function ChatShell({
     !hasMessages &&
     !hasSubmittedMessage;
   const headerTitle = useMemo(() => {
-    const firstUserMessage = (chat?.messages ?? [])
-      .find((message) => message.role === 'user')
-      ?.content?.trim();
-    const rawTitle = firstUserMessage || chat?.title || t('chat.defaultTitle');
+    // The backend generates the conversation topic (topic generator) after the
+    // first answer, so the title always comes from the server. Falling back to
+    // the first user message would show a different title than the sidebar.
+    const rawTitle = chat?.title?.trim() || t('chat.defaultTitle');
     const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
     const maxLength = 72;
     return compactTitle.length > maxLength
       ? `${compactTitle.slice(0, maxLength)}…`
       : compactTitle;
-  }, [chat?.messages, chat?.title, t]);
+  }, [chat?.title, t]);
 
   const getChatUserErrorMessage = (error: unknown) => {
     if (error instanceof ChatWebSocketError) {
@@ -297,6 +297,10 @@ export function ChatShell({
 
       if (result?.assistantCommitted) {
         clearStreamingState();
+        // The topic is generated server-side after the first answer, so refetch
+        // the conversation and the list to display the real title.
+        queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
       abortControllerRef.current = null;
       setValue('');

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ChevronsRight,
+  PanelLeft,
   EllipsisVertical,
   LogOut,
   MessageCircle,
@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChatSearchDialog } from '@/components/sidebar/ChatSearchDialog';
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -77,15 +78,10 @@ export function Sidebar({
     retry: false
   });
   const chatsQuery = useChats();
-  const [searchQuery, setSearchQuery] = useState('');
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const filteredChats = useMemo(() => {
-    if (!normalizedSearchQuery) return chatsQuery.data;
-    return (chatsQuery.data ?? []).filter((chat) =>
-      chat.title.toLowerCase().includes(normalizedSearchQuery)
-    );
-  }, [chatsQuery.data, normalizedSearchQuery]);
-  const groups = useGroupedChats(filteredChats);
+  // Conversation search now lives in a ChatGPT-style command dialog instead of
+  // an always-visible input inside the sidebar.
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
+  const groups = useGroupedChats(chatsQuery.data);
   const actions = useChatActions();
   const isRtl = locale === 'fa';
 
@@ -121,7 +117,6 @@ export function Sidebar({
 
     setCollapsed((prev) => {
       const next = !prev;
-      if (next) setSearchQuery('');
       localStorage.setItem('sidebar-collapsed', String(next));
       return next;
     });
@@ -310,7 +305,6 @@ export function Sidebar({
   }, [chatsQuery.data]);
 
   const hasChats = (chatsQuery.data?.length ?? 0) > 0;
-  const hasSearchResults = (filteredChats?.length ?? 0) > 0;
   const deleteTargetTitle = deleteChatId
     ? chatsById.get(deleteChatId)?.title
     : undefined;
@@ -355,64 +349,39 @@ export function Sidebar({
         <SidebarRoot className="h-full w-full">
           <SidebarHeader
             className={cn(
-              'space-y-3 px-4 py-4',
-              collapsed && 'flex flex-col items-center space-y-3 px-2 py-4'
+              'flex flex-col gap-1 border-b-0 px-3 py-3',
+              collapsed && 'items-center px-2'
             )}
           >
-            <Link
-              href={`/${locale}`}
-              aria-label={t('sidebar.home')}
+            {/* Brand row + collapse control, like ChatGPT's top rail. */}
+            <div
               className={cn(
-                'flex h-10 items-center rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] text-primary shadow-sm',
-                collapsed ? 'w-10 justify-center' : 'w-full gap-2 px-2'
+                'flex items-center gap-1',
+                collapsed && 'flex-col gap-1.5'
               )}
-              onClick={onNavigate}
             >
-              <Image
-                src="/Logo.png"
-                alt={t('sidebar.logoAlt')}
-                width={60}
-                height={60}
-                className="h-[3.75rem] w-[3.75rem]"
-              />
-              {!collapsed ? (
-                <span className="mr-16 truncate whitespace-nowrap text-sm">
-                  {t('sidebar.universityName')}
-                </span>
-              ) : null}
-            </Link>
-
-            <motion.div
-              layout
-              className={cn('flex items-center gap-3', collapsed && 'flex-col')}
-            >
-              <Button
-                type="button"
-                onClick={createNewChat}
-                variant="secondary"
+              <Link
+                href={`/${locale}`}
+                aria-label={t('sidebar.home')}
+                onClick={onNavigate}
                 className={cn(
-                  'shadow-sm transition-all duration-200 active:scale-[0.98]',
-                  collapsed
-                    ? 'h-10 w-10 p-0'
-                    : 'h-10 flex-1 justify-start gap-2'
+                  'flex h-10 items-center rounded-lg text-primary transition-colors hover:bg-[hsl(var(--surface-elevated))]',
+                  collapsed ? 'w-10 justify-center' : 'min-w-0 flex-1 gap-2 px-1.5'
                 )}
-                aria-label={t('newChat')}
-                title={collapsed ? t('newChat') : undefined}
               >
-                <MessageSquarePlus className="h-4 w-4" />
-                <AnimatePresence initial={false}>
-                  {!collapsed ? (
-                    <motion.span
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -8 }}
-                      transition={{ duration: 0.18, ease: 'easeOut' }}
-                    >
-                      {t('newChat')}
-                    </motion.span>
-                  ) : null}
-                </AnimatePresence>
-              </Button>
+                <Image
+                  src="/Logo.png"
+                  alt={t('sidebar.logoAlt')}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 shrink-0 object-contain"
+                />
+                {!collapsed ? (
+                  <span className="truncate text-sm font-semibold text-foreground">
+                    {t('sidebar.universityName')}
+                  </span>
+                ) : null}
+              </Link>
 
               {!isMobile ? (
                 <Button
@@ -420,45 +389,52 @@ export function Sidebar({
                   variant="ghost"
                   size="icon"
                   onClick={toggleCollapsed}
-                  aria-label={
-                    collapsed ? t('sidebar.expand') : t('sidebar.collapse')
-                  }
-                  className="h-10 w-10 shrink-0 border border-transparent transition-transform duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.98]"
-                  title={
-                    collapsed
-                      ? t('sidebar.expandShort')
-                      : t('sidebar.collapseShort')
-                  }
+                  aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+                  title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+                  className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground"
                 >
-                  <ChevronsRight
-                    className={cn(
-                      'h-4 w-4 transition-transform duration-200',
-                      (isRtl ? collapsed : !collapsed) && 'rotate-180'
-                    )}
-                  />
+                  <PanelLeft className="h-[1.15rem] w-[1.15rem]" />
                 </Button>
               ) : null}
-            </motion.div>
+            </div>
 
-            {!collapsed ? (
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t('sidebar.searchPlaceholder')}
-                  aria-label={t('sidebar.searchPlaceholder')}
-                  className="h-9 w-full rounded-lg border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] pe-3 ps-9 text-sm text-[hsl(var(--field-foreground))] outline-none transition placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
-                />
-              </div>
-            ) : null}
+            {/* Primary actions as quiet rail rows (new chat + search). */}
+            <nav className={cn('mt-1 flex flex-col gap-0.5', collapsed && 'items-center')}>
+              <button
+                type="button"
+                onClick={createNewChat}
+                aria-label={t('newChat')}
+                title={collapsed ? t('newChat') : undefined}
+                className={cn(
+                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
+                )}
+              >
+                <MessageSquarePlus className="h-[1.15rem] w-[1.15rem] shrink-0" />
+                {!collapsed ? <span className="truncate">{t('newChat')}</span> : null}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setChatSearchOpen(true)}
+                aria-label={t('sidebar.searchPlaceholder')}
+                title={collapsed ? t('sidebar.searchPlaceholder') : undefined}
+                className={cn(
+                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
+                )}
+              >
+                <Search className="h-[1.15rem] w-[1.15rem] shrink-0" />
+                {!collapsed ? (
+                  <span className="truncate">{t('sidebar.searchPlaceholder')}</span>
+                ) : null}
+              </button>
+            </nav>
           </SidebarHeader>
 
-          <SidebarContent className={cn('space-y-3', collapsed && 'px-1')}>
+          <SidebarContent
+            className={cn('space-y-3 px-2', collapsed && 'hidden')}
+          >
             {chatsQuery.isLoading ? (
               <div className="space-y-3 px-1" aria-hidden="true">
                 <Skeleton className="h-3.5 w-16" />
@@ -506,21 +482,13 @@ export function Sidebar({
                   </p>
                 ) : null}
               </div>
-            ) : normalizedSearchQuery && !hasSearchResults ? (
-              <div className={cn('px-2 py-3', collapsed && 'px-1 text-center')}>
-                {!collapsed ? (
-                  <p className="text-xs text-muted-foreground">
-                    {t('sidebar.noSearchResults')}
-                  </p>
-                ) : null}
-              </div>
             ) : (
               chatGroups.map((group) => {
                 if (!group.ids.length) return null;
                 return (
                   <section key={group.title} className="space-y-1">
                     {!collapsed ? (
-                      <p className="px-2 text-xs text-muted-foreground">
+                      <p className="px-2 pb-1 pt-3 text-xs font-medium text-muted-foreground">
                         {group.title}
                       </p>
                     ) : null}
@@ -539,9 +507,9 @@ export function Sidebar({
                         <motion.div layout key={chat.id} className="group">
                           <div
                             className={cn(
-                              'flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-foreground transition-all duration-200 hover:border-[hsl(var(--surface-subtle))] hover:bg-[hsl(var(--surface-elevated))] active:scale-[0.99] active:bg-[hsl(var(--surface-subtle))]',
+                              'flex items-center gap-2 rounded-lg px-2 py-2 text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-elevated))]',
                               isActive &&
-                                'border-[hsl(var(--field-border))] bg-[hsl(var(--surface-elevated))] text-foreground shadow-sm'
+                                'bg-[hsl(var(--surface-elevated))] font-medium text-foreground'
                             )}
                           >
                             <Link
@@ -690,6 +658,16 @@ export function Sidebar({
           </SidebarFooter>
         </SidebarRoot>
       </motion.div>
+
+      <ChatSearchDialog
+        open={chatSearchOpen}
+        onOpenChange={setChatSearchOpen}
+        chats={chatsQuery.data}
+        isLoading={chatsQuery.isLoading}
+        locale={locale}
+        currentChatId={currentChatId}
+        onNavigate={onNavigate}
+      />
 
       <SettingsModal
         open={settingsOpen}
