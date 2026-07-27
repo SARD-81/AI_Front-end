@@ -305,7 +305,7 @@ export function MessageList({
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-5 right-5 z-10 mt-10 h-10 w-10 rounded-full shadow-lg"
+          className="absolute bottom-5 left-1/2 z-10 h-10 w-10 -translate-x-1/2 rounded-full shadow-lg"
           onClick={scrollToBottom}
           aria-label={t('message.scrollToBottom')}
           title={t('message.scrollToBottom')}

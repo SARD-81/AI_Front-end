@@ -1,6 +1,6 @@
 'use client';
 
-import {Copy, Link2, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
+import {Copy, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
@@ -9,7 +9,6 @@ type MessageActionsProps = {
   role: 'user' | 'assistant';
   onCopy: () => void;
   onEdit?: () => void;
-  onCopyLink?: () => void;
   onRegenerate?: () => void;
   onLike?: () => void;
   onDislike?: () => void;
@@ -22,7 +21,6 @@ export function MessageActions({
   role,
   onCopy,
   onEdit,
-  onCopyLink,
   onRegenerate,
   onLike,
   onDislike,
@@ -42,9 +40,6 @@ export function MessageActions({
 
       {role === 'user' ? (
         <>
-          <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopyLink} aria-label={t('messageActions.copyLink')} title={t('messageActions.copyLink')}>
-            <Link2 className="h-3.5 w-3.5" />
-          </Button>
           <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label={t('messageActions.edit')} title={t('messageActions.edit')}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>

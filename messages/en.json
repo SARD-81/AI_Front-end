@@ -55,7 +55,10 @@
       "cancelLogout": "Stay signed in",
       "confirmLogout": "Sign out",
       "searchPlaceholder": "Search conversations",
-      "noSearchResults": "No conversations match your search."
+      "noSearchResults": "No conversations match your search.",
+      "searchDialogTitle": "Search conversations",
+      "recentChats": "Recent chats",
+      "searchResults": "Search results"
     },
     "dialog": {
       "close": "Close"
@@ -284,8 +287,7 @@
       "studentId": {
         "required": "Student ID is required.",
         "numeric": "Student ID must contain digits only.",
-        "min": "Student ID must be at least 5 digits.",
-        "max": "Student ID must be at most 12 digits."
+        "length": "Student ID must be exactly 9 digits."
       },
       "login": {
         "passwordRequired": "Password is required.",
@@ -317,7 +319,7 @@
         "confirmPasswordRequired": "Confirm password is required.",
         "confirmPasswordMismatch": "Passwords do not match.",
         "entryYearRequired": "Entry year is required.",
-        "entryYearInvalid": "Entry year must be a Persian year between 1300 and 1500.",
+        "entryYearInvalid": "Entry year must be a Persian year between 1399 and 1500.",
         "personnelIdRequired": "Personnel ID is required.",
         "departmentRequired": "Department is required."
       }
@@ -346,6 +348,33 @@
       "fa": "FA",
       "en": "EN",
       "ariaLabel": "Switch language to {locale}"
+    },
+    "passwordRules": {
+      "title": "Password requirements",
+      "counter": "{met} of {total}",
+      "min": "At least 8 characters",
+      "uppercase": "One uppercase letter (A-Z)",
+      "lowercase": "One lowercase letter (a-z)",
+      "number": "At least one digit (0-9)",
+      "symbol": "At least one symbol (like ! @ # $)",
+      "match": "Confirmation matches the password"
+    },
+    "stepRules": {
+      "title": "Required for this step",
+      "role": "Account type selected",
+      "firstName": "First name at least 2 characters",
+      "lastName": "Last name at least 2 characters",
+      "studentId": "Student ID exactly 9 digits",
+      "faculty": "Faculty filled in",
+      "major": "Major at least 2 characters",
+      "degreeLevel": "Degree level selected",
+      "entryYear": "Entry year between 1399 and 1500",
+      "personnelId": "Personnel ID filled in",
+      "department": "Department filled in"
+    },
+    "common": {
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     }
   },
   "profile": {
