@@ -33,6 +33,14 @@ type UserAnchor = {
   snippet: string;
 };
 
+// Kept module-level so the object identity never changes between renders;
+// Virtuoso remounts its internal components whenever this prop is a new object.
+const VIRTUOSO_COMPONENTS = {
+  // Clears the floating glass header so the very first message starts below it.
+  Header: () => <div className="h-20 w-full shrink-0" aria-hidden />,
+  Footer: () => <div className="h-4 w-full shrink-0" aria-hidden />
+};
+
 function AssistantPendingBubble() {
   const t = useTranslations('app');
   const statuses = useMemo(
@@ -259,6 +267,11 @@ export function MessageList({
         ref={virtuosoRef}
         data={items}
         className="h-full w-full"
+        // A scrollable spacer that belongs to the list content itself. Padding on
+        // the item wrapper cannot be used here: every Virtuoso row lives in its
+        // own container, so `first:` would match each row instead of only the
+        // topmost message.
+        components={VIRTUOSO_COMPONENTS}
         followOutput={atBottom ? 'auto' : false}
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
         atBottomThreshold={80}
@@ -266,7 +279,7 @@ export function MessageList({
         itemContent={(index, message) => {
           if (message.role === 'assistant-pending') {
             return (
-              <div className="group mx-auto w-full max-w-3xl px-4 py-3 first:pt-20 sm:px-6">
+              <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
                 <AssistantPendingBubble />
               </div>
             );
