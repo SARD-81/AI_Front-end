@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {OtpInput} from '@/components/auth/OtpInput';
 import {
   Form,
   FormControl,
@@ -273,7 +274,7 @@ export function SignupWizard({
                         <FormItem>
                           <FormLabel className="text-slate-200/90">{t('signup.otpLabel')}</FormLabel>
                           <FormControl>
-                            <Input {...field} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="h-11 rounded-xl border-field-border bg-field/90 text-field-foreground placeholder:text-field-placeholder focus-visible:ring-field-focus dark:bg-field/75" />
+                            <OtpInput value={field.value ?? ''} onChange={field.onChange} disabled={busy} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

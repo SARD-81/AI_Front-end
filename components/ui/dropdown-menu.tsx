@@ -30,7 +30,7 @@ export function DropdownMenuItem({className, ...props}: Dropdown.DropdownMenuIte
   return (
     <Dropdown.Item
       className={cn(
-        'relative flex h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground dark:focus:bg-menu-hover dark:data-[highlighted]:bg-menu-hover',
+        'relative flex min-h-10 cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors focus:bg-menu-hover focus:text-menu-hover-foreground data-[highlighted]:bg-menu-hover data-[highlighted]:text-menu-hover-foreground dark:focus:bg-menu-hover dark:data-[highlighted]:bg-menu-hover',
         className
       )}
       {...props}

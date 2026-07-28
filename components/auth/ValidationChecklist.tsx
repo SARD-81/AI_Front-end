@@ -14,8 +14,6 @@ type ValidationChecklistProps = {
   /** Short heading, e.g. "شرایط رمز عبور". */
   title: string;
   rules: ChecklistRule[];
-  /** Rendered next to the title, e.g. "3 از 5". */
-  counterLabel?: string;
   className?: string;
 };
 
@@ -32,13 +30,9 @@ type ValidationChecklistProps = {
 export function ValidationChecklist({
   title,
   rules,
-  counterLabel,
   className
 }: ValidationChecklistProps) {
   const reduceMotion = useReducedMotion();
-  const metCount = rules.filter((rule) => rule.met).length;
-  const progress = rules.length ? (metCount / rules.length) * 100 : 0;
-  const allMet = rules.length > 0 && metCount === rules.length;
 
   return (
     <div
@@ -47,48 +41,11 @@ export function ValidationChecklist({
         className
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
         <p className="text-xs font-bold text-slate-200/90">{title}</p>
-        {counterLabel ? (
-          <motion.span
-            key={counterLabel}
-            initial={reduceMotion ? false : {opacity: 0, y: -3}}
-            animate={{opacity: 1, y: 0}}
-            transition={{duration: 0.18, ease: 'easeOut'}}
-            className={cn(
-              'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums transition-colors',
-              allMet
-                ? 'bg-emerald-400/15 text-emerald-200'
-                : 'bg-white/10 text-slate-300'
-            )}
-          >
-            {counterLabel}
-          </motion.span>
-        ) : null}
       </div>
 
-      {/* Single glanceable progress signal for the whole rule set. */}
-      <div
-        className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/10"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={rules.length}
-        aria-valuenow={metCount}
-      >
-        <motion.div
-          className={cn(
-            'h-full rounded-full',
-            allMet
-              ? 'bg-gradient-to-r from-emerald-400 to-emerald-300'
-              : 'bg-gradient-to-r from-sky-400 to-primary'
-          )}
-          initial={false}
-          animate={{width: `${progress}%`}}
-          transition={reduceMotion ? {duration: 0} : {duration: 0.3, ease: 'easeOut'}}
-        />
-      </div>
-
-      <ul className="mt-3 space-y-1.5" aria-live="polite">
+      <ul className="mt-2.5 space-y-1.5" aria-live="polite">
         {rules.map((rule) => (
           <motion.li
             key={rule.id}

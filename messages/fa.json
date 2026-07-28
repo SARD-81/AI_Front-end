@@ -80,7 +80,7 @@
       "pending": "در حال ارسال…",
       "failed": "ارسال نشد",
       "pendingStatus": {
-        "connecting": "در حال اتصال…",
+        "connecting": "در حال آماده‌سازی پاسخ…",
         "thinking": "در حال فکر کردن…",
         "generating": "در حال تولید پاسخ…"
       }
@@ -114,7 +114,7 @@
       "openConversations": "باز کردن گفتگوها",
       "retryFailed": "تلاش دوباره",
       "restoreToInput": "بازگردانی به ورودی",
-      "connecting": "در حال اتصال...",
+      "connecting": "در حال آماده‌سازی پاسخ…",
       "offline": "اتصال اینترنت برقرار نیست. پس از اتصال دوباره تلاش کنید.",
       "profileIncomplete": "برای ادامه گفتگو لطفاً پروفایل خود را تکمیل کنید.",
       "accountLocked": "حساب شما قفل شده است. لطفاً با پشتیبانی تماس بگیرید.",
@@ -281,7 +281,16 @@
       "roleDescriptions": {
         "professor": "برای اعضای هیئت علمی با مسئولیت آموزشی یا پژوهشی.",
         "staff": "برای کارکنان و اعضای تیم‌های اداری دانشگاه."
-      }
+      },
+      "selectFacultyFirst": "ابتدا دانشکده را انتخاب کنید",
+      "selectMajorFirst": "ابتدا رشته را انتخاب کنید",
+      "specializationLabel": "گرایش",
+      "noSpecialization": "بدون گرایش",
+      "specializationHint": "در مقطع کارشناسی گرایش تعریف نشده است.",
+      "studentIdConfirmTitle": "شماره دانشجویی را تایید می‌کنید؟",
+      "studentIdConfirmDescription": "شماره دانشجویی پس از ثبت‌نام قابل تغییر نیست؛ لطفاً پیش از ادامه آن را با دقت بررسی کنید.",
+      "studentIdConfirmEdit": "ویرایش شماره",
+      "studentIdConfirmAccept": "تایید و ادامه"
     },
     "validation": {
       "studentId": {
