@@ -11,6 +11,31 @@ export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogPortal = DialogPrimitive.Portal;
 export const DialogClose = DialogPrimitive.Close;
 export const DialogTitle = DialogPrimitive.Title;
+// Radix ships a Description primitive; without re-exporting it here every
+// consumer that imports `DialogDescription` receives `undefined`, which React
+// reports as "Element type is invalid".
+export const DialogDescription = DialogPrimitive.Description;
+
+export function DialogHeader({className, ...props}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn('flex flex-col gap-1.5 text-start', className)}
+      {...props}
+    />
+  );
+}
+
+export function DialogFooter({className, ...props}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 export function DialogOverlay({className, ...props}: DialogPrimitive.DialogOverlayProps) {
   return (
