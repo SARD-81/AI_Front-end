@@ -66,18 +66,13 @@ function CodeBlock({ value, language }: { value: string; language?: string }) {
 function ThinkingIndicator() {
   const t = useTranslations('app');
   return (
-    <div className="inline-flex min-h-10 items-center gap-2 py-1 text-sm text-muted-foreground transition-opacity duration-200">
-      <span>{t('message.thinking')}</span>
-      <span className="flex items-center gap-1" aria-hidden>
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none" />
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
-          style={{ animationDelay: '120ms' }}
-        />
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-muted-foreground motion-safe:animate-bounce motion-reduce:animate-none"
-          style={{ animationDelay: '240ms' }}
-        />
+    <div className="inline-flex min-h-10 items-center gap-2.5 py-1 text-sm">
+      <span className="loader-orb" aria-hidden />
+      <span className="loader-shimmer font-medium">{t('message.thinking')}</span>
+      <span className="loader-dots" aria-hidden>
+        <i />
+        <i />
+        <i />
       </span>
     </div>
   );
@@ -127,7 +122,7 @@ const markdownComponents: Components = {
   },
   pre: ({ children }) => <>{children}</>,
   table: ({ children }) => (
-    <div className="my-4 w-full overflow-x-auto rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
+    <div className="chat-table-scroll">
       <table className="chat-table">{children}</table>
     </div>
   ),
@@ -254,7 +249,7 @@ function MessageBubbleComponent({
                 // inside it is aligned to the user's side.
                 'relative w-full text-[15px] leading-7 transition-all duration-200',
                 isUser
-                  ? 'flex justify-end'
+                  ? 'msg-user-row'
                   : 'rounded-none border-0 bg-transparent px-0 py-0 text-foreground shadow-none'
               )}
             >
@@ -280,13 +275,13 @@ function MessageBubbleComponent({
                     {message.content}
                   </p>
                   {sendStatus === 'pending' ? (
-                    <div className="mt-1 flex items-center justify-end gap-1 text-xs text-[hsl(var(--warning-text))]">
+                    <div className="msg-user-meta mt-1 flex items-center gap-1 text-xs text-[hsl(var(--warning-text))]">
                       <Clock className="h-3 w-3" />
                       <span>{t('message.pending')}</span>
                     </div>
                   ) : null}
                   {sendStatus === 'failed' ? (
-                    <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-xs text-[hsl(var(--danger-text))]">
+                    <div className="msg-user-meta mt-1 flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--danger-text))]">
                       <span className="inline-flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         {t('message.failed')}
@@ -321,7 +316,7 @@ function MessageBubbleComponent({
                     onEdit={() => onEditMessage?.(message)}
                     timeLabel={timeLabel}
                     dateTime={message.createdAt}
-                    className="pointer-events-none absolute end-0 top-full z-10 mt-1.5 translate-y-1 justify-end opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
+                    className="msg-user-actions pointer-events-none absolute top-full z-10 mt-1.5 translate-y-1 opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
                   />
                 </div>
               ) : (

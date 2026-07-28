@@ -131,16 +131,17 @@ export function AuthClient({ locale }: { locale: string }) {
     applyMode(mode);
   };
 
-  const switchLocale = () => {
-    const nextLocale = locale === 'en' ? 'fa' : 'en';
+  // The segmented control targets a language directly instead of toggling, so
+  // clicking the already active segment is a no-op.
+  const selectLocale = (nextLocale: 'fa' | 'en') => {
+    if (nextLocale === locale) return;
+
     const params = new URLSearchParams(searchParams.toString());
     const nextPath = replaceLocaleInPath(pathname, nextLocale);
     const query = params.toString();
     persistLanguagePreference(nextLocale);
     router.replace(query ? `${nextPath}?${query}` : nextPath);
   };
-
-  const nextLocaleLabel = locale === 'en' ? t('languageSwitch.fa') : t('languageSwitch.en');
 
   const getPostLoginDestination = (result: LoginResultDTO) => {
     // Only an explicit `false` sends the user to the profile page. Professors and
@@ -282,15 +283,37 @@ export function AuthClient({ locale }: { locale: string }) {
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-slate-300/80">{t('languageSwitch.language')}</span>
-                    <button
-                      type="button"
-                      onClick={switchLocale}
-                      aria-label={t('languageSwitch.ariaLabel', {locale: nextLocaleLabel})}
-                      title={t('languageSwitch.ariaLabel', {locale: nextLocaleLabel})}
-                      className="inline-flex h-8 min-w-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.07] px-3 text-xs font-bold tracking-wide text-sky-100 transition hover:bg-white/[0.12] hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-300/70"
+                    <div
+                      role="group"
+                      aria-label={t('languageSwitch.language')}
+                      dir="ltr"
+                      className="inline-flex overflow-hidden rounded-md bg-white/[0.06] ring-1 ring-white/15"
                     >
-                      {nextLocaleLabel}
-                    </button>
+                      {(['en', 'fa'] as const).map((option) => {
+                        const active = locale === option;
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => selectLocale(option)}
+                            aria-pressed={active}
+                            aria-label={t('languageSwitch.ariaLabel', {
+                              locale: t(`languageSwitch.${option}`)
+                            })}
+                            title={t('languageSwitch.ariaLabel', {
+                              locale: t(`languageSwitch.${option}`)
+                            })}
+                            className={
+                              active
+                                ? 'flex h-9 w-11 items-center justify-center bg-[#3b4bf6] text-[13px] font-bold tracking-wide text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70'
+                                : 'flex h-9 w-11 items-center justify-center bg-transparent text-[13px] font-bold tracking-wide text-slate-200/80 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70'
+                            }
+                          >
+                            {t(`languageSwitch.${option}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   {/* <div className="flex justify-end">
                     <Image

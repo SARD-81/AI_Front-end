@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso, type ListRange, type VirtuosoHandle } from 'react-virtuoso';
-import { ArrowDown, Bot, Sparkles } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import type { ChatMessage } from '@/lib/api/chat';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -62,39 +62,23 @@ function AssistantPendingBubble() {
 
   return (
     <article
-      className="mr-auto w-full max-w-[min(40rem,92%)]"
+      className="w-full"
       aria-live="polite"
       aria-label={statuses[statusIndex]}
     >
-      <div className="flex items-center gap-3 rounded-3xl border border-[hsl(var(--surface-subtle))]/80 bg-[hsl(var(--surface-card))]/80 px-4 py-3 shadow-card backdrop-blur-sm dark:bg-[hsl(var(--surface-elevated))]/60">
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
-          <Bot className="h-5 w-5" aria-hidden />
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-background text-primary shadow-sm ring-1 ring-primary/20">
-            <Sparkles className="h-2.5 w-2.5 motion-safe:animate-pulse motion-reduce:animate-none" aria-hidden />
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <span className="transition-opacity duration-300 motion-reduce:transition-none">
-              {statuses[statusIndex]}
-            </span>
-            <span className="flex items-center gap-1" aria-hidden>
-              <span className="h-1.5 w-1.5 rounded-full bg-primary/80 motion-safe:animate-bounce motion-reduce:animate-none" />
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-primary/70 motion-safe:animate-bounce motion-reduce:animate-none"
-                style={{ animationDelay: '120ms' }}
-              />
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-primary/60 motion-safe:animate-bounce motion-reduce:animate-none"
-                style={{ animationDelay: '240ms' }}
-              />
-            </span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted/70" aria-hidden>
-            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-transparent via-primary/35 to-transparent motion-safe:animate-pulse motion-reduce:animate-none" />
-          </div>
-        </div>
+      {/* A calm, glassy "typing" card: an orbiting spark, shimmering status text
+          and three soft dots. No progress bar, because the real duration of the
+          answer is unknown and a fake bar reads as broken. */}
+      <div className="inline-flex max-w-full items-center gap-3 rounded-2xl border border-[hsl(var(--surface-subtle))]/70 bg-[hsl(var(--surface-card))]/70 px-3.5 py-2.5 shadow-sm backdrop-blur-md dark:bg-[hsl(var(--surface-elevated))]/50">
+        <span className="loader-orb loader-orb-lg" aria-hidden />
+        <span className="loader-shimmer min-w-0 truncate text-sm font-medium">
+          {statuses[statusIndex]}
+        </span>
+        <span className="loader-dots" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </span>
       </div>
     </article>
   );
@@ -282,7 +266,7 @@ export function MessageList({
         itemContent={(index, message) => {
           if (message.role === 'assistant-pending') {
             return (
-              <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+              <div className="group mx-auto w-full max-w-3xl px-4 py-3 first:pt-20 sm:px-6">
                 <AssistantPendingBubble />
               </div>
             );
