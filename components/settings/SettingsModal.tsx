@@ -181,12 +181,12 @@ export function SettingsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isRtl ? 'rtl' : 'ltr'}
-        className={cn('h-[90vh] max-h-[600px] w-[96vw] max-w-[900px] overflow-hidden rounded-3xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-0 shadow-card sm:h-[600px]', isRtl ? 'text-right' : 'text-left')}
+        className={cn('h-[90vh] max-h-[620px] w-[96vw] max-w-[920px] gap-0 overflow-hidden rounded-3xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-0 pe-0 shadow-card sm:h-[620px]', isRtl ? 'text-right' : 'text-left')}
       >
         <DialogTitle className="sr-only">{t('title')}</DialogTitle>
         <div className="flex h-full flex-col sm:flex-row">
-          <aside className={cn('w-full border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] p-3 sm:w-60 sm:border-b-0 sm:p-4', isRtl ? 'sm:border-l' : 'sm:border-r')}>
-            <h2 className="mb-3 px-2 text-sm font-semibold text-muted-foreground">{t('title')}</h2>
+          <aside className={cn('w-full shrink-0 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-3 py-4 sm:w-64 sm:border-b-0 sm:px-4 sm:py-6', isRtl ? 'sm:border-l' : 'sm:border-r')}>
+            <h2 className="mb-4 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('title')}</h2>
             <nav className="space-y-1">
               <button
                 type="button"
@@ -213,11 +213,11 @@ export function SettingsModal({
             </nav>
           </aside>
 
-          <section className="flex-1 bg-background/60 p-6 sm:p-8">
-            <h3 className="text-2xl font-semibold">{tab === 'general' ? t('tabs.general') : t('tabs.account')}</h3>
-            <div className="mt-4 border-b border-border" />
+          <section className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background/60 px-6 py-6 sm:px-8 sm:py-7">
+            <h3 className="text-xl font-semibold leading-8 sm:text-2xl">{tab === 'general' ? t('tabs.general') : t('tabs.account')}</h3>
+            <div className="mt-5 border-b border-border" />
 
-            <div className="mt-4">
+            <div className="mt-2">
               {tab === 'general' ? (
                 <>
                   <SettingRow label={t('general.appearance')} isRtl={isRtl}>
@@ -270,12 +270,11 @@ export function SettingsModal({
                       </span>
                     </SettingRow>
                   ))}
-                  <div className="mt-5 rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-4 shadow-sm">
-                    <p className="text-sm text-muted-foreground">{t('account.editNotice')}</p>
+                  <div className="mt-6 flex justify-start">
                     <button
                       type="button"
                       onClick={handleEditProfile}
-                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-full border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-4 text-sm font-medium text-[hsl(var(--field-foreground))] shadow-sm transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="inline-flex h-10 items-center gap-2 rounded-full border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-4 text-sm font-medium text-[hsl(var(--field-foreground))] shadow-sm transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       <UserPen className="h-4 w-4" />
                       {t('account.editProfile')}

@@ -1,6 +1,6 @@
 'use client';
 
-import {ButtonHTMLAttributes, useMemo, useState} from 'react';
+import {ButtonHTMLAttributes, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
 
@@ -18,6 +18,8 @@ type UserMessageRailProps = {
   onAnchorClick: (anchor: UserAnchorItem) => void;
   onAnchorHover: (anchorId: string | null) => void;
 };
+
+const PANEL_CLOSE_DELAY_MS = 320;
 
 function RailTick({active, ...props}: ButtonHTMLAttributes<HTMLButtonElement> & {active: boolean}) {
   return (
@@ -45,6 +47,14 @@ export function UserMessageRail({
   const [isOpen, setIsOpen] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [hintShown, setHintShown] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    },
+    []
+  );
 
   const highlightedAnchorId = hoveredAnchorId ?? activeAnchorId;
 
@@ -55,7 +65,14 @@ export function UserMessageRail({
 
   if (!anchors.length) return null;
 
+  // The panel used to disappear the instant the pointer left the 8px rail, so
+  // reaching it was almost impossible. Closing is now debounced and the gap
+  // between rail and panel is covered by an invisible hover bridge.
   const openPanel = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     setIsOpen(true);
     if (!hintShown && anchors.length >= 2) {
       setShowHint(true);
@@ -64,9 +81,13 @@ export function UserMessageRail({
   };
 
   const closePanel = () => {
-    setIsOpen(false);
-    setShowHint(false);
-    onAnchorHover(null);
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      setShowHint(false);
+      onAnchorHover(null);
+      closeTimerRef.current = null;
+    }, PANEL_CLOSE_DELAY_MS);
   };
 
   return (
@@ -113,7 +134,8 @@ export function UserMessageRail({
         ) : null}
 
         {isOpen ? (
-          <div className="absolute left-full top-1/2 ml-2 w-72 -translate-y-1/2 rounded-xl border border-border/60 bg-popover p-2 shadow-lg">
+          <div className="absolute left-full top-1/2 w-72 -translate-y-1/2 ps-3" onMouseEnter={openPanel} onMouseLeave={closePanel}>
+            <div className="rounded-xl border border-border/60 bg-popover p-2 shadow-lg">
             <div className="max-h-[min(320px,40vh)] space-y-1 overflow-auto" dir="rtl">
               {anchors.map((anchor, index) => {
                 const isActive = anchor.anchorId === highlightedAnchorId;
@@ -137,6 +159,7 @@ export function UserMessageRail({
               })}
             </div>
             {activeIndex >= 0 ? <span className="sr-only">{t('messageRail.activeMessage', {index: activeIndex + 1})}</span> : null}
+            </div>
           </div>
         ) : null}
       </div>

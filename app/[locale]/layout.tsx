@@ -38,7 +38,10 @@ export async function generateMetadata({
     title: meta.title,
     description: meta.description,
     icons: {
-      icon: '/Logo.png',
+      // `/icon.svg` is generated from app/icon.svg and always exists; the PNG is
+      // listed first so the original brand favicon wins whenever it is present
+      // in /public.
+      icon: ['/Logo.png', '/icon.svg'],
       shortcut: '/Logo.png',
       apple: '/Logo.png'
     }

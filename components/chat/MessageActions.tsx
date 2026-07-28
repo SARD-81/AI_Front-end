@@ -14,6 +14,8 @@ type MessageActionsProps = {
   onDislike?: () => void;
   feedbackState?: boolean | null;
   feedbackDisabled?: boolean;
+  timeLabel?: string;
+  dateTime?: string;
   className?: string;
 };
 
@@ -26,22 +28,26 @@ export function MessageActions({
   onDislike,
   feedbackState,
   feedbackDisabled,
+  timeLabel,
+  dateTime,
   className
 }: MessageActionsProps) {
   const t = useTranslations('app');
+  // Slightly bigger hit area, softer hover surface and a calmer easing so
+  // the row does not 'pop' the moment the pointer crosses the bubble.
   const baseClass =
-    'h-7 w-7 rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95';
+    'h-8 w-8 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.97]';
 
   return (
-    <div className={cn('mt-1.5 flex items-center gap-1', className)}>
+    <div className={cn('mt-1 flex items-center gap-0.5', className)}>
       <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onCopy} aria-label={t('messageActions.copy')} title={t('messageActions.copy')}>
-        <Copy className="h-3.5 w-3.5" />
+        <Copy className="h-4 w-4" />
       </Button>
 
       {role === 'user' ? (
         <>
           <Button type="button" variant="ghost" size="icon" className={baseClass} onClick={onEdit} aria-label={t('messageActions.edit')} title={t('messageActions.edit')}>
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </Button>
         </>
       ) : (
@@ -56,7 +62,7 @@ export function MessageActions({
             title={t('messageActions.regenerate')}
             disabled={!onRegenerate}
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
           <Button
             type="button"
@@ -69,7 +75,7 @@ export function MessageActions({
             disabled={feedbackDisabled}
             onClick={onLike}
           >
-            <ThumbsUp className="h-3.5 w-3.5" />
+            <ThumbsUp className="h-4 w-4" />
           </Button>
           <Button
             type="button"
@@ -82,10 +88,18 @@ export function MessageActions({
             disabled={feedbackDisabled}
             onClick={onDislike}
           >
-            <ThumbsDown className="h-3.5 w-3.5" />
+            <ThumbsDown className="h-4 w-4" />
           </Button>
         </>
       )}
+
+      {/* The clock used to sit on its own line and collided with the
+          buttons; it is now the last chip of the same row. */}
+      {timeLabel ? (
+        <time dateTime={dateTime} className="px-1 text-[11px] tabular-nums text-muted-foreground/70">
+          {timeLabel}
+        </time>
+      ) : null}
     </div>
   );
 }

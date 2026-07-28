@@ -5,33 +5,31 @@ import { callWithAutoRefresh } from '@/lib/server/with-refresh';
 
 type BackendProfile = Record<string, unknown>;
 
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function optionalText(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 function normalizeProfile(profile: BackendProfile) {
   return {
     user: {
-      studentId:
-        typeof (profile.student_id ?? profile.studentId) === 'string'
-          ? (profile.student_id ?? profile.studentId)
-          : '',
-      fullName:
-        typeof (profile.full_name ?? profile.fullName) === 'string'
-          ? (profile.full_name ?? profile.fullName)
-          : '',
-      firstName:
-        typeof (profile.first_name ?? profile.firstName) === 'string'
-          ? (profile.first_name ?? profile.firstName)
-          : '',
-      lastName:
-        typeof (profile.last_name ?? profile.lastName) === 'string'
-          ? (profile.last_name ?? profile.lastName)
-          : '',
-      email: typeof profile.email === 'string' ? profile.email : '',
-      faculty: typeof profile.faculty === 'string' ? profile.faculty : '',
-      major: typeof profile.major === 'string' ? profile.major : '',
-      degreeLevel:
-        typeof (profile.degree_level ?? profile.degreeLevel) === 'string'
-          ? (profile.degree_level ?? profile.degreeLevel)
-          : '',
-      role: typeof profile.role === 'string' ? profile.role : undefined,
+      studentId: text(profile.student_id ?? profile.studentId),
+      personnelId: text(profile.personnel_id ?? profile.personnelId),
+      fullName: text(profile.full_name ?? profile.fullName),
+      firstName: text(profile.first_name ?? profile.firstName),
+      lastName: text(profile.last_name ?? profile.lastName),
+      email: text(profile.email),
+      faculty: text(profile.faculty),
+      major: text(profile.major),
+      degreeLevel: text(profile.degree_level ?? profile.degreeLevel),
+      // Employment side of the profile (professors and staff).
+      department: text(profile.department),
+      academicRank: text(profile.academic_rank ?? profile.academicRank),
+      jobTitle: text(profile.job_title ?? profile.jobTitle),
+      role: optionalText(profile.role),
       isProfileCompleted:
         typeof profile.is_profile_completed === 'boolean'
           ? profile.is_profile_completed

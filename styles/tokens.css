@@ -12,7 +12,7 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
 
-  --background: 210 30% 98%;
+  --background: 210 28% 97%;
   --foreground: 222 35% 12%;
   --muted: 210 25% 96%;
   --muted-foreground: 218 16% 40%;
@@ -39,10 +39,10 @@
   --card-foreground: 222 35% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 35% 12%;
-  --surface-base: 210 30% 98%;
-  --surface-card: 40 38% 99%;
-  --surface-elevated: 210 24% 96%;
-  --surface-subtle: 210 22% 94%;
+  --surface-base: 210 28% 97%;
+  --surface-card: 0 0% 100%;
+  --surface-elevated: 214 30% 94%;
+  --surface-subtle: 214 24% 91%;
   --surface-overlay: 222 28% 18%;
   --field: 210 28% 97%;
   --field-foreground: 222 35% 12%;
@@ -63,16 +63,20 @@
   --info-surface: 210 58% 94%;
   --info-border: 211 40% 76%;
   --info-text: 211 48% 30%;
-  --menu: 40 38% 99%;
+  --menu: 0 0% 100%;
   --menu-foreground: 222 35% 12%;
   --menu-border: 214 20% 88%;
   --menu-hover: 210 24% 94%;
   --menu-hover-foreground: 222 35% 12%;
+  --bubble-user: 214 40% 93%;
+  --bubble-user-border: 214 28% 85%;
   --shadow-color: 222 35% 20%;
   --shadow-strength: 9%;
 }
 
 .dark {
+  --bubble-user: 222 19% 21%;
+  --bubble-user-border: 222 16% 28%;
   --background: 222 22% 12%;
   --foreground: 215 24% 92%;
   --muted: 222 18% 18%;
@@ -102,7 +106,7 @@
   --popover-foreground: 215 24% 92%;
   --surface-base: 222 22% 12%;
   --surface-card: 222 23% 14%;
-  --surface-elevated: 222 20% 17%;
+  --surface-elevated: 222 20% 18%;
   --surface-subtle: 222 18% 20%;
   --surface-overlay: 222 24% 10%;
   --field: 222 18% 16%;

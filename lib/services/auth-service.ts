@@ -3,6 +3,7 @@ import { isEmployeeEmail, isStudentEmail } from '@/lib/config/email-domains';
 import { apiFetch, ApiError } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
 import type {
+  AuthRoleDTO,
   LoginInputDTO,
   LoginResponseDTO,
   LoginResultDTO,
@@ -19,37 +20,70 @@ import type {
   VerifyOtpResultDTO
 } from '@/lib/types/auth';
 
+const KNOWN_ROLES = ['student', 'professor', 'staff', 'admin'] as const;
+
+/**
+ * Normalizes whatever the backend sends in `role`.
+ * Unknown or missing values must never break the login flow, so they simply
+ * resolve to `undefined` instead of throwing a validation error.
+ */
+function normalizeRole(value: unknown): AuthRoleDTO | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  return (KNOWN_ROLES as readonly string[]).includes(normalized)
+    ? (normalized as AuthRoleDTO)
+    : undefined;
+}
+
+/** `null` is a perfectly valid "no value" for the backend, so treat it as empty. */
+const nullableString = z.string().nullish();
+const nullableBoolean = z.boolean().nullish();
+
+function cleanString(value: string | null | undefined): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function cleanBoolean(value: boolean | null | undefined): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
 const loginSchema = z
   .object({
     user: z
       .object({
-        studentId: z.string().optional(),
-        student_id: z.string().optional(),
-        fullName: z.string().optional(),
-        full_name: z.string().optional(),
-        role: z.enum(['student', 'professor', 'staff', 'admin']).optional(),
-        isProfileCompleted: z.boolean().optional(),
-        is_profile_completed: z.boolean().optional()
+        studentId: nullableString,
+        student_id: nullableString,
+        personnelId: nullableString,
+        personnel_id: nullableString,
+        fullName: nullableString,
+        full_name: nullableString,
+        role: z.unknown().optional(),
+        isProfileCompleted: nullableBoolean,
+        is_profile_completed: nullableBoolean
       })
-      .passthrough(),
-    isProfileCompleted: z.boolean().optional(),
-    is_profile_completed: z.boolean().optional()
+      .passthrough()
+      .optional(),
+    isProfileCompleted: nullableBoolean,
+    is_profile_completed: nullableBoolean
   })
   .passthrough()
   .transform((value) => {
-    const studentId = value.user.studentId ?? value.user.student_id;
+    const user = value.user ?? {};
+    const studentId = cleanString(user.studentId ?? user.student_id);
+    const personnelId = cleanString(user.personnelId ?? user.personnel_id);
 
     const isProfileCompleted =
-      value.isProfileCompleted ??
-      value.is_profile_completed ??
-      value.user.isProfileCompleted ??
-      value.user.is_profile_completed;
+      cleanBoolean(value.isProfileCompleted) ??
+      cleanBoolean(value.is_profile_completed) ??
+      cleanBoolean(user.isProfileCompleted) ??
+      cleanBoolean(user.is_profile_completed);
 
     return {
       user: {
         studentId,
-        fullName: value.user.fullName ?? value.user.full_name,
-        role: value.user.role,
+        personnelId,
+        fullName: cleanString(user.fullName ?? user.full_name),
+        role: normalizeRole(user.role),
         isProfileCompleted
       },
       isProfileCompleted
@@ -60,52 +94,58 @@ const profileSchema = z
   .object({
     user: z
       .object({
-        email: z.string().optional(),
-        firstName: z.string().optional(),
-        first_name: z.string().optional(),
-        lastName: z.string().optional(),
-        last_name: z.string().optional(),
-        studentId: z.string().optional(),
-        student_id: z.string().optional(),
-        personnelId: z.string().optional(),
-        personnel_id: z.string().optional(),
-        faculty: z.string().optional(),
-        major: z.string().optional(),
-        degreeLevel: z.string().optional(),
-        degree_level: z.string().optional(),
-        department: z.string().optional(),
-        academicRank: z.string().optional(),
-        academic_rank: z.string().optional(),
-        jobTitle: z.string().optional(),
-        job_title: z.string().optional(),
-        fullName: z.string().optional(),
-        full_name: z.string().optional(),
-        role: z.enum(['student', 'professor', 'staff', 'admin']).optional(),
-        isProfileCompleted: z.boolean().optional(),
-        is_profile_completed: z.boolean().optional()
+        email: nullableString,
+        firstName: nullableString,
+        first_name: nullableString,
+        lastName: nullableString,
+        last_name: nullableString,
+        studentId: nullableString,
+        student_id: nullableString,
+        personnelId: nullableString,
+        personnel_id: nullableString,
+        faculty: nullableString,
+        major: nullableString,
+        degreeLevel: nullableString,
+        degree_level: nullableString,
+        department: nullableString,
+        academicRank: nullableString,
+        academic_rank: nullableString,
+        jobTitle: nullableString,
+        job_title: nullableString,
+        fullName: nullableString,
+        full_name: nullableString,
+        role: z.unknown().optional(),
+        isProfileCompleted: nullableBoolean,
+        is_profile_completed: nullableBoolean
       })
       .passthrough()
+      .optional()
   })
   .passthrough()
-  .transform((value) => ({
-    user: {
-      email: value.user.email,
-      firstName: value.user.firstName ?? value.user.first_name ?? '',
-      lastName: value.user.lastName ?? value.user.last_name ?? '',
-      studentId: value.user.studentId ?? value.user.student_id,
-      personnelId: value.user.personnelId ?? value.user.personnel_id,
-      faculty: value.user.faculty,
-      major: value.user.major,
-      degreeLevel: value.user.degreeLevel ?? value.user.degree_level,
-      department: value.user.department,
-      academicRank: value.user.academicRank ?? value.user.academic_rank,
-      jobTitle: value.user.jobTitle ?? value.user.job_title,
-      fullName: value.user.fullName ?? value.user.full_name,
-      role: value.user.role,
-      isProfileCompleted:
-        value.user.isProfileCompleted ?? value.user.is_profile_completed
-    }
-  }));
+  .transform((value) => {
+    const user = value.user ?? {};
+
+    return {
+      user: {
+        email: cleanString(user.email),
+        firstName: cleanString(user.firstName ?? user.first_name) ?? '',
+        lastName: cleanString(user.lastName ?? user.last_name) ?? '',
+        studentId: cleanString(user.studentId ?? user.student_id),
+        personnelId: cleanString(user.personnelId ?? user.personnel_id),
+        faculty: cleanString(user.faculty),
+        major: cleanString(user.major),
+        degreeLevel: cleanString(user.degreeLevel ?? user.degree_level),
+        department: cleanString(user.department),
+        academicRank: cleanString(user.academicRank ?? user.academic_rank),
+        jobTitle: cleanString(user.jobTitle ?? user.job_title),
+        fullName: cleanString(user.fullName ?? user.full_name),
+        role: normalizeRole(user.role),
+        isProfileCompleted:
+          cleanBoolean(user.isProfileCompleted) ??
+          cleanBoolean(user.is_profile_completed)
+      }
+    };
+  });
 
 const messageSchema = z
   .object({

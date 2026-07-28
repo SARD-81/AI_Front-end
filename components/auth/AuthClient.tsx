@@ -143,7 +143,13 @@ export function AuthClient({ locale }: { locale: string }) {
   const nextLocaleLabel = locale === 'en' ? t('languageSwitch.fa') : t('languageSwitch.en');
 
   const getPostLoginDestination = (result: LoginResultDTO) => {
-    if (result.isProfileCompleted === false || result.user.isProfileCompleted === false) {
+    // Only an explicit `false` sends the user to the profile page. Professors and
+    // staff often come back with `undefined` here, and they must land in the chat
+    // just like students do.
+    if (
+      result?.isProfileCompleted === false ||
+      result?.user?.isProfileCompleted === false
+    ) {
       return `/${locale}/profile`;
     }
 
@@ -151,7 +157,11 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   const handleLoginSuccess = (result: LoginResultDTO) => {
-    router.push(getPostLoginDestination(result));
+    const destination = getPostLoginDestination(result);
+    // `replace` keeps the login screen out of the history stack and `refresh`
+    // makes the server components re-read the freshly written auth cookies.
+    router.replace(destination);
+    router.refresh();
   };
 
   const handlePasswordResetCompleted = (email: string) => {
@@ -183,7 +193,8 @@ export function AuthClient({ locale }: { locale: string }) {
         { signal: controller.signal }
       );
       toast.success(t('signup.autoLoginSuccess'));
-      router.push(getPostLoginDestination(result));
+      router.replace(getPostLoginDestination(result));
+      router.refresh();
     } catch (error) {
       if (isAbortError(error)) {
         return;

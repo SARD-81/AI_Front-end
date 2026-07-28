@@ -36,8 +36,8 @@ export function ChatEmptyState({
   return (
     <div className="flex h-full items-center justify-center px-4" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-[800px] space-y-6 text-center">
-        <div className="mx-auto h-20 w-20 rounded-full border border-border bg-muted p-[3px] shadow-soft">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
+        <div className="mx-auto h-20 w-20 rounded-full border border-border bg-muted p-[3px] shadow-soft dark:border-white/15">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-white p-2 dark:bg-white">
             <Image
               src="/Logo.png"
               alt={t('emptyState.logoAlt')}
