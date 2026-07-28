@@ -282,7 +282,7 @@ export function AuthClient({ locale }: { locale: string }) {
               <div className="relative z-10">
                 <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-slate-300/80">{t('languageSwitch.language')}</span>
+                    {/* <span className="text-xs font-medium text-slate-300/80">{t('languageSwitch.language')}</span> */}
                     <div
                       role="group"
                       aria-label={t('languageSwitch.language')}
