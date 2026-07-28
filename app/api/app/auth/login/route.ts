@@ -26,10 +26,11 @@ export async function POST(request: Request) {
     const data = await backendFetch<{
       access: string;
       refresh?: string;
-      student_id?: string;
-      full_name?: string;
-      role?: string;
-      is_profile_completed?: boolean;
+      student_id?: string | null;
+      personnel_id?: string | null;
+      full_name?: string | null;
+      role?: string | null;
+      is_profile_completed?: boolean | null;
     }>('/login/', {
       base: 'auth',
       method: 'POST',
@@ -38,14 +39,22 @@ export async function POST(request: Request) {
 
     await setAuthCookies({ access: data.access, refresh: data.refresh });
 
+    // `null` values (professors and staff have no student id) are dropped so the
+    // client-side schema never sees a type it does not expect.
+    const text = (value: unknown) =>
+      typeof value === 'string' && value.length > 0 ? value : undefined;
+    const flag = (value: unknown) =>
+      typeof value === 'boolean' ? value : undefined;
+
     return NextResponse.json({
       user: {
-        studentId: data.student_id,
-        fullName: data.full_name,
-        role: data.role,
-        isProfileCompleted: data.is_profile_completed
+        studentId: text(data.student_id),
+        personnelId: text(data.personnel_id),
+        fullName: text(data.full_name),
+        role: text(data.role),
+        isProfileCompleted: flag(data.is_profile_completed)
       },
-      isProfileCompleted: data.is_profile_completed
+      isProfileCompleted: flag(data.is_profile_completed)
     });
   } catch (error) {
     return routeErrorResponse(error);

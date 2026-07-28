@@ -47,6 +47,7 @@ export function ChatShell({
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
+  const editingMessageIdRef = useRef<string | null>(null);
   const [value, setValue] = useState('');
   const [streamContent, setStreamContent] = useState('');
   const streamChunksRef = useRef<string[]>([]);
@@ -258,6 +259,12 @@ export function ChatShell({
       clientMessageId: stableClientMessageId
     };
 
+    const editedMessageId = editingMessageIdRef.current;
+    if (editedMessageId) {
+      dropMessagesFrom(editedMessageId);
+      editingMessageIdRef.current = null;
+    }
+
     setErrorMessage('');
     streamChunksRef.current = [];
     streamCreatedAtRef.current = new Date().toISOString();
@@ -318,7 +325,9 @@ export function ChatShell({
         router.push(`/${locale}/profile`);
       }
 
-      setErrorMessage(getChatUserErrorMessage(error));
+      const friendlyError = getChatUserErrorMessage(error);
+      setErrorMessage(friendlyError);
+      toast.error(friendlyError);
     } finally {
       if (options?.replaceAssistantMessageId) {
         regenerateTargetRef.current = null;
@@ -354,9 +363,29 @@ export function ChatShell({
     toast.error(t('chat.copyError'));
   };
 
-  const handleEditMessage = (content: string) => {
-    setValue(content);
+  // The API has no "edit message" endpoint, so editing is handled purely on the
+  // client: the edited message (and the answer it produced) is removed from the
+  // thread and the new text is sent as a fresh message in its place.
+  const dropMessagesFrom = (messageId: string) => {
+    if (!chatId) return;
+    queryClient.setQueryData(['chat', chatId], (previous: unknown) => {
+      const current = previous as {messages?: ChatMessage[]} | undefined;
+      if (!current?.messages) return previous;
+      const index = current.messages.findIndex((item) => item.id === messageId);
+      if (index < 0) return previous;
+      return {...current, messages: current.messages.slice(0, index)};
+    });
+  };
+
+  const handleEditMessage = (message: ChatMessage) => {
+    editingMessageIdRef.current = message.id;
+    setValue(message.content);
     setFocusTrigger((prev) => prev + 1);
+  };
+
+  const handleCancelEdit = () => {
+    editingMessageIdRef.current = null;
+    setValue('');
   };
 
   useEffect(() => {
@@ -439,44 +468,6 @@ export function ChatShell({
             </div>
           ) : null}
 
-          {sendMutation.isPending && !streamContent && !errorMessage ? (
-            <div role="status" className="border-b border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] px-4 py-2 text-sm text-[hsl(var(--info-text))]">
-              <div className="mx-auto w-full max-w-3xl">{t('chat.connecting')}</div>
-            </div>
-          ) : null}
-
-          {errorMessage ? (
-            <div
-              role="alert"
-              className="border-b border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] px-4 py-2 text-sm text-[hsl(var(--danger-text))]"
-            >
-              <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span>{errorMessage}</span>
-                {failedMessage ? (
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleRetryFailedMessage}
-                      disabled={sendMutation.isPending}
-                    >
-                      {t('chat.retryFailed')}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRestoreFailedMessage}
-                    >
-                      {t('chat.restoreToInput')}
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">
               {isChatLoading ? (
@@ -507,9 +498,7 @@ export function ChatShell({
                     messages={messages}
                     typing={sendMutation.isPending && !streamContent}
                     onCopyMessage={handleCopyMessage}
-                    onEditMessage={(message) =>
-                      handleEditMessage(message.content)
-                    }
+                    onEditMessage={handleEditMessage}
                     onRegenerate={handleRegenerate}
                     onRetryMessage={(message) =>
                       submitMessage(message.content, message.id)

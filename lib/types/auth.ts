@@ -25,17 +25,21 @@ export type LoginInputDTO = {
 };
 
 export type LoginResponseDTO = {
-  user: {
-    studentId?: string;
-    student_id?: string;
-    fullName?: string;
-    full_name?: string;
-    role: AuthRoleDTO;
-    isProfileCompleted?: boolean;
-    is_profile_completed?: boolean;
+  // Professors and staff have no student id, and some deployments answer with
+  // `null` instead of omitting the field, hence the nullable members.
+  user?: {
+    studentId?: string | null;
+    student_id?: string | null;
+    personnelId?: string | null;
+    personnel_id?: string | null;
+    fullName?: string | null;
+    full_name?: string | null;
+    role?: AuthRoleDTO | string | null;
+    isProfileCompleted?: boolean | null;
+    is_profile_completed?: boolean | null;
   };
-  isProfileCompleted?: boolean;
-  is_profile_completed?: boolean;
+  isProfileCompleted?: boolean | null;
+  is_profile_completed?: boolean | null;
 };
 
 export type SendOtpInputDTO = {

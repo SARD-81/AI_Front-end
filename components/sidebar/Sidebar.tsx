@@ -57,6 +57,7 @@ const SettingsModal = dynamic(
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 304;
 const MAX_CONVERSATION_TITLE_LENGTH = 100;
+const RENAME_COUNTER_THRESHOLD = 90;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -369,13 +370,15 @@ export function Sidebar({
                   collapsed ? 'w-10 justify-center' : 'min-w-0 flex-1 gap-2 px-1.5'
                 )}
               >
-                <Image
-                  src="/Logo.png"
-                  alt={t('sidebar.logoAlt')}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 shrink-0 object-contain"
-                />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-black/5 dark:bg-white dark:ring-white/25">
+                  <Image
+                    src="/Logo.png"
+                    alt={t('sidebar.logoAlt')}
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-contain"
+                  />
+                </span>
                 {!collapsed ? (
                   <span className="truncate text-sm font-semibold text-foreground">
                     {t('sidebar.universityName')}
@@ -521,12 +524,13 @@ export function Sidebar({
                               onClick={onNavigate}
                               title={collapsed ? chat.title : undefined}
                             >
-                              <MessageCircle className="h-4 w-4 shrink-0" />
                               {!collapsed ? (
                                 <span className="truncate text-sm">
                                   {chat.title}
                                 </span>
-                              ) : null}
+                              ) : (
+                                <MessageCircle className="h-4 w-4 shrink-0" />
+                              )}
                             </Link>
 
                             <DropdownMenu
@@ -752,9 +756,12 @@ export function Sidebar({
                 className="flex items-center justify-between gap-3 text-xs"
               >
                 <span className="text-danger-text">{renameError}</span>
-                <span className="ms-auto shrink-0 text-muted-foreground">
-                  {renameTitle.length} / {MAX_CONVERSATION_TITLE_LENGTH}
-                </span>
+                {/* Only surfaces the counter when the user approaches the cap. */}
+                {renameTitle.length > RENAME_COUNTER_THRESHOLD ? (
+                  <span className="ms-auto shrink-0 tabular-nums text-muted-foreground">
+                    {renameTitle.length} / {MAX_CONVERSATION_TITLE_LENGTH}
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="flex justify-end gap-2">

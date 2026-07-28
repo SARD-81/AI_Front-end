@@ -225,16 +225,25 @@ export function MessageList({
       }
     }
 
-    const { startIndex } = range;
-    let resolved = userAnchors[0];
-    for (const anchor of userAnchors) {
-      if (anchor.messageIndex <= startIndex) {
-        resolved = anchor;
-      } else {
-        break;
+    // Highlight the user message that is actually visible at the top of the
+    // viewport. The previous logic always resolved to the anchor *before* the
+    // first visible row, which made the rail lag one tick behind.
+    const { startIndex, endIndex } = range;
+    const visible = userAnchors.find(
+      (anchor) =>
+        anchor.messageIndex >= startIndex && anchor.messageIndex <= endIndex
+    );
+    let resolved = visible;
+    if (!resolved) {
+      for (const anchor of userAnchors) {
+        if (anchor.messageIndex <= startIndex) {
+          resolved = anchor;
+        } else {
+          break;
+        }
       }
     }
-    setActiveAnchorId(resolved?.anchorId);
+    setActiveAnchorId((resolved ?? userAnchors[0])?.anchorId);
   };
 
   return (

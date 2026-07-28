@@ -3,6 +3,8 @@
 import { memo, useMemo, useState } from 'react';
 import ReactMarkdown, {type Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import rehypeRaw from 'rehype-raw';
 import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -81,8 +83,32 @@ function ThinkingIndicator() {
   );
 }
 
+// A full component map: without it react-markdown renders bare tags that the
+// Tailwind preflight strips of every margin, list marker and heading size,
+// which is why answers looked like unformatted plain text.
 const markdownComponents: Components = {
-  p: ({ children }) => <p className="my-2 leading-8">{children}</p>,
+  p: ({ children }) => <p className="my-3 text-justify leading-8">{children}</p>,
+  h1: ({ children }) => <h1 className="mb-3 mt-5 text-xl font-bold leading-8">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-2.5 mt-5 text-lg font-bold leading-8">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold leading-7">{children}</h3>,
+  h4: ({ children }) => <h4 className="mb-2 mt-4 text-sm font-bold leading-7">{children}</h4>,
+  ul: ({ children }) => <ul className="my-3 list-disc space-y-1.5 ps-6">{children}</ul>,
+  ol: ({ children }) => <ol className="my-3 list-decimal space-y-1.5 ps-6">{children}</ol>,
+  li: ({ children }) => <li className="leading-8 marker:text-muted-foreground">{children}</li>,
+  strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
+  del: ({ children }) => <del className="opacity-70">{children}</del>,
+  hr: () => <hr className="my-5 border-t border-[hsl(var(--surface-subtle))]" />,
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4">
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="my-4 rounded-e-lg border-s-4 border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/60 px-4 py-2">
+      {children}
+    </blockquote>
+  ),
   code: ({ className, children, ...props }) => {
     const text = String(children).replace(/\n$/, '');
     const languageMatch = /language-([\w+-]+)/.exec(className ?? '');
@@ -101,10 +127,13 @@ const markdownComponents: Components = {
   },
   pre: ({ children }) => <>{children}</>,
   table: ({ children }) => (
-    <div className="my-3 overflow-x-auto rounded-lg border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]">
-      <table>{children}</table>
+    <div className="my-4 w-full overflow-x-auto rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
+      <table className="chat-table">{children}</table>
     </div>
-  )
+  ),
+  thead: ({ children }) => <thead>{children}</thead>,
+  th: ({ children }) => <th>{children}</th>,
+  td: ({ children }) => <td>{children}</td>
 };
 
 type MessageBubbleProps = {
@@ -214,21 +243,23 @@ function MessageBubbleComponent({
     >
       <div className="flex w-full flex-col">
         {isTyping ? (
-          <div className="mr-auto w-full max-w-[min(40rem,92%)]">
+          <div className="w-full">
             <ThinkingIndicator />
           </div>
         ) : (
           <>
             <div
               className={cn(
-                'relative text-[15px] leading-7 transition-all duration-200',
+                // Both roles share one column (ChatGPT-like); only the bubble
+                // inside it is aligned to the user's side.
+                'relative w-full text-[15px] leading-7 transition-all duration-200',
                 isUser
-                  ? 'ml-auto w-fit max-w-[min(32rem,85%)]'
-                  : 'mr-auto w-full max-w-[min(40rem,92%)] rounded-none border-0 bg-transparent px-0 py-0 text-foreground shadow-none'
+                  ? 'flex justify-end'
+                  : 'rounded-none border-0 bg-transparent px-0 py-0 text-foreground shadow-none'
               )}
             >
               {isUser ? (
-                <div className="group relative w-fit max-w-full">
+                <div className="group relative w-fit max-w-[min(38rem,88%)]">
                   {anchorId ? (
                     <span
                       id={anchorId}
@@ -239,7 +270,7 @@ function MessageBubbleComponent({
                   ) : null}
                   <p
                     className={cn(
-                      'm-0 whitespace-pre-wrap break-words rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-4 py-3 text-foreground shadow-card',
+                      'm-0 whitespace-pre-wrap break-words rounded-3xl border border-[hsl(var(--bubble-user-border))] bg-[hsl(var(--bubble-user))] px-4 py-3 text-foreground shadow-sm',
                       sendStatus === 'failed'
                         ? 'border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] text-[hsl(var(--danger-text))]'
                         : undefined,
@@ -288,7 +319,9 @@ function MessageBubbleComponent({
                     role={message.role}
                     onCopy={() => onCopyMessage(message.content)}
                     onEdit={() => onEditMessage?.(message)}
-                    className="pointer-events-none absolute right-0 top-full z-10 mt-2 translate-y-1 opacity-0 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
+                    timeLabel={timeLabel}
+                    dateTime={message.createdAt}
+                    className="pointer-events-none absolute end-0 top-full z-10 mt-1.5 translate-y-1 justify-end opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
                   />
                 </div>
               ) : (
@@ -299,33 +332,16 @@ function MessageBubbleComponent({
                     isAssistantEnglish ? 'text-left ltr:text-left' : undefined
                   )}
                 >
-                  {isStreaming ? (
-                    <p className="my-2 whitespace-pre-wrap break-words leading-8">
-                      {message.content}
-                    </p>
-                  ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={markdownComponents}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
-                  )}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={markdownComponents}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
-
-            {timeLabel ? (
-              <time
-                dateTime={message.createdAt}
-                className={cn(
-                  'mt-1 block text-[11px] text-muted-foreground/70 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100',
-                  isUser ? 'ml-auto' : 'mr-auto'
-                )}
-              >
-                {timeLabel}
-              </time>
-            ) : null}
 
             {!isUser ? (
               <>
@@ -337,8 +353,10 @@ function MessageBubbleComponent({
                   onDislike={() => setDialogOpen(true)}
                   feedbackState={feedbackState}
                   feedbackDisabled={feedbackDisabled}
+                  timeLabel={timeLabel}
+                  dateTime={message.createdAt}
                   className={cn(
-                    'mr-auto justify-start transition-all duration-150',
+                    'mr-auto justify-start transition-all duration-300',
                     isLastAssistant
                       ? 'pointer-events-auto opacity-100'
                       : 'pointer-events-none opacity-0 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100 max-sm:pointer-events-auto max-sm:opacity-100'
