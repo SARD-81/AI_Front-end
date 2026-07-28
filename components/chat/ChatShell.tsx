@@ -439,9 +439,13 @@ export function ChatShell({
           <Sidebar locale={locale} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
 
-        <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="relative flex min-h-14 items-center border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] py-1 sm:h-14 sm:py-0">
-            <div className="mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
+        <main id="main-content" className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Floating glass bar: no divider, and the conversation scrolls *under*
+              it so the content blurs away behind the frosted background. */}
+          <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-h-14 items-center border-0 bg-transparent py-1 sm:h-14 sm:py-0">
+            <div className="pointer-events-none absolute inset-0 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background)/0.82)] to-transparent" />
+            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
@@ -456,14 +460,14 @@ export function ChatShell({
             </div>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="w-full max-w-3xl truncate px-16 text-center text-sm font-medium leading-6 sm:px-6 md:text-base">
+              <h1 className="max-w-[min(32rem,72%)] truncate rounded-full px-4 text-center text-sm font-semibold leading-6 text-foreground/90 md:text-base">
                 {headerTitle}
               </h1>
             </div>
           </header>
 
           {!isOnline ? (
-            <div role="status" className="border-b border-[hsl(var(--warning-border,var(--info-border)))] bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]">
+            <div role="status" className="mt-14 bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]">
               <div className="mx-auto w-full max-w-3xl">{t('chat.offline')}</div>
             </div>
           ) : null}
@@ -471,7 +475,7 @@ export function ChatShell({
           <LayoutGroup>
             <section className="min-h-0 flex-1 overflow-hidden">
               {isChatLoading ? (
-                <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 sm:px-6">
+                <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-6 pt-20 sm:px-6">
                   <Skeleton className="h-5 w-1/3" />
                   <Skeleton className="h-16 w-4/5" />
                   <Skeleton className="h-12 w-3/5" />
