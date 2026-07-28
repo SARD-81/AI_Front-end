@@ -193,7 +193,6 @@ export function LoginForm({
       met: passwordsMatch(newPasswordValue, confirmNewPasswordValue)
     }
   ];
-  const newPasswordRulesMetCount = newPasswordChecklistRules.filter((rule) => rule.met).length;
   const passwordToggleClassName =
     'absolute inset-y-0 end-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus';
 
@@ -292,10 +291,6 @@ export function LoginForm({
 
           <ValidationChecklist
             title={t('passwordRules.title')}
-            counterLabel={t('passwordRules.counter', {
-              met: newPasswordRulesMetCount,
-              total: newPasswordChecklistRules.length
-            })}
             rules={newPasswordChecklistRules}
           />
 

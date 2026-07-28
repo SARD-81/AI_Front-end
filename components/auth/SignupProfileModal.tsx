@@ -5,11 +5,17 @@ import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2} from 'lucide-react';
 import {isStudentEmail} from '@/lib/config/email-domains';
+import {
+  getDegreeLevels,
+  getFaculties,
+  getMajors,
+  getSpecializations
+} from '@/lib/config/academic';
 import {useLocale, useTranslations} from 'next-intl';
 import {useForm} from 'react-hook-form';
 import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
-import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
+import {Dialog, DialogContent, DialogDescription, DialogTitle} from '@/components/ui/dialog';
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
 import {Input} from '@/components/ui/input';
 import {ValidationChecklist, type ChecklistRule} from '@/components/auth/ValidationChecklist';
@@ -49,9 +55,9 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
   const [direction, setDirection] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [studentIdConfirmOpen, setStudentIdConfirmOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const studentDomain = isStudentEmail(email);
-  const degreeOptions = t.raw('signup.degreeOptions') as string[];
 
   const form = useForm<SignupStep2Values>({
     resolver: zodResolver(createSignupStep2Schema(schemaT)),
@@ -98,16 +104,27 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
     if (step === 'role') return ['role'];
     if (step === 'personal') return ['firstName', 'lastName'];
     if (step === 'password') return ['password', 'confirmPassword'];
-    if (role === 'student') return ['studentId', 'faculty', 'major', 'degreeLevel', 'entryYear'];
+    if (role === 'student') return ['studentId', 'faculty', 'major', 'degreeLevel', 'entryYear', 'specialization'];
     return ['personnelId', 'faculty', 'department'];
+  };
+
+  const advance = () => {
+    setDirection(1);
+    setStepIndex((value) => Math.min(value + 1, steps.length - 1));
   };
 
   const goNext = async () => {
     const valid = await form.trigger(fieldsForStep(currentStep), {shouldFocus: true});
-    if (valid) {
-      setDirection(1);
-      setStepIndex((value) => Math.min(value + 1, steps.length - 1));
+    if (!valid) return;
+
+    // The student ID cannot be changed later, so ask for an explicit
+    // confirmation before leaving the step that captures it.
+    if (currentStep === 'academic' && role === 'student') {
+      setStudentIdConfirmOpen(true);
+      return;
     }
+
+    advance();
   };
 
   const goBack = () => {
@@ -152,91 +169,65 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
   const stepTitle = currentStep === 'role' ? t('signup.groups.role') : currentStep === 'personal' ? t('signup.groups.personalInfo') : currentStep === 'academic' ? (role === 'staff' ? t('signup.groups.employmentInfo') : t('signup.groups.academicInfo')) : t('signup.groups.password');
   const stepDescription = currentStep === 'role' ? t('signup.stepHelpers.role') : currentStep === 'personal' ? t('signup.stepHelpers.personal') : currentStep === 'academic' ? (role === 'staff' ? t('signup.stepHelpers.employment') : t('signup.stepHelpers.academic')) : t('signup.stepHelpers.password');
   const roleLabel = role === 'student' ? t('signup.studentRoleLabel') : role === 'professor' ? t('signup.professorRoleLabel') : role === 'staff' ? t('signup.staffRoleLabel') : null;
-  const progressPercent = ((stepIndex + 1) / steps.length) * 100;
 
-  // --- Live validation checklist -------------------------------------------
-  // Every value is watched so the checklist reflects the field state on each
-  // keystroke, instead of only after a failed "next"/"submit" attempt.
-  const watchedFirstName = form.watch('firstName') ?? '';
-  const watchedLastName = form.watch('lastName') ?? '';
+  // --- Live password checklist ------------------------------------------
+  // Only the password step gets a checklist; the other steps rely on the
+  // regular inline field errors so the form stays calm and uncluttered.
+  // --- Cascading academic selectors --------------------------------------
+  // Faculty -> major -> degree level -> specialization. Every level filters
+  // the next one, and any invalid leftover value is cleared automatically so
+  // the API never receives an impossible combination.
   const watchedStudentId = form.watch('studentId') ?? '';
   const watchedFaculty = form.watch('faculty') ?? '';
   const watchedMajor = form.watch('major') ?? '';
   const watchedDegreeLevel = form.watch('degreeLevel') ?? '';
-  const watchedEntryYear = form.watch('entryYear');
-  const watchedPersonnelId = form.watch('personnelId') ?? '';
-  const watchedDepartment = form.watch('department') ?? '';
+  const facultyOptions = useMemo(() => getFaculties(), []);
+  const majorOptions = useMemo(() => getMajors(watchedFaculty), [watchedFaculty]);
+  const degreeOptions = useMemo(
+    () => getDegreeLevels(watchedFaculty, watchedMajor),
+    [watchedFaculty, watchedMajor]
+  );
+  const specializationOptions = useMemo(
+    () => getSpecializations(watchedFaculty, watchedMajor, watchedDegreeLevel),
+    [watchedFaculty, watchedMajor, watchedDegreeLevel]
+  );
+  const specializationEnabled = specializationOptions.length > 0;
+
+  useEffect(() => {
+    if (watchedMajor && !majorOptions.includes(watchedMajor)) {
+      form.setValue('major', '', {shouldValidate: false});
+    }
+  }, [form, majorOptions, watchedMajor]);
+
+  useEffect(() => {
+    if (watchedDegreeLevel && !degreeOptions.includes(watchedDegreeLevel as never)) {
+      form.setValue('degreeLevel', '', {shouldValidate: false});
+    }
+  }, [degreeOptions, form, watchedDegreeLevel]);
+
+  useEffect(() => {
+    const current = form.getValues('specialization') ?? '';
+    if (current && !specializationOptions.includes(current)) {
+      form.setValue('specialization', '', {shouldValidate: false});
+    }
+  }, [form, specializationOptions]);
+
   const watchedPassword = form.watch('password') ?? '';
   const watchedConfirmPassword = form.watch('confirmPassword') ?? '';
   const passwordRuleState = evaluatePasswordRules(watchedPassword);
-  const entryYearNumber = typeof watchedEntryYear === 'number' ? watchedEntryYear : Number(watchedEntryYear);
-
-  const checklistRules = useMemo<ChecklistRule[]>(() => {
-    if (currentStep === 'role') {
-      return [{id: 'role', label: t('stepRules.role'), met: role === 'professor' || role === 'staff'}];
+  const passwordChecklistRules: ChecklistRule[] = [
+    ...PASSWORD_RULE_IDS.map((ruleId) => ({
+      id: ruleId,
+      label: t(`passwordRules.${ruleId}`),
+      met: passwordRuleState[ruleId]
+    })),
+    {
+      id: 'match',
+      label: t('passwordRules.match'),
+      met: passwordsMatch(watchedPassword, watchedConfirmPassword)
     }
+  ];
 
-    if (currentStep === 'personal') {
-      return [
-        {id: 'firstName', label: t('stepRules.firstName'), met: watchedFirstName.trim().length >= 2},
-        {id: 'lastName', label: t('stepRules.lastName'), met: watchedLastName.trim().length >= 2}
-      ];
-    }
-
-    if (currentStep === 'academic') {
-      if (role === 'student') {
-        return [
-          {id: 'studentId', label: t('stepRules.studentId'), met: /^\d{9}$/.test(watchedStudentId)},
-          {id: 'faculty', label: t('stepRules.faculty'), met: watchedFaculty.trim().length > 0},
-          {id: 'major', label: t('stepRules.major'), met: watchedMajor.trim().length >= 2},
-          {id: 'degreeLevel', label: t('stepRules.degreeLevel'), met: watchedDegreeLevel.trim().length > 0},
-          {
-            id: 'entryYear',
-            label: t('stepRules.entryYear'),
-            met: Number.isInteger(entryYearNumber) && entryYearNumber >= 1399 && entryYearNumber <= 1500
-          }
-        ];
-      }
-
-      return [
-        {id: 'personnelId', label: t('stepRules.personnelId'), met: watchedPersonnelId.trim().length > 0},
-        {id: 'faculty', label: t('stepRules.faculty'), met: watchedFaculty.trim().length > 0},
-        {id: 'department', label: t('stepRules.department'), met: watchedDepartment.trim().length > 0}
-      ];
-    }
-
-    return [
-      ...PASSWORD_RULE_IDS.map((ruleId) => ({
-        id: ruleId,
-        label: t(`passwordRules.${ruleId}`),
-        met: passwordRuleState[ruleId]
-      })),
-      {
-        id: 'match',
-        label: t('passwordRules.match'),
-        met: passwordsMatch(watchedPassword, watchedConfirmPassword)
-      }
-    ];
-  }, [
-    currentStep,
-    entryYearNumber,
-    passwordRuleState,
-    role,
-    t,
-    watchedConfirmPassword,
-    watchedDegreeLevel,
-    watchedDepartment,
-    watchedFaculty,
-    watchedFirstName,
-    watchedLastName,
-    watchedMajor,
-    watchedPassword,
-    watchedPersonnelId,
-    watchedStudentId
-  ]);
-
-  const checklistMetCount = checklistRules.filter((rule) => rule.met).length;
-  const checklistTitle = currentStep === 'password' ? t('passwordRules.title') : t('stepRules.title');
   const BackIcon = locale === 'fa' ? ArrowRight : ArrowLeft;
 
   return (
@@ -266,12 +257,6 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
               </span>
             </div>
             <p className="text-sm leading-6 text-slate-300">{stepDescription}</p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-primary transition-all duration-300 motion-reduce:transition-none"
-                style={{width: `${progressPercent}%`}}
-              />
-            </div>
             <div className="flex gap-1.5" aria-hidden="true">
               {steps.map((item, index) => (
                 <span key={item} className={`h-1.5 flex-1 rounded-full transition-colors ${index <= stepIndex ? 'bg-sky-300/80' : 'bg-white/10'}`} />
@@ -332,9 +317,92 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
                     {currentStep === 'academic' && role === 'student' ? (
                       <div className="grid gap-4 sm:grid-cols-2">
                         <FormField control={form.control} name="studentId" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.studentIdLabel')}</FormLabel><FormControl><Input {...field} inputMode="numeric" maxLength={9} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
-                        <FormField control={form.control} name="faculty" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.facultyLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
-                        <FormField control={form.control} name="major" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.majorLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
-                        <FormField control={form.control} name="degreeLevel" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.degreeLevelLabel')}</FormLabel><FormControl><select {...field} className={selectClassName}><option value="">{t('signup.selectOption')}</option>{degreeOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></FormControl><FormMessage /></FormItem>} />
+
+                        <FormField
+                          control={form.control}
+                          name="faculty"
+                          render={({field}) => (
+                            <FormItem>
+                              <FormLabel className="text-slate-200/90">{t('signup.facultyLabel')}</FormLabel>
+                              <FormControl>
+                                <select {...field} className={selectClassName}>
+                                  <option value="">{t('signup.selectOption')}</option>
+                                  {facultyOptions.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="major"
+                          render={({field}) => (
+                            <FormItem>
+                              <FormLabel className="text-slate-200/90">{t('signup.majorLabel')}</FormLabel>
+                              <FormControl>
+                                <select {...field} disabled={!watchedFaculty} className={selectClassName}>
+                                  <option value="">{watchedFaculty ? t('signup.selectOption') : t('signup.selectFacultyFirst')}</option>
+                                  {majorOptions.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="degreeLevel"
+                          render={({field}) => (
+                            <FormItem>
+                              <FormLabel className="text-slate-200/90">{t('signup.degreeLevelLabel')}</FormLabel>
+                              <FormControl>
+                                <select {...field} disabled={!watchedMajor} className={selectClassName}>
+                                  <option value="">{watchedMajor ? t('signup.selectOption') : t('signup.selectMajorFirst')}</option>
+                                  {degreeOptions.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="specialization"
+                          render={({field}) => (
+                            <FormItem>
+                              <FormLabel className="text-slate-200/90">{t('signup.specializationLabel')}</FormLabel>
+                              <FormControl>
+                                <select
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  disabled={!specializationEnabled}
+                                  className={selectClassName}
+                                >
+                                  <option value="">{specializationEnabled ? t('signup.selectOption') : t('signup.noSpecialization')}</option>
+                                  {specializationOptions.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              {/* Bachelor programmes have no branches at SBU. */}
+                              {!specializationEnabled && watchedDegreeLevel ? (
+                                <p className="text-xs leading-5 text-slate-400">{t('signup.specializationHint')}</p>
+                              ) : null}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <FormField control={form.control} name="entryYear" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.entryYearLabel')}</FormLabel><FormControl><Input {...field} value={field.value ?? ''} onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : undefined)} type="number" inputMode="numeric" className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
                       </div>
                     ) : null}
@@ -342,7 +410,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
                     {currentStep === 'academic' && (role === 'professor' || role === 'staff') ? (
                       <div className="grid gap-4 sm:grid-cols-2">
                         <FormField control={form.control} name="personnelId" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.personnelIdLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
-                        <FormField control={form.control} name="faculty" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.facultyLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
+                        <FormField control={form.control} name="faculty" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.facultyLabel')}</FormLabel><FormControl><select {...field} className={selectClassName}><option value="">{t('signup.selectOption')}</option>{facultyOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></FormControl><FormMessage /></FormItem>} />
                         <FormField control={form.control} name="department" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.departmentLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
                         {role === 'professor'
                           ? <FormField control={form.control} name="academicRank" render={({field}) => <FormItem><FormLabel className="text-slate-200/90">{t('signup.academicRankLabel')}</FormLabel><FormControl><Input {...field} className={inputClassName} /></FormControl><FormMessage /></FormItem>} />
@@ -403,12 +471,9 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
                       </div>
                     ) : null}
 
-                    {/* Live "what is done / what is left" list for the current step. */}
-                    <ValidationChecklist
-                      title={checklistTitle}
-                      counterLabel={t('passwordRules.counter', {met: checklistMetCount, total: checklistRules.length})}
-                      rules={checklistRules}
-                    />
+                    {currentStep === 'password' ? (
+                      <ValidationChecklist title={t('passwordRules.title')} rules={passwordChecklistRules} />
+                    ) : null}
                   </motion.div>
                 </AnimatePresence>
               </section>
@@ -450,6 +515,49 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
           </form>
         </Form>
       </DialogContent>
+
+      {/* Student ID is immutable after registration -> explicit confirmation. */}
+      <Dialog open={studentIdConfirmOpen} onOpenChange={setStudentIdConfirmOpen}>
+        <DialogContent
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+          className="w-[calc(100vw-2rem)] max-w-md gap-0 rounded-3xl border-white/10 bg-slate-950/95 p-0 pe-0 text-white shadow-2xl"
+        >
+          <div className="space-y-3 px-6 pb-4 pt-6 pe-14">
+            <DialogTitle className="text-lg font-black leading-7">{t('signup.studentIdConfirmTitle')}</DialogTitle>
+            <DialogDescription className="text-sm leading-6 text-slate-300">
+              {t('signup.studentIdConfirmDescription')}
+            </DialogDescription>
+          </div>
+          <div className="px-6 pb-5">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3">
+              <p className="text-xs text-slate-400">{t('signup.studentIdLabel')}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums tracking-[0.2em] text-white" dir="ltr">
+                {watchedStudentId}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-6 py-4 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 rounded-xl border border-white/10 bg-white/[0.03] px-5 text-sm font-semibold text-slate-200 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
+              onClick={() => setStudentIdConfirmOpen(false)}
+            >
+              {t('signup.studentIdConfirmEdit')}
+            </Button>
+            <Button
+              type="button"
+              className="h-11 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
+              onClick={() => {
+                setStudentIdConfirmOpen(false);
+                advance();
+              }}
+            >
+              {t('signup.studentIdConfirmAccept')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -2,7 +2,7 @@
 
 import {motion} from 'motion/react';
 import {ArrowUp, Check, ChevronDown, Square} from 'lucide-react';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {useEffect, useRef} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {
@@ -42,6 +42,7 @@ export function Composer({
   onThinkLevelChange
 }: ComposerProps) {
   const t = useTranslations('app');
+  const locale = useLocale();
   const thinkingLevels: ThinkingLevel[] = ['low', 'medium', 'high'];
   const characterCount = value.length;
   const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
@@ -108,24 +109,42 @@ export function Composer({
               <span className="truncate">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" sideOffset={8} className="min-w-[17rem] rounded-2xl p-1.5">
-            {thinkingLevels.map((level) => (
-              <DropdownMenuItem
-                key={level}
-                onSelect={() => onThinkLevelChange(level)}
-                className="flex items-start gap-2 rounded-xl px-3 py-2.5"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className={cn('text-sm', level === thinkLevel && 'font-semibold')}>
-                    {t(`thinkingLevel.options.${level}.title`)}
+          <DropdownMenuContent
+            align="start"
+            sideOffset={10}
+            /*
+             * The menu must inherit the document direction, otherwise Persian
+             * sentences render with their full stop on the wrong side and the
+             * check mark lands opposite the text.
+             */
+            dir={locale === 'fa' ? 'rtl' : 'ltr'}
+            className="w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border-menu-border bg-menu p-2 shadow-xl"
+          >
+            {thinkingLevels.map((level) => {
+              const isActive = level === thinkLevel;
+              return (
+                <DropdownMenuItem
+                  key={level}
+                  onSelect={() => onThinkLevelChange(level)}
+                  className={cn(
+                    'h-auto items-start gap-3 rounded-xl px-3 py-2.5 text-start',
+                    isActive && 'bg-[hsl(var(--surface-elevated))]'
+                  )}
+                >
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                    {isActive ? <Check className="h-4 w-4 text-primary" strokeWidth={2.5} /> : null}
                   </span>
-                  <span className="text-xs leading-5 text-muted-foreground">
-                    {t(`thinkingLevel.options.${level}.subtitle`)}
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-start">
+                    <span className={cn('text-sm leading-6', isActive ? 'font-semibold text-foreground' : 'text-foreground/90')}>
+                      {t(`thinkingLevel.options.${level}.title`)}
+                    </span>
+                    <span className="text-xs leading-5 text-muted-foreground">
+                      {t(`thinkingLevel.options.${level}.subtitle`)}
+                    </span>
                   </span>
-                </div>
-                {level === thinkLevel ? <Check className="ms-auto mt-0.5 h-4 w-4 shrink-0" /> : null}
-              </DropdownMenuItem>
-            ))}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
 

@@ -17,6 +17,7 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { OtpInput } from '@/components/auth/OtpInput';
 import { ValidationChecklist, type ChecklistRule } from '@/components/auth/ValidationChecklist';
 import {
   evaluatePasswordRules,
@@ -217,7 +218,6 @@ export function PasswordResetWizard({
       met: passwordsMatch(passwordValue, confirmPasswordValue)
     }
   ];
-  const passwordRulesMetCount = passwordChecklistRules.filter((rule) => rule.met).length;
 
   return (
     <div className="space-y-5">
@@ -270,13 +270,7 @@ export function PasswordResetWizard({
                     <FormItem>
                       <FormLabel className="text-slate-200/90">{t('reset.otpLabel')}</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          maxLength={6}
-                          className={authInputClassName}
-                        />
+                        <OtpInput value={field.value ?? ''} onChange={field.onChange} disabled={busy} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -321,10 +315,6 @@ export function PasswordResetWizard({
                 />
                 <ValidationChecklist
                   title={t('passwordRules.title')}
-                  counterLabel={t('passwordRules.counter', {
-                    met: passwordRulesMetCount,
-                    total: passwordChecklistRules.length
-                  })}
                   rules={passwordChecklistRules}
                 />
                 <FormField
