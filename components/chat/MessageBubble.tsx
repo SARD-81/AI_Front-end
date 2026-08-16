@@ -4,7 +4,6 @@ import { memo, useMemo, useState } from 'react';
 import ReactMarkdown, {type Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import rehypeRaw from 'rehype-raw';
 import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -329,7 +328,7 @@ function MessageBubbleComponent({
                 >
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkBreaks]}
-                    rehypePlugins={[rehypeRaw]}
+                    skipHtml
                     components={markdownComponents}
                   >
                     {message.content}
