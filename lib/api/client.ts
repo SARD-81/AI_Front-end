@@ -59,6 +59,30 @@ function redirectToProfile() {
   window.location.assign(target);
 }
 
+function getErrorCode(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return undefined;
+  }
+
+  const record = payload as Record<string, unknown>;
+  if (typeof record.code === 'string' && record.code.trim()) {
+    return record.code.trim().toUpperCase();
+  }
+
+  const nestedError = record.error;
+  if (
+    nestedError &&
+    typeof nestedError === 'object' &&
+    !Array.isArray(nestedError) &&
+    typeof (nestedError as Record<string, unknown>).code === 'string'
+  ) {
+    const code = String((nestedError as Record<string, unknown>).code).trim();
+    return code ? code.toUpperCase() : undefined;
+  }
+
+  return undefined;
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => undefined);
   if (!response.ok) {
@@ -76,14 +100,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
           : '';
     const errorMessage = payloadMessage || 'API request failed';
     const error = new ApiError(errorMessage, response.status, data);
-
-    // Admin endpoints answer 403 when the caller simply is not an admin; that
-    // is not an incomplete-profile signal, so it must not bounce to /profile.
-    const isAdminRequest = response.url.includes('/api/app/admin/');
+    const errorCode = getErrorCode(data);
 
     if (response.status === 401) {
       redirectToLogin();
-    } else if (response.status === 403 && !isAdminRequest) {
+    } else if (
+      response.status === 403 &&
+      errorCode === 'PROFILE_INCOMPLETE'
+    ) {
+      // A generic 403 can mean account lock, permission denial, an expired
+      // registration flow, or another policy decision. Only the explicit
+      // backend profile-incomplete code is allowed to navigate to /profile.
       redirectToProfile();
     }
 
