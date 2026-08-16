@@ -105,6 +105,11 @@ export function MessageList({
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isAnchorNavRef = useRef(false);
   const anchorNavTimeoutRef = useRef<number | null>(null);
+  const forceBottomFrameRef = useRef<number | null>(null);
+  const previousMessagesRef = useRef<{
+    count: number;
+    lastUserMessageId?: string;
+  } | null>(null);
   const initializedHashScrollRef = useRef(false);
   const [atBottom, setAtBottom] = useState(true);
   const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(
@@ -135,6 +140,13 @@ export function MessageList({
       }));
   }, [messages]);
 
+  const lastUserMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i]?.role === 'user') return messages[i]?.id;
+    }
+    return undefined;
+  }, [messages]);
+
   const lastAssistantMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       if (messages[i]?.role === 'assistant') return messages[i]?.id;
@@ -151,9 +163,57 @@ export function MessageList({
     () => () => {
       if (anchorNavTimeoutRef.current)
         window.clearTimeout(anchorNavTimeoutRef.current);
+      if (forceBottomFrameRef.current !== null)
+        window.cancelAnimationFrame(forceBottomFrameRef.current);
     },
     []
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const previous = previousMessagesRef.current;
+    previousMessagesRef.current = {
+      count: messages.length,
+      lastUserMessageId
+    };
+
+    // Do not move the viewport on initial history load. Force-scroll only when
+    // a genuinely new user message is appended to the already-mounted thread.
+    if (!previous) return;
+
+    const hasNewUserMessage =
+      messages.length > previous.count &&
+      Boolean(lastUserMessageId) &&
+      lastUserMessageId !== previous.lastUserMessageId;
+
+    if (!hasNewUserMessage || items.length === 0) return;
+
+    if (anchorNavTimeoutRef.current) {
+      window.clearTimeout(anchorNavTimeoutRef.current);
+      anchorNavTimeoutRef.current = null;
+    }
+    isAnchorNavRef.current = false;
+
+    if (forceBottomFrameRef.current !== null) {
+      window.cancelAnimationFrame(forceBottomFrameRef.current);
+    }
+
+    forceBottomFrameRef.current = window.requestAnimationFrame(() => {
+      forceBottomFrameRef.current = null;
+      const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+      virtuosoRef.current?.scrollToIndex({
+        index: items.length - 1,
+        align: 'end',
+        behavior: reduceMotion ? 'auto' : 'smooth'
+      });
+      // Once the user submits a fresh message, subsequent pending/streaming
+      // output should follow naturally until the user deliberately scrolls up.
+      setAtBottom(true);
+    });
+  }, [items.length, lastUserMessageId, messages.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -279,7 +339,7 @@ export function MessageList({
         itemContent={(index, message) => {
           if (message.role === 'assistant-pending') {
             return (
-              <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+              <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
                 <AssistantPendingBubble />
               </div>
             );
@@ -288,7 +348,7 @@ export function MessageList({
           const anchorId =
             message.role === 'user' ? `msg-${message.id}` : undefined;
           return (
-            <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+            <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
               <MessageBubble
                 message={message}
                 onCopyMessage={onCopyMessage}

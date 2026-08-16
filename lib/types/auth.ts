@@ -2,6 +2,7 @@ export type AuthRoleDTO = 'student' | 'professor' | 'staff' | 'admin';
 export type PublicRegisterRoleDTO = Exclude<AuthRoleDTO, 'admin'>;
 
 export type AuthUserDTO = {
+  identifier?: string;
   studentId?: string;
   personnelId?: string;
   fullName?: string;
@@ -16,6 +17,8 @@ export type AuthUserDTO = {
   jobTitle?: string;
   role?: AuthRoleDTO;
   isProfileCompleted?: boolean;
+  mustChangePassword?: boolean;
+  isLocked?: boolean;
 };
 
 export type LoginInputDTO = {
@@ -25,9 +28,8 @@ export type LoginInputDTO = {
 };
 
 export type LoginResponseDTO = {
-  // Professors and staff have no student id, and some deployments answer with
-  // `null` instead of omitting the field, hence the nullable members.
   user?: {
+    identifier?: string | null;
     studentId?: string | null;
     student_id?: string | null;
     personnelId?: string | null;
@@ -37,9 +39,17 @@ export type LoginResponseDTO = {
     role?: AuthRoleDTO | string | null;
     isProfileCompleted?: boolean | null;
     is_profile_completed?: boolean | null;
+    mustChangePassword?: boolean | null;
+    must_change_password?: boolean | null;
+    isLocked?: boolean | null;
+    is_locked?: boolean | null;
   };
   isProfileCompleted?: boolean | null;
   is_profile_completed?: boolean | null;
+  mustChangePassword?: boolean | null;
+  must_change_password?: boolean | null;
+  isLocked?: boolean | null;
+  is_locked?: boolean | null;
 };
 
 export type SendOtpInputDTO = {
@@ -147,9 +157,18 @@ export type PasswordResetCompleteBodyDTO = {
 export type LoginResultDTO = {
   user: Pick<
     AuthUserDTO,
-    'studentId' | 'fullName' | 'role' | 'isProfileCompleted'
+    | 'identifier'
+    | 'studentId'
+    | 'personnelId'
+    | 'fullName'
+    | 'role'
+    | 'isProfileCompleted'
+    | 'mustChangePassword'
+    | 'isLocked'
   >;
   isProfileCompleted?: boolean;
+  mustChangePassword?: boolean;
+  isLocked?: boolean;
 };
 
 export type SendOtpResultDTO = {
@@ -172,6 +191,9 @@ export type PasswordResetResultDTO = {
 
 export type ProfileResponseDTO = {
   user: AuthUserDTO;
+  isProfileCompleted?: boolean;
+  mustChangePassword?: boolean;
+  isLocked?: boolean;
 };
 
 export type ProfileUpdateDTO = {

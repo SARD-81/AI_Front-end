@@ -53,6 +53,17 @@ type LoginFormProps = {
   onForgotPassword: () => void;
 };
 
+function mustChangePassword(result: LoginResultDTO): boolean {
+  return (
+    result.mustChangePassword === true ||
+    result.user.mustChangePassword === true
+  );
+}
+
+function isLocked(result: LoginResultDTO): boolean {
+  return result.isLocked === true || result.user.isLocked === true;
+}
+
 export function LoginForm({
   onSuccess,
   busy = false,
@@ -71,6 +82,7 @@ export function LoginForm({
   } | null>(null);
   const inFlightRef = useRef(false);
   const t = useTranslations('auth');
+  const appT = useTranslations('app');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
 
   const form = useForm<LoginFormValues>({
@@ -95,6 +107,12 @@ export function LoginForm({
     }
   }, [form, initialIdentifier]);
 
+  const startInitialPasswordFlow = (email: string, temporaryPassword: string) => {
+    setPendingPasswordChange({ email, temporaryPassword });
+    setPasswordForm.reset({ password: '', confirmPassword: '' });
+    setFormError(null);
+  };
+
   const onSubmit = form.handleSubmit(async (values) => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
@@ -107,21 +125,37 @@ export function LoginForm({
 
     try {
       const result = await loginUser(values, { signal: controller.signal });
+
+      if (isLocked(result)) {
+        const message = appT('chat.accountLocked');
+        setFormError(message);
+        toast.error(message);
+        return;
+      }
+
+      if (mustChangePassword(result)) {
+        startInitialPasswordFlow(values.email, values.password);
+        return;
+      }
+
       toast.success(t('login.success'));
       onSuccess(result);
     } catch (error) {
       if (isAbortError(error)) return;
       if (
         error instanceof ServiceError &&
-        error.code === 'password_change_required'
+        error.code.toLowerCase() === 'password_change_required'
       ) {
-        // Temporary-password accounts must set a permanent password first.
-        setPendingPasswordChange({
-          email: values.email,
-          temporaryPassword: values.password
-        });
-        setPasswordForm.reset({ password: '', confirmPassword: '' });
-        setFormError(null);
+        startInitialPasswordFlow(values.email, values.password);
+        return;
+      }
+      if (
+        error instanceof ServiceError &&
+        error.code.toUpperCase() === 'ACCOUNT_LOCKED'
+      ) {
+        const message = appT('chat.accountLocked');
+        setFormError(message);
+        toast.error(message);
         return;
       }
       const message =
@@ -156,14 +190,41 @@ export function LoginForm({
         },
         { signal: controller.signal }
       );
-      toast.success(t('setPassword.success'));
+
       const result = await loginUser(
         { email: pendingPasswordChange.email, password: values.password },
         { signal: controller.signal }
       );
+
+      if (isLocked(result)) {
+        const message = appT('chat.accountLocked');
+        setFormError(message);
+        toast.error(message);
+        return;
+      }
+
+      if (mustChangePassword(result)) {
+        startInitialPasswordFlow(pendingPasswordChange.email, values.password);
+        const message = t('setPassword.errorFallback');
+        setFormError(message);
+        toast.error(message);
+        return;
+      }
+
+      toast.success(t('setPassword.success'));
+      setPendingPasswordChange(null);
       onSuccess(result);
     } catch (error) {
       if (isAbortError(error)) return;
+      if (
+        error instanceof ServiceError &&
+        error.code.toUpperCase() === 'ACCOUNT_LOCKED'
+      ) {
+        const message = appT('chat.accountLocked');
+        setFormError(message);
+        toast.error(message);
+        return;
+      }
       const message =
         error instanceof ServiceError
           ? error.message
@@ -217,33 +278,35 @@ export function LoginForm({
                 <FormLabel className="text-slate-200/90">
                   {t('setPassword.newPasswordLabel')}
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}
                     />
-                    <button
-                      type="button"
-                      className={passwordToggleClassName}
-                      onClick={() => setShowNewPassword((previous) => !previous)}
-                      aria-label={
-                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                      title={
-                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    className={passwordToggleClassName}
+                    onClick={() => setShowNewPassword((previous) => !previous)}
+                    aria-label={
+                      showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                    title={
+                      showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -257,33 +320,35 @@ export function LoginForm({
                 <FormLabel className="text-slate-200/90">
                   {t('setPassword.confirmPasswordLabel')}
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showConfirmNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}
                     />
-                    <button
-                      type="button"
-                      className={passwordToggleClassName}
-                      onClick={() => setShowConfirmNewPassword((previous) => !previous)}
-                      aria-label={
-                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                      title={
-                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                    >
-                      {showConfirmNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    className={passwordToggleClassName}
+                    onClick={() => setShowConfirmNewPassword((previous) => !previous)}
+                    aria-label={
+                      showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                    title={
+                      showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                  >
+                    {showConfirmNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -373,6 +438,9 @@ export function LoginForm({
                     className="absolute inset-y-0 left-3 inline-flex items-center rounded-xl px-1 text-field-placeholder transition hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={
+                      showPassword ? t('login.hidePassword') : t('login.showPassword')
+                    }
+                    title={
                       showPassword ? t('login.hidePassword') : t('login.showPassword')
                     }
                   >

@@ -4,7 +4,6 @@ import { memo, useMemo, useState } from 'react';
 import ReactMarkdown, {type Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import rehypeRaw from 'rehype-raw';
 import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -254,7 +253,7 @@ function MessageBubbleComponent({
               )}
             >
               {isUser ? (
-                <div className="group relative w-fit max-w-[min(38rem,88%)]">
+                <div className="group relative ml-auto w-fit max-w-[min(38rem,88%)]">
                   {anchorId ? (
                     <span
                       id={anchorId}
@@ -329,7 +328,7 @@ function MessageBubbleComponent({
                 >
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkBreaks]}
-                    rehypePlugins={[rehypeRaw]}
+                    skipHtml
                     components={markdownComponents}
                   >
                     {message.content}

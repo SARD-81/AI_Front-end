@@ -99,8 +99,11 @@ export function ProfileForm({ locale }: ProfileFormProps) {
   });
 
   const profile = profileQuery.data?.user;
-  const role = profile?.role ?? 'admin';
-  const readOnlyFields = useMemo(() => roleReadOnlyFields[role], [role]);
+  const role = profile?.role;
+  const readOnlyFields = useMemo<ReadOnlyFieldName[]>(
+    () => (role ? roleReadOnlyFields[role] : ['email']),
+    [role]
+  );
   const isProfileIncomplete = profile?.isProfileCompleted === false;
 
   useEffect(() => {
@@ -244,7 +247,7 @@ export function ProfileForm({ locale }: ProfileFormProps) {
         ) : null}
         <div className="flex flex-col gap-2 text-sm text-muted-foreground">
           <p className="inline-flex w-fit rounded-full border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))] px-3 py-1 text-xs font-medium">
-            {t('roleLabel')}: {t(`roles.${role}`)}
+            {t('roleLabel')}: {role ? t(`roles.${role}`) : '—'}
           </p>
           <p>{t('editableNotice')}</p>
           <p>{t('readOnlyNotice')}</p>
