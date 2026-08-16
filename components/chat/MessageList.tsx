@@ -339,7 +339,7 @@ export function MessageList({
         itemContent={(index, message) => {
           if (message.role === 'assistant-pending') {
             return (
-              <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+              <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
                 <AssistantPendingBubble />
               </div>
             );
@@ -348,7 +348,7 @@ export function MessageList({
           const anchorId =
             message.role === 'user' ? `msg-${message.id}` : undefined;
           return (
-            <div className="group mx-auto w-full max-w-3xl px-4 py-3 sm:px-6">
+            <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
               <MessageBubble
                 message={message}
                 onCopyMessage={onCopyMessage}

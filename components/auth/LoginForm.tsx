@@ -217,33 +217,35 @@ export function LoginForm({
                 <FormLabel className="text-slate-200/90">
                   {t('setPassword.newPasswordLabel')}
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}
                     />
-                    <button
-                      type="button"
-                      className={passwordToggleClassName}
-                      onClick={() => setShowNewPassword((previous) => !previous)}
-                      aria-label={
-                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                      title={
-                        showNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    className={passwordToggleClassName}
+                    onClick={() => setShowNewPassword((previous) => !previous)}
+                    aria-label={
+                      showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                    title={
+                      showNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -257,33 +259,35 @@ export function LoginForm({
                 <FormLabel className="text-slate-200/90">
                   {t('setPassword.confirmPasswordLabel')}
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
+                      value={field.value ?? ''}
+                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showConfirmNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}
                     />
-                    <button
-                      type="button"
-                      className={passwordToggleClassName}
-                      onClick={() => setShowConfirmNewPassword((previous) => !previous)}
-                      aria-label={
-                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                      title={
-                        showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
-                      }
-                    >
-                      {showConfirmNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <button
+                    type="button"
+                    className={passwordToggleClassName}
+                    onClick={() => setShowConfirmNewPassword((previous) => !previous)}
+                    aria-label={
+                      showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                    title={
+                      showConfirmNewPassword ? t('common.hidePassword') : t('common.showPassword')
+                    }
+                  >
+                    {showConfirmNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

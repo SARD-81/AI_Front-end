@@ -253,7 +253,7 @@ function MessageBubbleComponent({
               )}
             >
               {isUser ? (
-                <div className="group relative w-fit max-w-[min(38rem,88%)]">
+                <div className="group relative ml-auto w-fit max-w-[min(38rem,88%)]">
                   {anchorId ? (
                     <span
                       id={anchorId}
