@@ -55,7 +55,7 @@ export function ChatShell({
   const streamCreatedAtRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [, setErrorMessage] = useState('');
   const isOnline = useOnlineStatus();
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
@@ -125,16 +125,6 @@ export function ChatShell({
   const shouldAutoFocus = searchParams.get('focus') === '1';
   const isChatLoading = Boolean(chatId) && !chat && chatQuery.isFetching;
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
-  const failedMessage = useMemo(
-    () =>
-      [...messages]
-        .reverse()
-        .find(
-          (message): message is ChatMessage =>
-            message.role === 'user' && message.sendStatus === 'failed'
-        ),
-    [messages]
-  );
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState =
     !isChatLoading &&
@@ -341,17 +331,6 @@ export function ChatShell({
     abortControllerRef.current?.abort();
   };
 
-  const handleRetryFailedMessage = async () => {
-    if (!failedMessage) return;
-    await submitMessage(failedMessage.content, failedMessage.id);
-  };
-
-  const handleRestoreFailedMessage = () => {
-    if (!failedMessage) return;
-    setValue(failedMessage.content);
-    setFocusTrigger((prev) => prev + 1);
-  };
-
   const handleCopyMessage = async (content: string) => {
     const copied = await copyToClipboard(content);
 
@@ -381,11 +360,6 @@ export function ChatShell({
     editingMessageIdRef.current = message.id;
     setValue(message.content);
     setFocusTrigger((prev) => prev + 1);
-  };
-
-  const handleCancelEdit = () => {
-    editingMessageIdRef.current = null;
-    setValue('');
   };
 
   useEffect(() => {

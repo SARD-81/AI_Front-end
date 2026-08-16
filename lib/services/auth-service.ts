@@ -22,11 +22,6 @@ import type {
 
 const KNOWN_ROLES = ['student', 'professor', 'staff', 'admin'] as const;
 
-/**
- * Normalizes whatever the backend sends in `role`.
- * Unknown or missing values must never break the login flow, so they simply
- * resolve to `undefined` instead of throwing a validation error.
- */
 function normalizeRole(value: unknown): AuthRoleDTO | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase();
@@ -35,7 +30,6 @@ function normalizeRole(value: unknown): AuthRoleDTO | undefined {
     : undefined;
 }
 
-/** `null` is a perfectly valid "no value" for the backend, so treat it as empty. */
 const nullableString = z.string().nullish();
 const nullableBoolean = z.boolean().nullish();
 
@@ -51,6 +45,7 @@ const loginSchema = z
   .object({
     user: z
       .object({
+        identifier: nullableString,
         studentId: nullableString,
         student_id: nullableString,
         personnelId: nullableString,
@@ -59,34 +54,54 @@ const loginSchema = z
         full_name: nullableString,
         role: z.unknown().optional(),
         isProfileCompleted: nullableBoolean,
-        is_profile_completed: nullableBoolean
+        is_profile_completed: nullableBoolean,
+        mustChangePassword: nullableBoolean,
+        must_change_password: nullableBoolean,
+        isLocked: nullableBoolean,
+        is_locked: nullableBoolean
       })
       .passthrough()
       .optional(),
     isProfileCompleted: nullableBoolean,
-    is_profile_completed: nullableBoolean
+    is_profile_completed: nullableBoolean,
+    mustChangePassword: nullableBoolean,
+    must_change_password: nullableBoolean,
+    isLocked: nullableBoolean,
+    is_locked: nullableBoolean
   })
   .passthrough()
   .transform((value) => {
     const user = value.user ?? {};
-    const studentId = cleanString(user.studentId ?? user.student_id);
-    const personnelId = cleanString(user.personnelId ?? user.personnel_id);
-
     const isProfileCompleted =
       cleanBoolean(value.isProfileCompleted) ??
       cleanBoolean(value.is_profile_completed) ??
       cleanBoolean(user.isProfileCompleted) ??
       cleanBoolean(user.is_profile_completed);
+    const mustChangePassword =
+      cleanBoolean(value.mustChangePassword) ??
+      cleanBoolean(value.must_change_password) ??
+      cleanBoolean(user.mustChangePassword) ??
+      cleanBoolean(user.must_change_password);
+    const isLocked =
+      cleanBoolean(value.isLocked) ??
+      cleanBoolean(value.is_locked) ??
+      cleanBoolean(user.isLocked) ??
+      cleanBoolean(user.is_locked);
 
     return {
       user: {
-        studentId,
-        personnelId,
+        identifier: cleanString(user.identifier),
+        studentId: cleanString(user.studentId ?? user.student_id),
+        personnelId: cleanString(user.personnelId ?? user.personnel_id),
         fullName: cleanString(user.fullName ?? user.full_name),
         role: normalizeRole(user.role),
-        isProfileCompleted
+        isProfileCompleted,
+        mustChangePassword,
+        isLocked
       },
-      isProfileCompleted
+      isProfileCompleted,
+      mustChangePassword,
+      isLocked
     };
   });
 
@@ -94,6 +109,7 @@ const profileSchema = z
   .object({
     user: z
       .object({
+        identifier: nullableString,
         email: nullableString,
         firstName: nullableString,
         first_name: nullableString,
@@ -116,17 +132,43 @@ const profileSchema = z
         full_name: nullableString,
         role: z.unknown().optional(),
         isProfileCompleted: nullableBoolean,
-        is_profile_completed: nullableBoolean
+        is_profile_completed: nullableBoolean,
+        mustChangePassword: nullableBoolean,
+        must_change_password: nullableBoolean,
+        isLocked: nullableBoolean,
+        is_locked: nullableBoolean
       })
       .passthrough()
-      .optional()
+      .optional(),
+    isProfileCompleted: nullableBoolean,
+    is_profile_completed: nullableBoolean,
+    mustChangePassword: nullableBoolean,
+    must_change_password: nullableBoolean,
+    isLocked: nullableBoolean,
+    is_locked: nullableBoolean
   })
   .passthrough()
   .transform((value) => {
     const user = value.user ?? {};
+    const isProfileCompleted =
+      cleanBoolean(value.isProfileCompleted) ??
+      cleanBoolean(value.is_profile_completed) ??
+      cleanBoolean(user.isProfileCompleted) ??
+      cleanBoolean(user.is_profile_completed);
+    const mustChangePassword =
+      cleanBoolean(value.mustChangePassword) ??
+      cleanBoolean(value.must_change_password) ??
+      cleanBoolean(user.mustChangePassword) ??
+      cleanBoolean(user.must_change_password);
+    const isLocked =
+      cleanBoolean(value.isLocked) ??
+      cleanBoolean(value.is_locked) ??
+      cleanBoolean(user.isLocked) ??
+      cleanBoolean(user.is_locked);
 
     return {
       user: {
+        identifier: cleanString(user.identifier),
         email: cleanString(user.email),
         firstName: cleanString(user.firstName ?? user.first_name) ?? '',
         lastName: cleanString(user.lastName ?? user.last_name) ?? '',
@@ -140,10 +182,13 @@ const profileSchema = z
         jobTitle: cleanString(user.jobTitle ?? user.job_title),
         fullName: cleanString(user.fullName ?? user.full_name),
         role: normalizeRole(user.role),
-        isProfileCompleted:
-          cleanBoolean(user.isProfileCompleted) ??
-          cleanBoolean(user.is_profile_completed)
-      }
+        isProfileCompleted,
+        mustChangePassword,
+        isLocked
+      },
+      isProfileCompleted,
+      mustChangePassword,
+      isLocked
     };
   });
 
@@ -373,7 +418,16 @@ export async function updateProfile(
 export async function getMe(opts?: {
   signal?: AbortSignal;
 }): Promise<ProfileResponseDTO> {
-  return getProfile(opts);
+  try {
+    const result = await apiFetch<ProfileResponseDTO>(API_ENDPOINTS.auth.me, {
+      method: 'GET',
+      signal: opts?.signal
+    });
+
+    return profileSchema.parse(result);
+  } catch (error) {
+    throw toServiceError(error);
+  }
 }
 
 export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {

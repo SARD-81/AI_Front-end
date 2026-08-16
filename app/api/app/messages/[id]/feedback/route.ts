@@ -32,9 +32,8 @@ function normalizePayload(raw: unknown): MessageFeedbackPayload {
     throw badRequest('مقدار بازخورد نامعتبر است.');
   }
 
-  if (payload.is_liked === undefined) {
-    payload.is_liked = null;
-  }
+  const isLiked: boolean | null =
+    payload.is_liked === undefined ? null : payload.is_liked;
 
   // `text_comment` is optional per the backend contract: an omitted or null
   // value withdraws the comment, and an empty string is stored as null.
@@ -59,15 +58,15 @@ function normalizePayload(raw: unknown): MessageFeedbackPayload {
     throw badRequest('دلیل بازخورد نامعتبر است.');
   }
 
-  if (payload.is_liked === false && reasonCategory === null) {
+  if (isLiked === false && reasonCategory === null) {
     throw badRequest('انتخاب دلیل برای بازخورد منفی الزامی است.');
   }
 
   // PUT carries the full desired state: `is_liked: null` clears both fields.
   return {
-    is_liked: payload.is_liked,
-    reason_category: payload.is_liked === true || payload.is_liked === null ? null : (reasonCategory as FeedbackReasonCategory),
-    text_comment: payload.is_liked === null ? null : textComment
+    is_liked: isLiked,
+    reason_category: isLiked === true || isLiked === null ? null : (reasonCategory as FeedbackReasonCategory),
+    text_comment: isLiked === null ? null : textComment
   };
 }
 

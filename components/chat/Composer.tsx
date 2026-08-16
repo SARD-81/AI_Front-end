@@ -96,7 +96,7 @@ export function Composer({
       />
 
       <div className="mt-1.5 flex items-center gap-2">
-        <DropdownMenu>
+        <DropdownMenu dir={locale === 'fa' ? 'rtl' : 'ltr'}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
@@ -112,12 +112,6 @@ export function Composer({
           <DropdownMenuContent
             align="start"
             sideOffset={10}
-            /*
-             * The menu must inherit the document direction, otherwise Persian
-             * sentences render with their full stop on the wrong side and the
-             * check mark lands opposite the text.
-             */
-            dir={locale === 'fa' ? 'rtl' : 'ltr'}
             className="w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border-menu-border bg-menu p-2 shadow-xl"
           >
             {thinkingLevels.map((level) => {
