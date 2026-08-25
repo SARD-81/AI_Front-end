@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { formatDigitsForLocale } from '@/lib/utils/digits';
 import { Label } from '@/components/ui/label';
 import {
   getProfile,
@@ -311,28 +312,32 @@ export function ProfileForm({ locale }: ProfileFormProps) {
                 </p>
               </div>
               <dl className="grid gap-3 sm:grid-cols-2">
-                {readOnlyFields.map((field) => (
-                  <div
-                    key={field}
-                    className="rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-3 shadow-sm"
-                  >
-                    <dt className="text-xs font-medium text-muted-foreground">
-                      {t(`fields.${field}`)}
-                    </dt>
-                    <dd
-                      className="mt-1 break-words text-sm text-foreground"
-                      dir={
-                        field === 'email' ||
-                        field === 'studentId' ||
-                        field === 'personnelId'
-                          ? 'ltr'
-                          : undefined
-                      }
+                {readOnlyFields.map((field) => {
+                  const readOnlyValue =
+                    getReadOnlyValue(profile, field, t) || t('notProvided');
+                  return (
+                    <div
+                      key={field}
+                      className="rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] p-3 shadow-sm"
                     >
-                      {getReadOnlyValue(profile, field, t) || t('notProvided')}
-                    </dd>
-                  </div>
-                ))}
+                      <dt className="text-xs font-medium text-muted-foreground">
+                        {t(`fields.${field}`)}
+                      </dt>
+                      <dd
+                        className="mt-1 break-words text-sm text-foreground"
+                        dir={
+                          field === 'email' ||
+                          field === 'studentId' ||
+                          field === 'personnelId'
+                            ? 'ltr'
+                            : undefined
+                        }
+                      >
+                        {formatDigitsForLocale(readOnlyValue, locale)}
+                      </dd>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           ) : null}
