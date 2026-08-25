@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import type { ChatDetail, ChatMessage, MessageFeedbackPayload } from '@/lib/api/chat';
 import { CodeHighlight } from './CodeHighlight';
+import { ExpandableTable } from './ExpandableTable';
 import { MessageActions } from './MessageActions';
 import { SourcesDialog } from './SourcesDialog';
 
@@ -67,13 +68,11 @@ function ThinkingIndicator() {
   const t = useTranslations('app');
   return (
     <div className="inline-flex min-h-10 items-center gap-2.5 py-1 text-sm">
-      <span className="loader-orb" aria-hidden />
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] motion-safe:animate-pulse"
+        aria-hidden
+      />
       <span className="loader-shimmer font-medium">{t('message.thinking')}</span>
-      <span className="loader-dots" aria-hidden>
-        <i />
-        <i />
-        <i />
-      </span>
     </div>
   );
 }
@@ -121,11 +120,7 @@ const markdownComponents: Components = {
     );
   },
   pre: ({ children }) => <>{children}</>,
-  table: ({ children }) => (
-    <div className="chat-table-scroll">
-      <table className="chat-table">{children}</table>
-    </div>
-  ),
+  table: ({ children }) => <ExpandableTable>{children}</ExpandableTable>,
   thead: ({ children }) => <thead>{children}</thead>,
   th: ({ children }) => <th>{children}</th>,
   td: ({ children }) => <td>{children}</td>
@@ -309,18 +304,22 @@ function MessageBubbleComponent({
                       </Button>
                     </div>
                   ) : null}
-                  <div
-                    className="absolute right-0 top-full h-2 w-full"
-                    aria-hidden
-                  />
-                  <MessageActions
-                    role={message.role}
-                    onCopy={() => onCopyMessage(message.content)}
-                    onEdit={() => onEditMessage?.(message)}
-                    timeLabel={timeLabel}
-                    dateTime={message.createdAt}
-                    className="msg-user-actions pointer-events-none absolute top-full z-10 mt-1.5 translate-y-1 opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
-                  />
+                  {sendStatus !== 'pending' ? (
+                    <>
+                      <div
+                        className="absolute right-0 top-full h-2 w-full"
+                        aria-hidden
+                      />
+                      <MessageActions
+                        role={message.role}
+                        onCopy={() => onCopyMessage(message.content)}
+                        onEdit={() => onEditMessage?.(message)}
+                        timeLabel={timeLabel}
+                        dateTime={message.createdAt}
+                        className="msg-user-actions pointer-events-none absolute top-full z-10 mt-1.5 translate-y-1 opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
+                      />
+                    </>
+                  ) : null}
                 </div>
               ) : (
                 <div

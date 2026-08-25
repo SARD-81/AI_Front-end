@@ -18,6 +18,7 @@ import {
 import {Skeleton} from '@/components/ui/skeleton';
 import type {AuthUserDTO} from '@/lib/types/auth';
 import {cn} from '@/lib/utils';
+import {formatDigitsForLocale} from '@/lib/utils/digits';
 import type {AppSettings} from '@/hooks/use-app-settings';
 
 export {useAppSettings} from '@/hooks/use-app-settings';
@@ -114,21 +115,23 @@ export function SettingsModal({
   const profile = useMemo(() => {
     const fullName = user?.fullName?.trim();
     const firstLastName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+    const display = (value: string) => formatDigitsForLocale(value, locale);
 
     return {
-      name: fullName || firstLastName || user?.studentId?.trim() || '—',
-      email: user?.email?.trim() || '—',
-      studentId: user?.studentId?.trim() || '—',
-      personnelId: user?.personnelId?.trim() || '—',
-      faculty: user?.faculty?.trim() || '—',
-      major: user?.major?.trim() || '—',
-      degreeLevel: user?.degreeLevel?.trim() || '—',
-      department: user?.department?.trim() || '—',
-      academicRank: user?.academicRank?.trim() || '—',
-      jobTitle: user?.jobTitle?.trim() || '—',
+      name: display(fullName || firstLastName || user?.studentId?.trim() || '—'),
+      email: display(user?.email?.trim() || '—'),
+      studentId: display(user?.studentId?.trim() || '—'),
+      personnelId: display(user?.personnelId?.trim() || '—'),
+      faculty: display(user?.faculty?.trim() || '—'),
+      major: display(user?.major?.trim() || '—'),
+      degreeLevel: display(user?.degreeLevel?.trim() || '—'),
+      department: display(user?.department?.trim() || '—'),
+      academicRank: display(user?.academicRank?.trim() || '—'),
+      jobTitle: display(user?.jobTitle?.trim() || '—'),
       role: user?.role ? t(`account.roles.${user.role}`) : t('account.unknownRole')
     };
   }, [
+    locale,
     t,
     user?.academicRank,
     user?.degreeLevel,
@@ -144,7 +147,6 @@ export function SettingsModal({
     user?.role,
     user?.studentId
   ]);
-
 
   const readOnlyDetails = useMemo(() => {
     if (!user?.role) return [];

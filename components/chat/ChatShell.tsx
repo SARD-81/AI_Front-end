@@ -7,6 +7,7 @@ import { Menu } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Sidebar } from '@/components/sidebar/Sidebar';
+import { SohaFooter } from '@/components/layout/SohaFooter';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -264,6 +265,9 @@ export function ChatShell({
     try {
       let activeChatId = chatId;
 
+      // Conversation creation is deliberately lazy: opening the chat shell or
+      // pressing "New chat" never persists an empty conversation. The backend
+      // conversation is created only when the first real message is submitted.
       if (!activeChatId) {
         const created = await actions.create.mutateAsync({ title: t('newChat') });
         activeChatId = created.id;
@@ -466,8 +470,7 @@ export function ChatShell({
                   thinkLevel={thinkLevel}
                   onThinkLevelChange={setThinkLevel}
                   onPromptSelect={(prompt) => {
-                    setValue(prompt);
-                    setFocusTrigger((prev) => prev + 1);
+                    void submitMessage(prompt);
                   }}
                 />
               ) : (
@@ -510,6 +513,8 @@ export function ChatShell({
               </div>
             ) : null}
           </LayoutGroup>
+
+          <SohaFooter />
         </main>
       </Sheet>
     </div>

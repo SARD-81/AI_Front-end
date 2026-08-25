@@ -20,11 +20,11 @@ const METADATA_BY_LOCALE: Record<
   { title: string; description: string }
 > = {
   fa: {
-    title: 'دستیار دانشگاه شهید بهشتی',
+    title: 'سها',
     description: 'دستیار هوشمند دانشگاه شهید بهشتی'
   },
   en: {
-    title: 'SBU Assistant',
+    title: 'سها',
     description: 'Shahid Beheshti University AI assistant'
   }
 };
