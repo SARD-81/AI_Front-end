@@ -1,6 +1,6 @@
 'use client';
 
-import {Copy, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
+import {BookOpen, Copy, Pencil, RotateCcw, ThumbsDown, ThumbsUp} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
@@ -12,6 +12,8 @@ type MessageActionsProps = {
   onRegenerate?: () => void;
   onLike?: () => void;
   onDislike?: () => void;
+  onShowSources?: () => void;
+  hasSources?: boolean;
   feedbackState?: boolean | null;
   feedbackDisabled?: boolean;
   timeLabel?: string;
@@ -26,6 +28,8 @@ export function MessageActions({
   onRegenerate,
   onLike,
   onDislike,
+  onShowSources,
+  hasSources,
   feedbackState,
   feedbackDisabled,
   timeLabel,
@@ -90,6 +94,20 @@ export function MessageActions({
           >
             <ThumbsDown className="h-4 w-4" />
           </Button>
+          {hasSources ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={baseClass}
+              aria-label={t('messageActions.sources')}
+              title={t('messageActions.sources')}
+              onClick={onShowSources}
+              disabled={!onShowSources}
+            >
+              <BookOpen className="h-4 w-4" />
+            </Button>
+          ) : null}
         </>
       )}
 

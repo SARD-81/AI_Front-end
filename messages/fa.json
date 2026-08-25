@@ -69,7 +69,18 @@
       "edit": "ویرایش",
       "regenerate": "تولید دوباره",
       "like": "پسندیدن",
-      "dislike": "نپسندیدن"
+      "dislike": "نپسندیدن",
+      "sources": "مشاهده منابع پاسخ"
+    },
+    "sources": {
+      "title": "منابع پاسخ ({count})",
+      "description": "اسنادی که برای تولید این پاسخ بازیابی شده‌اند.",
+      "documentFallback": "منبع بدون عنوان",
+      "datasetFallback": "منبع",
+      "documentLabel": "نام سند",
+      "excerptLabel": "بخش مرتبط از سند",
+      "showMore": "نمایش بیشتر",
+      "showLess": "نمایش کمتر"
     },
     "message": {
       "codeLabel": "کد",

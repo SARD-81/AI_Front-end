@@ -282,8 +282,6 @@ export function LoginForm({
                   <FormControl>
                     <Input
                       {...field}
-                      value={field.value ?? ''}
-                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}
@@ -324,8 +322,6 @@ export function LoginForm({
                   <FormControl>
                     <Input
                       {...field}
-                      value={field.value ?? ''}
-                      onChange={(event) => field.onChange(event.currentTarget.value)}
                       type={showConfirmNewPassword ? 'text' : 'password'}
                       autoComplete="new-password"
                       className={`${authInputClassName} pe-12`}

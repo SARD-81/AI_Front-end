@@ -7,6 +7,17 @@ export type ChatSummary = {
 export type MessageRole = 'user' | 'assistant';
 export type MessageSendStatus = 'pending' | 'failed' | 'sent';
 
+export type AiResource = {
+  position?: number;
+  datasetId?: string;
+  datasetName?: string;
+  documentId?: string | null;
+  documentName?: string | null;
+  segmentId?: string;
+  score?: number;
+  content?: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: MessageRole;
@@ -15,6 +26,7 @@ export type ChatMessage = {
   isStreaming?: boolean;
   sendStatus?: MessageSendStatus;
   is_liked?: boolean | null;
+  aiResources?: AiResource[];
 };
 
 export type ChatDetail = {

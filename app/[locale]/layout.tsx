@@ -1,10 +1,10 @@
 import '../globals.css';
-import type {Metadata} from 'next';
-import {notFound} from 'next/navigation';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import localFont from 'next/font/local';
-import {getMessages} from 'next-intl/server';
-import {AppProviders} from '@/components/providers/app-providers';
-import {locales} from '@/lib/i18n/config';
+import { getMessages } from 'next-intl/server';
+import { AppProviders } from '@/components/providers/app-providers';
+import { locales } from '@/lib/i18n/config';
 
 const vazirmatn = localFont({
   src: '../fonts/vazirmatn/Vazirmatn-Regular.ttf',
@@ -15,7 +15,10 @@ const vazirmatn = localFont({
   variable: '--font-vazirmatn'
 });
 
-const METADATA_BY_LOCALE: Record<string, {title: string; description: string}> = {
+const METADATA_BY_LOCALE: Record<
+  string,
+  { title: string; description: string }
+> = {
   fa: {
     title: 'دستیار دانشگاه شهید بهشتی',
     description: 'دستیار هوشمند دانشگاه شهید بهشتی'
@@ -29,27 +32,19 @@ const METADATA_BY_LOCALE: Record<string, {title: string; description: string}> =
 export async function generateMetadata({
   params
 }: {
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const {locale} = await params;
+  const { locale } = await params;
   const meta = METADATA_BY_LOCALE[locale] ?? METADATA_BY_LOCALE.fa;
 
   return {
     title: meta.title,
-    description: meta.description,
-    icons: {
-      // `/icon.svg` is generated from app/icon.svg and always exists; the PNG is
-      // listed first so the original brand favicon wins whenever it is present
-      // in /public.
-      icon: ['/Logo.png', '/icon.svg'],
-      shortcut: '/Logo.png',
-      apple: '/Logo.png'
-    }
+    description: meta.description
   };
 }
 
 export function generateStaticParams() {
-  return locales.map((locale) => ({locale}));
+  return locales.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({
@@ -57,9 +52,9 @@ export default async function LocaleLayout({
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const {locale} = await params;
+  const { locale } = await params;
 
   if (!locales.includes(locale as (typeof locales)[number])) {
     notFound();

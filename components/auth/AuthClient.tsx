@@ -22,7 +22,6 @@ import type { LoginResultDTO } from '@/lib/types/auth';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
-
 function replaceLocaleInPath(pathname: string, nextLocale: string) {
   const segments = pathname.split('/');
   if (segments[1] === 'fa' || segments[1] === 'en') {
@@ -36,9 +35,15 @@ function persistLanguagePreference(nextLocale: string) {
   try {
     const raw = localStorage.getItem('app_settings');
     const settings = raw ? JSON.parse(raw) : {};
-    localStorage.setItem('app_settings', JSON.stringify({...settings, language: nextLocale}));
+    localStorage.setItem(
+      'app_settings',
+      JSON.stringify({ ...settings, language: nextLocale })
+    );
   } catch {
-    localStorage.setItem('app_settings', JSON.stringify({language: nextLocale}));
+    localStorage.setItem(
+      'app_settings',
+      JSON.stringify({ language: nextLocale })
+    );
   }
 }
 
@@ -86,7 +91,11 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   useEffect(() => {
-    if (modeQuery === 'signup' || modeQuery === 'login' || modeQuery === 'reset') {
+    if (
+      modeQuery === 'signup' ||
+      modeQuery === 'login' ||
+      modeQuery === 'reset'
+    ) {
       setAuthMode(modeQuery);
     }
   }, [modeQuery]);
@@ -215,15 +224,7 @@ export function AuthClient({ locale }: { locale: string }) {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#060a13] text-white">
-      <Image
-        src="/Uni.png"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="pointer-events-none select-none object-cover opacity-60 scale-[1.01] saturate-125 contrast-110"
-      />
-      <div className="pointer-events-none absolute inset-0 bg-slate-950/38" />
+      <div className="bg-slate-950/38 pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.86)_0%,rgba(15,23,42,0.54)_48%,rgba(2,6,23,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
@@ -238,7 +239,7 @@ export function AuthClient({ locale }: { locale: string }) {
 
             <div className="relative z-10 flex h-full flex-col justify-between gap-12">
               <div className="flex flex-1 flex-col items-center justify-center space-y-8 text-center">
-                <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/20 bg-white/12 p-4 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md md:h-44 md:w-44">
+                <div className="bg-white/12 mx-auto flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/20 p-4 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md md:h-44 md:w-44">
                   <Image
                     src="/Logo.png"
                     alt={t('hero.logoAlt')}
@@ -251,32 +252,32 @@ export function AuthClient({ locale }: { locale: string }) {
 
                 <div className="mx-auto max-w-2xl space-y-5">
                   <motion.h1
-                    initial={{opacity: 0, y: 10}}
-                    animate={{opacity: 1, y: 0}}
-                    transition={{duration: 0.35, ease: 'easeOut'}}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
                     className="text-3xl font-black leading-[1.8] tracking-tight text-white drop-shadow-lg md:text-4xl xl:text-5xl"
                   >
                     {t('hero.title')}
                   </motion.h1>
                   <motion.p
-                    initial={{opacity: 0, y: 8}}
-                    animate={{opacity: 1, y: 0}}
-                    transition={{duration: 0.4, ease: 'easeOut', delay: 0.06}}
-                    className="max-w-xl text-sm leading-8 text-slate-200/82 md:text-base"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut', delay: 0.06 }}
+                    className="text-slate-200/82 max-w-xl text-sm leading-8 md:text-base"
                   >
                     {t('hero.description')}
                   </motion.p>
                 </div>
               </div>
 
-              <div className="mx-auto max-w-xl rounded-3xl border border-white/12 bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md">
+              <div className="border-white/12 mx-auto max-w-xl rounded-3xl border bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md">
                 {t('hero.tagline')}
               </div>
             </div>
           </section>
 
           <section className="flex items-center justify-center lg:justify-start">
-            <Card className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border-white/16 bg-slate-950/58 text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl">
+            <Card className="border-white/16 bg-slate-950/58 relative w-full max-w-xl overflow-hidden rounded-[2rem] text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.18),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.10),transparent_34%)]" />
               <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
               <div className="relative z-10">
@@ -342,7 +343,7 @@ export function AuthClient({ locale }: { locale: string }) {
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 pt-2 md:p-8 md:pt-3">
-                  <div className="rounded-3xl border border-white/10 bg-slate-950/32 p-4 shadow-inner shadow-black/25 backdrop-blur-md md:p-5">
+                  <div className="bg-slate-950/32 rounded-3xl border border-white/10 p-4 shadow-inner shadow-black/25 backdrop-blur-md md:p-5">
                     <AnimatePresence mode="wait" initial={false}>
                       {authMode === 'login' ? (
                         <motion.div

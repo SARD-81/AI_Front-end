@@ -16,6 +16,7 @@ import { copyToClipboard } from '@/lib/utils/clipboard';
 import type { ChatDetail, ChatMessage, MessageFeedbackPayload } from '@/lib/api/chat';
 import { CodeHighlight } from './CodeHighlight';
 import { MessageActions } from './MessageActions';
+import { SourcesDialog } from './SourcesDialog';
 
 function CodeBlock({ value, language }: { value: string; language?: string }) {
   const t = useTranslations('app');
@@ -161,7 +162,10 @@ function MessageBubbleComponent({
   const t = useTranslations('app');
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const isUser = message.role === 'user';
+  const aiResources = message.aiResources ?? [];
+  const hasSources = !isUser && aiResources.length > 0;
   const isTyping = message.id === 'typing';
   const isStreaming = message.id === 'streaming';
   const sendStatus = message.sendStatus ?? (isUser ? 'sent' : undefined);
@@ -345,6 +349,10 @@ function MessageBubbleComponent({
                   onRegenerate={() => onRegenerate?.(message)}
                   onLike={handleLike}
                   onDislike={() => setDialogOpen(true)}
+                  onShowSources={
+                    hasSources ? () => setSourcesOpen(true) : undefined
+                  }
+                  hasSources={hasSources}
                   feedbackState={feedbackState}
                   feedbackDisabled={feedbackDisabled}
                   timeLabel={timeLabel}
@@ -356,6 +364,14 @@ function MessageBubbleComponent({
                       : 'pointer-events-none opacity-0 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100 max-sm:pointer-events-auto max-sm:opacity-100'
                   )}
                 />
+                {hasSources ? (
+                  <SourcesDialog
+                    open={sourcesOpen}
+                    onOpenChange={setSourcesOpen}
+                    resources={aiResources}
+                  />
+                ) : null}
+
                 <FeedbackDialog
                   open={dialogOpen}
                   onOpenChange={setDialogOpen}
@@ -416,6 +432,7 @@ export const MessageBubble = memo(
     prevProps.message.role === nextProps.message.role &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.is_liked === nextProps.message.is_liked &&
+    prevProps.message.aiResources === nextProps.message.aiResources &&
     prevProps.message.sendStatus === nextProps.message.sendStatus &&
     prevProps.isLastAssistant === nextProps.isLastAssistant &&
     prevProps.anchorId === nextProps.anchorId

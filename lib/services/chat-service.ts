@@ -1,7 +1,7 @@
 import {ApiError, apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import {uuid} from '@/lib/utils/uid';
-import type {ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
+import type {AiResource, ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
   nextCursor: string | null;
@@ -20,6 +20,17 @@ type BackendConversation = {
   created_at?: string | null;
 };
 
+type BackendAiResource = {
+  position?: number;
+  dataset_id?: string | null;
+  dataset_name?: string | null;
+  document_id?: string | null;
+  document_name?: string | null;
+  segment_id?: string | null;
+  score?: number;
+  content?: string | null;
+};
+
 type BackendMessage = {
   id: string;
   role: 'user' | 'assistant';
@@ -30,6 +41,8 @@ type BackendMessage = {
   created_at?: string | null;
   is_liked?: boolean | null;
   feedback?: 'like' | 'dislike' | null;
+  ai_resources?: BackendAiResource[] | null;
+  aiResources?: BackendAiResource[] | null;
 };
 
 type FeedbackBody = MessageFeedbackPayload;
@@ -81,6 +94,31 @@ function normalizeConversationList(data: BackendConversation[] | {results?: Back
   return list.map(normalizeConversation);
 }
 
+function normalizeAiResources(
+  resources?: BackendAiResource[] | null
+): AiResource[] {
+  if (!Array.isArray(resources)) return [];
+
+  return resources
+    .map((resource) => ({
+      position:
+        typeof resource.position === 'number' ? resource.position : undefined,
+      datasetId: resource.dataset_id?.trim() || undefined,
+      datasetName: resource.dataset_name?.trim() || undefined,
+      documentId: resource.document_id?.trim() || null,
+      documentName: resource.document_name?.trim() || null,
+      segmentId: resource.segment_id?.trim() || undefined,
+      score: typeof resource.score === 'number' ? resource.score : undefined,
+      content: resource.content?.trim() || undefined
+    }))
+    .filter(
+      (resource) =>
+        Boolean(resource.documentName) ||
+        Boolean(resource.content) ||
+        Boolean(resource.documentId)
+    );
+}
+
 function normalizeMessage(message: BackendMessage): ChatMessage {
   const isLiked =
     message.is_liked !== undefined
@@ -96,7 +134,10 @@ function normalizeMessage(message: BackendMessage): ChatMessage {
     role: message.role,
     content: message.content ?? message.message ?? message.text ?? '',
     createdAt: normalizeDate(message.createdAt ?? message.created_at),
-    is_liked: isLiked
+    is_liked: isLiked,
+    aiResources: normalizeAiResources(
+      message.ai_resources ?? message.aiResources
+    )
   };
 }
 
@@ -179,6 +220,7 @@ type WsAnswerMessage = {
   role: 'assistant';
   content: string;
   created_at: string;
+  ai_resources?: BackendAiResource[] | null;
 };
 
 type WsServerMessage =

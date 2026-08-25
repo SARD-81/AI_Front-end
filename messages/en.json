@@ -69,7 +69,18 @@
       "edit": "Edit",
       "regenerate": "Regenerate",
       "like": "Like",
-      "dislike": "Dislike"
+      "dislike": "Dislike",
+      "sources": "View answer sources"
+    },
+    "sources": {
+      "title": "Answer sources ({count})",
+      "description": "Documents retrieved to generate this answer.",
+      "documentFallback": "Untitled source",
+      "datasetFallback": "Source",
+      "documentLabel": "Document",
+      "excerptLabel": "Relevant excerpt",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "message": {
       "codeLabel": "code",
