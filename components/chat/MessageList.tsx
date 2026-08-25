@@ -51,41 +51,20 @@ function AssistantPendingBubble() {
     ],
     [t]
   );
-  const [statusIndex, setStatusIndex] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
-    if (reduceMotion) return undefined;
-
-    const interval = window.setInterval(() => {
-      setStatusIndex((current) => (current + 1) % statuses.length);
-    }, 1500);
-
-    return () => window.clearInterval(interval);
-  }, [statuses.length]);
+  // Pick exactly one status for this pending response. The component is mounted
+  // once per request, so the label stays stable instead of cycling endlessly.
+  const [statusIndex] = useState(() => Math.floor(Math.random() * 3));
+  const status = statuses[statusIndex] ?? statuses[0];
 
   return (
-    <article
-      className="w-full"
-      aria-live="polite"
-      aria-label={statuses[statusIndex]}
-    >
-      {/* A calm, glassy "typing" card: an orbiting spark, shimmering status text
-          and three soft dots. No progress bar, because the real duration of the
-          answer is unknown and a fake bar reads as broken. */}
-      <div className="inline-flex max-w-full items-center gap-3 rounded-2xl border border-[hsl(var(--surface-subtle))]/70 bg-[hsl(var(--surface-card))]/70 px-3.5 py-2.5 shadow-sm backdrop-blur-md dark:bg-[hsl(var(--surface-elevated))]/50">
-        <span className="loader-orb loader-orb-lg" aria-hidden />
-        <span className="loader-shimmer min-w-0 truncate text-sm font-medium">
-          {statuses[statusIndex]}
-        </span>
-        <span className="loader-dots" aria-hidden>
-          <i />
-          <i />
-          <i />
+    <article className="w-full" aria-live="polite" aria-label={status}>
+      <div className="inline-flex max-w-full items-center gap-2.5 py-1.5 text-sm">
+        <span
+          className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] motion-safe:animate-pulse"
+          aria-hidden
+        />
+        <span className="loader-shimmer min-w-0 truncate font-medium">
+          {status}
         </span>
       </div>
     </article>
