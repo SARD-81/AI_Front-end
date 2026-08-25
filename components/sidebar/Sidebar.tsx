@@ -39,12 +39,13 @@ import {
   useChats,
   useGroupedChats
 } from '@/hooks/use-chat-data';
-import type { ChatDetail, ChatSummary } from '@/lib/api/chat';
+import type { ChatSummary } from '@/lib/api/chat';
 import dynamic from 'next/dynamic';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import { getMe, logout } from '@/lib/services/auth-service';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
+import { formatDigitsForLocale } from '@/lib/utils/digits';
 
 const SettingsModal = dynamic(
   () =>
@@ -123,64 +124,15 @@ export function Sidebar({
     });
   };
 
-  const isDefaultNewChatTitle = (title?: string) => {
-    const normalizedTitle = title?.trim();
+  const createNewChat = () => {
+    const href = `/${locale}/chat?focus=1`;
 
-    if (!normalizedTitle) return true;
-
-    return [
-      t('newChat'),
-      t('chat.defaultTitle'),
-      'New chat',
-      'Conversation',
-      'گفت‌وگوی جدید',
-      'گفت‌وگو'
-    ].includes(normalizedTitle);
-  };
-
-  const focusCurrentChat = (href: string, message: string) => {
-    router.push(`${href}?focus=1`);
-    toast.info(message);
-    onNavigate?.();
-  };
-
-  const createNewChat = async () => {
     if (pathname === `/${locale}/chat`) {
-      focusCurrentChat(`/${locale}/chat`, t('sidebar.alreadyInNewChat'));
-      return;
+      router.replace(href);
+    } else {
+      router.push(href);
     }
 
-    if (currentChatId) {
-      const cachedChat = queryClient.getQueryData<ChatDetail>([
-        'chat',
-        currentChatId
-      ]);
-      const summaryChat = queryClient
-        .getQueryData<ChatSummary[]>(['chats'])
-        ?.find((chat) => chat.id === currentChatId);
-      const currentTitle = cachedChat?.title ?? summaryChat?.title;
-      const hasCachedMessages = (cachedChat?.messages?.length ?? 0) > 0;
-      const isEmptyCachedChat =
-        Boolean(cachedChat) &&
-        !hasCachedMessages &&
-        isDefaultNewChatTitle(currentTitle);
-      const isLikelyEmptySummaryChat =
-        !cachedChat &&
-        Boolean(summaryChat) &&
-        isDefaultNewChatTitle(currentTitle);
-
-      if (isEmptyCachedChat || isLikelyEmptySummaryChat) {
-        focusCurrentChat(
-          `/${locale}/chat/${currentChatId}`,
-          t('sidebar.focusCurrentEmptyChat')
-        );
-        return;
-      }
-    }
-
-    const created = await actions.create.mutateAsync({ title: t('newChat') });
-    // TODO(BACKEND): confirm created chat id shape from POST /conversations/.
-    router.push(`/${locale}/chat/${created.id}?focus=1`);
     onNavigate?.();
   };
 
@@ -271,17 +223,10 @@ export function Sidebar({
         return;
       }
 
-      try {
-        const created = await actions.create.mutateAsync({
-          title: t('newChat')
-        });
-        router.replace(`/${locale}/chat/${created.id}?focus=1`);
-        onNavigate?.();
-        return;
-      } catch {
-        router.replace(`/${locale}/chat`);
-        onNavigate?.();
-      }
+      // Do not persist a replacement conversation after deleting the last one.
+      // The empty shell remains virtual until the user submits a real message.
+      router.replace(`/${locale}/chat?focus=1`);
+      onNavigate?.();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : t('sidebar.deleteError');
@@ -315,10 +260,12 @@ export function Sidebar({
   const fullName = user?.fullName?.trim();
   const firstLastName =
     `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
-  const profileName =
+  const rawProfileName =
     fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
-  const profileSubtitle =
+  const rawProfileSubtitle =
     user?.email || user?.studentId || t('sidebar.demoVersion');
+  const profileName = formatDigitsForLocale(rawProfileName, locale);
+  const profileSubtitle = formatDigitsForLocale(rawProfileSubtitle, locale);
 
   const handleLogout = async () => {
     try {
@@ -758,8 +705,9 @@ export function Sidebar({
                 <span className="text-danger-text">{renameError}</span>
                 {/* Only surfaces the counter when the user approaches the cap. */}
                 {renameTitle.length > RENAME_COUNTER_THRESHOLD ? (
-                  <span className="ms-auto shrink-0 tabular-nums text-muted-foreground">
-                    {renameTitle.length} / {MAX_CONVERSATION_TITLE_LENGTH}
+                  <span className="ms-auto shrink-0 tabular-nums text-muted-foreground" dir="ltr">
+                    {formatDigitsForLocale(renameTitle.length, locale)} /{' '}
+                    {formatDigitsForLocale(MAX_CONVERSATION_TITLE_LENGTH, locale)}
                   </span>
                 ) : null}
               </div>
