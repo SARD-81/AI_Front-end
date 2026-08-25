@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type {ThinkingLevel} from '@/lib/api/chat';
 import {cn} from '@/lib/utils';
+import {formatDigitsForLocale} from '@/lib/utils/digits';
 
 const MAX_MESSAGE_LENGTH = 2500;
 
@@ -151,8 +152,10 @@ export function Composer({
             showCharacterCounter ? 'text-muted-foreground opacity-100' : 'sr-only opacity-0',
             isAtCharacterLimit && 'font-medium text-[hsl(var(--danger-text))]'
           )}
+          dir="ltr"
         >
-          {characterCount} / {MAX_MESSAGE_LENGTH}
+          {formatDigitsForLocale(characterCount, locale)} /{' '}
+          {formatDigitsForLocale(MAX_MESSAGE_LENGTH, locale)}
         </div>
 
         {isSending && onStop ? (
