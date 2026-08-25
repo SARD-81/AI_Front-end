@@ -67,7 +67,7 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           dir={isRtl ? 'rtl' : 'ltr'}
-          className="h-[100dvh] max-h-none w-screen max-w-none gap-0 overflow-hidden rounded-none border-0 bg-background p-0 pe-0 shadow-none sm:rounded-none"
+          className="h-[100dvh] max-h-none w-screen max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-none border-0 bg-background p-0 pe-0 shadow-none sm:rounded-none"
         >
           <DialogTitle className="sr-only">{labels.expand}</DialogTitle>
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] px-4 pe-14 sm:px-6 sm:pe-16">
@@ -79,7 +79,7 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
             </span>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-6">
+          <div className="min-h-0 overflow-auto p-3 sm:p-6">
             <div className="prose-chat min-w-max rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
               <table className="chat-table min-w-full !text-sm [&_td]:!min-w-36 [&_td]:!max-w-[30rem] [&_td]:!px-4 [&_td]:!py-3 [&_th]:!min-w-36 [&_th]:!max-w-[30rem] [&_th]:!px-4 [&_th]:!py-3">
                 {children}
