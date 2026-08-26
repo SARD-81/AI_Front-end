@@ -49,10 +49,63 @@ export function DialogOverlay({className, ...props}: DialogPrimitive.DialogOverl
   );
 }
 
-export function DialogContent({className, children, dir, ...props}: DialogPrimitive.DialogContentProps) {
+type VisualViewportState = {
+  centerY: number;
+  height: number;
+  keyboardOpen: boolean;
+};
+
+function useVisualViewportState() {
+  const [viewport, setViewport] = React.useState<VisualViewportState | null>(null);
+
+  React.useEffect(() => {
+    const visualViewport = window.visualViewport;
+    if (!visualViewport) return;
+
+    const update = () => {
+      const height = visualViewport.height;
+      const keyboardOpen = window.innerHeight - height > 120;
+
+      setViewport({
+        height,
+        centerY: visualViewport.offsetTop + height / 2,
+        keyboardOpen
+      });
+    };
+
+    update();
+    visualViewport.addEventListener('resize', update);
+    visualViewport.addEventListener('scroll', update);
+    window.addEventListener('orientationchange', update);
+
+    return () => {
+      visualViewport.removeEventListener('resize', update);
+      visualViewport.removeEventListener('scroll', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+
+  return viewport;
+}
+
+export function DialogContent({className, children, dir, style, ...props}: DialogPrimitive.DialogContentProps) {
   const t = useTranslations('app');
   const locale = useLocale();
   const contentDir = dir ?? (locale === 'fa' ? 'rtl' : 'ltr');
+  const visualViewport = useVisualViewportState();
+
+  const responsiveStyle: React.CSSProperties = {
+    ...(visualViewport
+      ? {
+          top: `${visualViewport.centerY}px`,
+          ...(visualViewport.keyboardOpen
+            ? {maxHeight: `${Math.max(0, visualViewport.height - 8)}px`}
+            : {})
+        }
+      : {}),
+    ...style
+  };
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -62,6 +115,7 @@ export function DialogContent({className, children, dir, ...props}: DialogPrimit
           className
         )}
         dir={contentDir}
+        style={responsiveStyle}
         {...props}
       >
         {children}
