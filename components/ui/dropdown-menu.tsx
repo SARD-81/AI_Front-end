@@ -4,12 +4,25 @@ import * as React from 'react';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {Circle} from 'lucide-react';
 import {cn} from '@/lib/utils';
+import {useMediaQuery} from '@/hooks/use-media-query';
 
 export const DropdownMenu = Dropdown.Root;
 export const DropdownMenuTrigger = Dropdown.Trigger;
 export const DropdownMenuRadioGroup = Dropdown.RadioGroup;
 
-export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenuContentProps) {
+export function DropdownMenuContent({
+  className,
+  side,
+  align,
+  ...props
+}: Dropdown.DropdownMenuContentProps) {
+  const isNarrowViewport = useMediaQuery('(max-width: 639px)');
+  const opensHorizontally = side === 'left' || side === 'right';
+  const resolvedSide =
+    isNarrowViewport && opensHorizontally ? 'top' : side;
+  const resolvedAlign =
+    isNarrowViewport && opensHorizontally ? 'center' : align;
+
   return (
     <Dropdown.Portal>
       <Dropdown.Content
@@ -19,7 +32,10 @@ export function DropdownMenuContent({className, ...props}: Dropdown.DropdownMenu
           'data-[state=closed]:-translate-y-1 data-[state=closed]:opacity-0',
           className
         )}
+        side={resolvedSide}
+        align={resolvedAlign}
         sideOffset={8}
+        collisionPadding={12}
         {...props}
       />
     </Dropdown.Portal>
