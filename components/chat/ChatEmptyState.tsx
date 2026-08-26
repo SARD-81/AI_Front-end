@@ -33,10 +33,14 @@ export function ChatEmptyState({
   const locale = useLocale();
   const t = useTranslations('app');
   const suggestedPrompts = t.raw('emptyState.suggestedPrompts') as string[];
+
   return (
-    <div className="flex h-full items-center justify-center px-4" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
-      <div className="w-full max-w-[800px] space-y-6 text-center">
-        <div className="mx-auto h-20 w-20 rounded-full border border-border bg-muted p-[3px] shadow-soft dark:border-white/15">
+    <div
+      className="flex h-full min-h-0 overflow-y-auto overscroll-contain px-3 pb-6 pt-20 sm:px-4 sm:pb-8 sm:pt-20"
+      dir={locale === 'fa' ? 'rtl' : 'ltr'}
+    >
+      <div className="my-auto w-full max-w-[800px] space-y-4 text-center sm:mx-auto sm:space-y-6">
+        <div className="mx-auto h-16 w-16 rounded-full border border-border bg-muted p-[3px] shadow-soft dark:border-white/15 sm:h-20 sm:w-20">
           <div className="flex h-full w-full items-center justify-center rounded-full bg-white p-2 dark:bg-white">
             <Image
               src="/Logo.png"
@@ -49,16 +53,16 @@ export function ChatEmptyState({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <h1 className="text-balance text-2xl font-semibold leading-10 text-foreground md:text-3xl">
+        <div className="space-y-2 sm:space-y-3">
+          <h1 className="text-balance text-xl font-semibold leading-8 text-foreground sm:text-2xl sm:leading-10 md:text-3xl">
             {t('emptyState.title')}
           </h1>
-          <p className="mx-auto max-w-[720px] text-pretty text-sm leading-7 text-muted-foreground md:text-base">
+          <p className="mx-auto max-w-[720px] text-pretty text-sm leading-6 text-muted-foreground sm:leading-7 md:text-base">
             {t('emptyState.description')}
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Composer
             value={value}
             onChange={onChange}
@@ -70,7 +74,7 @@ export function ChatEmptyState({
             onThinkLevelChange={onThinkLevelChange}
           />
 
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
             {suggestedPrompts.map((prompt) => (
               <Button
                 key={prompt}
@@ -79,12 +83,12 @@ export function ChatEmptyState({
                 size="sm"
                 onClick={() => onPromptSelect(prompt)}
                 className={cn(
-                  'h-auto rounded-full border-border bg-background px-4 py-2 text-sm text-foreground transition-colors',
+                  'h-auto max-w-full rounded-full border-border bg-background px-3 py-2 text-xs leading-5 text-foreground transition-colors sm:px-4 sm:text-sm',
                   'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                 )}
               >
-                {prompt}
+                <span className="whitespace-normal text-center">{prompt}</span>
               </Button>
             ))}
           </div>
