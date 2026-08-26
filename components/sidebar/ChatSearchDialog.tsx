@@ -19,10 +19,6 @@ type ChatSearchDialogProps = {
   onNavigate?: () => void;
 };
 
-/**
- * ChatGPT-style command palette for conversations: it lists the recent chats
- * and filters them by title as the user types. Selecting a row opens that chat.
- */
 export function ChatSearchDialog({
   open,
   onOpenChange,
@@ -59,14 +55,13 @@ export function ChatSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0 pe-0"
+        className="bottom-2 top-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none translate-y-0 flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:bottom-auto sm:top-[12%] sm:w-full sm:max-w-xl sm:rounded-2xl"
       >
         <DialogTitle className="sr-only">
           {t('sidebar.searchDialogTitle')}
         </DialogTitle>
 
-        {/* Search row: borderless, the dialog itself is the visual frame. */}
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <input
             autoFocus
@@ -75,11 +70,11 @@ export function ChatSearchDialog({
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('sidebar.searchPlaceholder')}
             aria-label={t('sidebar.searchPlaceholder')}
-            className="w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0"
+            className="min-w-0 w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0"
           />
         </div>
 
-        <div className="max-h-[60vh] min-h-[8rem] overflow-y-auto px-2 py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3 sm:max-h-[60vh] sm:min-h-[8rem]">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
             {normalizedQuery
               ? t('sidebar.searchResults')
