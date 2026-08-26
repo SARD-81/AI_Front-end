@@ -140,8 +140,6 @@ export function AuthClient({ locale }: { locale: string }) {
     applyMode(mode);
   };
 
-  // The segmented control targets a language directly instead of toggling, so
-  // clicking the already active segment is a no-op.
   const selectLocale = (nextLocale: 'fa' | 'en') => {
     if (nextLocale === locale) return;
 
@@ -153,9 +151,6 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   const getPostLoginDestination = (result: LoginResultDTO) => {
-    // Only an explicit `false` sends the user to the profile page. Professors and
-    // staff often come back with `undefined` here, and they must land in the chat
-    // just like students do.
     if (
       result?.isProfileCompleted === false ||
       result?.user?.isProfileCompleted === false
@@ -168,8 +163,6 @@ export function AuthClient({ locale }: { locale: string }) {
 
   const handleLoginSuccess = (result: LoginResultDTO) => {
     const destination = getPostLoginDestination(result);
-    // `replace` keeps the login screen out of the history stack and `refresh`
-    // makes the server components re-read the freshly written auth cookies.
     router.replace(destination);
     router.refresh();
   };
@@ -223,23 +216,23 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#060a13] text-white">
+    <main className="relative min-h-[100dvh] overflow-x-hidden overflow-y-auto bg-[#060a13] text-white">
       <div className="bg-slate-950/38 pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.86)_0%,rgba(15,23,42,0.54)_48%,rgba(2,6,23,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
       <div className="pointer-events-none absolute -right-28 bottom-12 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-6 md:px-8 lg:py-10">
-        <div className="grid w-full items-center gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 xl:gap-12">
-          <section className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] p-6 shadow-2xl shadow-slate-950/40 backdrop-blur-xl md:p-8 lg:min-h-[640px]">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-7xl items-start px-3 py-3 sm:px-4 sm:py-6 md:px-8 lg:items-center lg:py-10">
+        <div className="grid w-full min-w-0 items-center gap-3 sm:gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 xl:gap-12">
+          <section className="relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.08] p-4 shadow-2xl shadow-slate-950/40 backdrop-blur-xl sm:rounded-[2rem] sm:p-6 md:p-8 lg:min-h-[640px]">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_32%,rgba(59,130,246,0.14)_100%)]" />
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
             <div className="pointer-events-none absolute -bottom-28 -right-20 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
 
-            <div className="relative z-10 flex h-full flex-col justify-between gap-12">
-              <div className="flex flex-1 flex-col items-center justify-center space-y-8 text-center">
-                <div className="bg-white/12 mx-auto flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/20 p-4 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md md:h-44 md:w-44">
+            <div className="relative z-10 flex h-full flex-col justify-between gap-4 sm:gap-8 lg:gap-12">
+              <div className="flex flex-1 items-center gap-4 sm:flex-col sm:justify-center sm:space-y-6 sm:text-center lg:space-y-8">
+                <div className="bg-white/12 flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/20 p-2 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md sm:mx-auto sm:h-32 sm:w-32 sm:rounded-[2rem] sm:p-3 md:h-44 md:w-44 md:p-4">
                   <Image
                     src="/Logo.png"
                     alt={t('hero.logoAlt')}
@@ -250,12 +243,12 @@ export function AuthClient({ locale }: { locale: string }) {
                   />
                 </div>
 
-                <div className="mx-auto max-w-2xl space-y-5">
+                <div className="min-w-0 flex-1 space-y-1.5 text-start sm:mx-auto sm:max-w-2xl sm:space-y-5 sm:text-center">
                   <motion.h1
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="text-3xl font-black leading-[1.8] tracking-tight text-white drop-shadow-lg md:text-4xl xl:text-5xl"
+                    className="text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
                   >
                     {t('hero.title')}
                   </motion.h1>
@@ -263,27 +256,26 @@ export function AuthClient({ locale }: { locale: string }) {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: 'easeOut', delay: 0.06 }}
-                    className="text-slate-200/82 max-w-xl text-sm leading-8 md:text-base"
+                    className="hidden max-w-xl text-sm leading-7 text-slate-200/82 sm:block md:text-base md:leading-8"
                   >
                     {t('hero.description')}
                   </motion.p>
                 </div>
               </div>
 
-              <div className="border-white/12 mx-auto max-w-xl rounded-3xl border bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md">
+              <div className="border-white/12 mx-auto hidden max-w-xl rounded-3xl border bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md sm:block">
                 {t('hero.tagline')}
               </div>
             </div>
           </section>
 
-          <section className="flex items-center justify-center lg:justify-start">
-            <Card className="border-white/16 bg-slate-950/58 relative w-full max-w-xl overflow-hidden rounded-[2rem] text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl">
+          <section className="flex min-w-0 items-center justify-center lg:justify-start">
+            <Card className="border-white/16 bg-slate-950/58 relative w-full min-w-0 max-w-xl overflow-hidden rounded-[1.5rem] text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl sm:rounded-[2rem]">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.18),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.10),transparent_34%)]" />
               <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
-              <div className="relative z-10">
-                <CardHeader className="space-y-4 p-6 pb-3 md:p-8 md:pb-4">
+              <div className="relative z-10 min-w-0">
+                <CardHeader className="space-y-3 p-4 pb-2 sm:space-y-4 sm:p-6 sm:pb-3 md:p-8 md:pb-4">
                   <div className="flex items-center justify-between gap-3">
-                    {/* <span className="text-xs font-medium text-slate-300/80">{t('languageSwitch.language')}</span> */}
                     <div
                       role="group"
                       aria-label={t('languageSwitch.language')}
@@ -316,24 +308,16 @@ export function AuthClient({ locale }: { locale: string }) {
                       })}
                     </div>
                   </div>
-                  {/* <div className="flex justify-end">
-                    <Image
-                      src="/Logo.png"
-                      alt={t('hero.logoAlt')}
-                      width={44}
-                      height={44}
-                      className="h-11 w-11 rounded-xl object-contain opacity-90 ring-1 ring-white/10"
-                    />
-                  </div> */}
-                  <div className="space-y-3 text-right">
-                    <CardTitle className="text-2xl font-black leading-relaxed text-white md:text-3xl">
+
+                  <div className="space-y-2 text-right sm:space-y-3">
+                    <CardTitle className="text-xl font-black leading-relaxed text-white sm:text-2xl md:text-3xl">
                       {authMode === 'login'
                         ? t('card.loginTitle')
                         : authMode === 'reset'
                           ? t('card.resetTitle')
                           : t('card.signupTitle')}
                     </CardTitle>
-                    <CardDescription className="text-sm leading-7 text-slate-300/85">
+                    <CardDescription className="text-xs leading-6 text-slate-300/85 sm:text-sm sm:leading-7">
                       {authMode === 'login'
                         ? t('card.loginDescription')
                         : authMode === 'reset'
@@ -342,8 +326,9 @@ export function AuthClient({ locale }: { locale: string }) {
                     </CardDescription>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 pt-2 md:p-8 md:pt-3">
-                  <div className="bg-slate-950/32 rounded-3xl border border-white/10 p-4 shadow-inner shadow-black/25 backdrop-blur-md md:p-5">
+
+                <CardContent className="min-w-0 p-4 pt-2 sm:p-6 sm:pt-2 md:p-8 md:pt-3">
+                  <div className="bg-slate-950/32 min-w-0 rounded-2xl border border-white/10 p-3 shadow-inner shadow-black/25 backdrop-blur-md sm:rounded-3xl sm:p-4 md:p-5">
                     <AnimatePresence mode="wait" initial={false}>
                       {authMode === 'login' ? (
                         <motion.div
@@ -352,7 +337,7 @@ export function AuthClient({ locale }: { locale: string }) {
                           animate={{ opacity: 1, y: 0, height: 'auto' }}
                           exit={{ opacity: 0, y: -8, height: 0 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="overflow-hidden"
+                          className="min-w-0 overflow-hidden"
                         >
                           <LoginForm
                             busy={busy || postSignupAuthLoading}
@@ -370,7 +355,7 @@ export function AuthClient({ locale }: { locale: string }) {
                           animate={{ opacity: 1, y: 0, height: 'auto' }}
                           exit={{ opacity: 0, y: -8, height: 0 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="overflow-hidden"
+                          className="min-w-0 overflow-hidden"
                         >
                           <SignupWizard
                             busy={busy || postSignupAuthLoading}
@@ -391,7 +376,7 @@ export function AuthClient({ locale }: { locale: string }) {
                           animate={{ opacity: 1, y: 0, height: 'auto' }}
                           exit={{ opacity: 0, y: -8, height: 0 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="overflow-hidden"
+                          className="min-w-0 overflow-hidden"
                         >
                           <PasswordResetWizard
                             busy={busy || postSignupAuthLoading}
@@ -409,7 +394,7 @@ export function AuthClient({ locale }: { locale: string }) {
                     </AnimatePresence>
                   </div>
 
-                  <Separator className="my-6 bg-white/10" />
+                  <Separator className="my-4 bg-white/10 sm:my-6" />
 
                   <button
                     type="button"
