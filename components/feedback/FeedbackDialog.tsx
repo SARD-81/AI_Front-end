@@ -86,9 +86,15 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('max-w-xl', isRtl ? 'text-right' : 'text-left')} dir={isRtl ? 'rtl' : 'ltr'}>
+      <DialogContent
+        className={cn(
+          'max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-xl overflow-y-auto overscroll-contain rounded-2xl p-4 pe-10 sm:w-full sm:p-6 sm:pe-12',
+          isRtl ? 'text-right' : 'text-left'
+        )}
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
         <DialogTitle className="text-lg font-semibold">{t('title')}</DialogTitle>
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{t('description')}</p>
 
         <Form {...form}>
           <form
@@ -108,7 +114,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
               render={({field}) => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {FEEDBACK_CHIPS.map((chip) => {
                         const selected = field.value === chip.key;
                         return (
@@ -120,7 +126,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                               form.setValue('mappedReasonCategory', chip.reasonCategory, {shouldValidate: true});
                             }}
                             className={cn(
-                              'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2',
+                              'rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 sm:px-3 sm:text-sm',
                               selected
                                 ? 'border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] text-[hsl(var(--info-text))] shadow-sm'
                                 : 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] text-foreground hover:bg-[hsl(var(--surface-elevated))]'
@@ -148,7 +154,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
                   <FormControl>
                     <textarea
                       id="feedback-comment"
-                      className="flex min-h-24 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
+                      className="flex min-h-24 w-full resize-y rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
                       maxLength={1000}
                       placeholder={t('placeholder')}
                       {...field}
@@ -174,7 +180,7 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
               ) : null}
             </AnimatePresence>
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 {t('cancel')}
               </Button>
