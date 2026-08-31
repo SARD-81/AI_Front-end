@@ -75,7 +75,7 @@ export function ChatEmptyState({
           />
 
           <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:gap-2.5 [@media(max-height:700px)]:gap-1.5">
-            {suggestedPrompts.map((prompt) => (
+            {suggestedPrompts.map((prompt, index) => (
               <Button
                 key={prompt}
                 type="button"
@@ -83,6 +83,7 @@ export function ChatEmptyState({
                 size="sm"
                 onClick={() => onPromptSelect(prompt)}
                 className={cn(
+                  index >= 3 && 'hidden sm:inline-flex',
                   'h-auto min-w-0 max-w-full rounded-full border-border bg-background px-3 py-2 text-xs leading-5 text-foreground transition-colors sm:px-4 sm:text-sm [@media(max-height:700px)]:py-1.5',
                   'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
