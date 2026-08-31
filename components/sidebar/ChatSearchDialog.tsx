@@ -55,26 +55,32 @@ export function ChatSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        className="bottom-2 top-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none translate-y-0 flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:bottom-auto sm:top-[12%] sm:w-full sm:max-w-xl sm:rounded-2xl"
+        className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:max-h-[min(44rem,calc(100dvh-3rem))] sm:w-full sm:max-w-xl"
       >
         <DialogTitle className="sr-only">
           {t('sidebar.searchDialogTitle')}
         </DialogTitle>
 
         <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Search
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           <input
             autoFocus
-            type="text"
+            type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('sidebar.searchPlaceholder')}
             aria-label={t('sidebar.searchPlaceholder')}
-            className="min-w-0 w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0"
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-w-0 w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:hidden"
           />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3 sm:max-h-[60vh] sm:min-h-[8rem]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-2 px-2 py-3 sm:min-h-[8rem]">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
             {normalizedQuery
               ? t('sidebar.searchResults')
@@ -110,7 +116,9 @@ export function ChatSearchDialog({
                       className="h-4 w-4 shrink-0 text-muted-foreground"
                       aria-hidden
                     />
-                    <span className="truncate">{chat.title}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {chat.title}
+                    </span>
                   </button>
                 </li>
               ))}
