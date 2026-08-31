@@ -16,19 +16,22 @@ export function DropdownMenuContent({
   align,
   ...props
 }: Dropdown.DropdownMenuContentProps) {
-  const isNarrowViewport = useMediaQuery('(max-width: 639px)');
+  // Horizontal fly-out menus work well beside the collapsed desktop sidebar,
+  // but inside the mobile/tablet sheet they can escape the visible viewport.
+  // Keep those menus above their trigger until the permanent desktop sidebar
+  // takes over at the lg breakpoint.
+  const isSidebarViewport = useMediaQuery('(max-width: 1023px)');
   const opensHorizontally = side === 'left' || side === 'right';
-  const resolvedSide =
-    isNarrowViewport && opensHorizontally ? 'top' : side;
-  const resolvedAlign =
-    isNarrowViewport && opensHorizontally ? 'center' : align;
+  const shouldOpenVertically = isSidebarViewport && opensHorizontally;
+  const resolvedSide = shouldOpenVertically ? 'top' : side;
+  const resolvedAlign = shouldOpenVertically ? 'center' : align;
 
   return (
     <Dropdown.Portal>
       <Dropdown.Content
         className={cn(
-          'z-50 min-w-40 rounded-md border border-menu-border bg-menu p-1 text-menu-foreground shadow-card outline-none dark:border-menu-border dark:bg-menu dark:shadow-[0_18px_48px_-24px_hsl(var(--shadow-color)/0.9),0_0_0_1px_hsl(var(--foreground)/0.03)]',
-          'origin-top-right transition duration-200 ease-out data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
+          'z-50 min-w-40 max-w-[calc(100vw-1.5rem)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-md border border-menu-border bg-menu p-1 text-menu-foreground shadow-card outline-none dark:border-menu-border dark:bg-menu dark:shadow-[0_18px_48px_-24px_hsl(var(--shadow-color)/0.9),0_0_0_1px_hsl(var(--foreground)/0.03)]',
+          '[transform-origin:var(--radix-dropdown-menu-content-transform-origin)] transition duration-200 ease-out data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
           'data-[state=closed]:-translate-y-1 data-[state=closed]:opacity-0',
           className
         )}
