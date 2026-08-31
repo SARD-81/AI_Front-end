@@ -7,8 +7,19 @@ import {cn} from '@/lib/utils';
 import {useMediaQuery} from '@/hooks/use-media-query';
 
 export const DropdownMenu = Dropdown.Root;
-export const DropdownMenuTrigger = Dropdown.Trigger;
 export const DropdownMenuRadioGroup = Dropdown.RadioGroup;
+
+export const DropdownMenuTrigger = React.forwardRef<
+  React.ElementRef<typeof Dropdown.Trigger>,
+  React.ComponentPropsWithoutRef<typeof Dropdown.Trigger>
+>(({className, ...props}, ref) => (
+  <Dropdown.Trigger
+    ref={ref}
+    className={cn('max-lg:opacity-100', className)}
+    {...props}
+  />
+));
+DropdownMenuTrigger.displayName = Dropdown.Trigger.displayName;
 
 export function DropdownMenuContent({
   className,
