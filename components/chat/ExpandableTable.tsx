@@ -23,7 +23,7 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="my-4 overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
+      <div className="my-4 min-w-0 overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/60 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -51,8 +51,8 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="relative">
-          <div className="max-h-72 overflow-auto overscroll-contain">
+        <div className="relative min-w-0">
+          <div className="max-h-[min(16rem,45dvh)] max-w-full touch-pan-x overflow-auto overscroll-contain sm:max-h-72">
             <table className="chat-table !text-[13px] [&_td]:!min-w-28 [&_td]:!max-w-72 [&_td]:!px-2.5 [&_td]:!py-2 [&_th]:!min-w-28 [&_th]:!max-w-72 [&_th]:!px-2.5 [&_th]:!py-2">
               {children}
             </table>
