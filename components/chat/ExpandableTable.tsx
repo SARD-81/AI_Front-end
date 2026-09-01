@@ -52,7 +52,7 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
         </div>
 
         <div className="relative min-w-0">
-          <div className="max-h-[min(16rem,45dvh)] max-w-full touch-pan-x overflow-auto overscroll-contain sm:max-h-72">
+          <div className="max-h-[min(16rem,45dvh)] max-w-full overflow-auto overscroll-contain sm:max-h-72">
             <table className="chat-table !text-[13px] [&_td]:!min-w-28 [&_td]:!max-w-72 [&_td]:!px-2.5 [&_td]:!py-2 [&_th]:!min-w-28 [&_th]:!max-w-72 [&_th]:!px-2.5 [&_th]:!py-2">
               {children}
             </table>
