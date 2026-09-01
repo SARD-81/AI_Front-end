@@ -75,7 +75,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="w-full resize-none border-0 bg-transparent px-1 py-0.5 text-[14px] leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:py-1 sm:text-[15px] sm:leading-7"
+        className="max-h-[9.5rem] w-full resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-0.5 text-[14px] leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:max-h-[13rem] sm:py-1 sm:text-[15px] sm:leading-7"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             if (event.nativeEvent.isComposing) return;
