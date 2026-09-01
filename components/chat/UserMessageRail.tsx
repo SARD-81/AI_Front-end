@@ -91,7 +91,7 @@ export function UserMessageRail({
   };
 
   return (
-    <aside className="absolute bottom-24 left-2 top-24 z-20 flex w-32 items-center justify-start">
+    <aside className="absolute bottom-24 left-2 top-24 z-20 hidden w-32 items-center justify-start lg:flex">
       <div
         className="pointer-events-auto relative"
         onMouseEnter={openPanel}
@@ -109,7 +109,6 @@ export function UserMessageRail({
             isOpen ? 'opacity-100 shadow-sm ring-1 ring-ring/20' : 'opacity-85'
           )}
         >
-          {/*<List className="mb-0.5 h-3.5 w-3.5 text-muted-foreground/75" aria-hidden />*/}
           {anchors.map((anchor) => {
             const isActive = highlightedAnchorId === anchor.anchorId;
             return (
@@ -136,29 +135,29 @@ export function UserMessageRail({
         {isOpen ? (
           <div className="absolute left-full top-1/2 w-72 -translate-y-1/2 ps-3" onMouseEnter={openPanel} onMouseLeave={closePanel}>
             <div className="rounded-xl border border-border/60 bg-popover p-2 shadow-lg">
-            <div className="max-h-[min(320px,40vh)] space-y-1 overflow-auto" dir="rtl">
-              {anchors.map((anchor, index) => {
-                const isActive = anchor.anchorId === highlightedAnchorId;
-                return (
-                  <button
-                    key={`panel-${anchor.anchorId}`}
-                    type="button"
-                    className={cn(
-                      'flex h-9 w-full items-center gap-2 rounded-lg px-3 text-right text-sm transition-colors',
-                      isActive ? 'bg-accent/70 text-foreground' : 'hover:bg-muted/60'
-                    )}
-                    onMouseEnter={() => onAnchorHover(anchor.anchorId)}
-                    onMouseLeave={() => onAnchorHover(null)}
-                    onClick={() => onAnchorClick(anchor)}
-                    title={anchor.snippet}
-                  >
-                    <span className="text-xs text-muted-foreground">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate">{anchor.snippet || t('messageRail.emptyMessage')}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {activeIndex >= 0 ? <span className="sr-only">{t('messageRail.activeMessage', {index: activeIndex + 1})}</span> : null}
+              <div className="max-h-[min(320px,40vh)] space-y-1 overflow-auto" dir="rtl">
+                {anchors.map((anchor, index) => {
+                  const isActive = anchor.anchorId === highlightedAnchorId;
+                  return (
+                    <button
+                      key={`panel-${anchor.anchorId}`}
+                      type="button"
+                      className={cn(
+                        'flex h-9 w-full items-center gap-2 rounded-lg px-3 text-right text-sm transition-colors',
+                        isActive ? 'bg-accent/70 text-foreground' : 'hover:bg-muted/60'
+                      )}
+                      onMouseEnter={() => onAnchorHover(anchor.anchorId)}
+                      onMouseLeave={() => onAnchorHover(null)}
+                      onClick={() => onAnchorClick(anchor)}
+                      title={anchor.snippet}
+                    >
+                      <span className="text-xs text-muted-foreground">{index + 1}</span>
+                      <span className="min-w-0 flex-1 truncate">{anchor.snippet || t('messageRail.emptyMessage')}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {activeIndex >= 0 ? <span className="sr-only">{t('messageRail.activeMessage', {index: activeIndex + 1})}</span> : null}
             </div>
           </div>
         ) : null}
