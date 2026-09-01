@@ -27,10 +27,13 @@ export function OtpInput({value, onChange, disabled, className}: OtpInputProps) 
   };
 
   return (
-    // Only the digit boxes are ordered left-to-right here; the inputs
-    // themselves carry no forced direction, so the typing language is never
-    // overridden.
-    <div className={cn('flex items-center justify-center gap-2', className)} dir="ltr">
+    <div
+      className={cn(
+        'mx-auto grid w-full max-w-[20rem] grid-cols-6 gap-1.5 sm:flex sm:w-auto sm:max-w-none sm:items-center sm:justify-center sm:gap-2',
+        className
+      )}
+      dir="ltr"
+    >
       {digits.map((digit, index) => (
         <Input
           key={index}
@@ -43,7 +46,7 @@ export function OtpInput({value, onChange, disabled, className}: OtpInputProps) 
           autoComplete="one-time-code"
           maxLength={1}
           disabled={disabled}
-          className="h-11 w-11 text-center text-base"
+          className="h-10 min-w-0 w-full px-0 text-center text-base sm:h-11 sm:w-11 sm:flex-none"
           onChange={(event) => setDigit(index, event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Backspace' && !digits[index] && index > 0) {
@@ -51,7 +54,10 @@ export function OtpInput({value, onChange, disabled, className}: OtpInputProps) 
             }
           }}
           onPaste={(event) => {
-            const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+            const pasted = event.clipboardData
+              .getData('text')
+              .replace(/\D/g, '')
+              .slice(0, 6);
             if (!pasted) {
               return;
             }

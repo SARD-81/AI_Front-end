@@ -33,12 +33,9 @@ type UserAnchor = {
   snippet: string;
 };
 
-// Kept module-level so the object identity never changes between renders;
-// Virtuoso remounts its internal components whenever this prop is a new object.
 const VIRTUOSO_COMPONENTS = {
-  // Clears the floating glass header so the very first message starts below it.
   Header: () => <div className="h-20 w-full shrink-0" aria-hidden />,
-  Footer: () => <div className="h-4 w-full shrink-0" aria-hidden />
+  Footer: () => <div className="h-16 w-full shrink-0 sm:h-4" aria-hidden />
 };
 
 function AssistantPendingBubble() {
@@ -51,8 +48,6 @@ function AssistantPendingBubble() {
     ],
     [t]
   );
-  // Pick exactly one status for this pending response. The component is mounted
-  // once per request, so the label stays stable instead of cycling endlessly.
   const [statusIndex] = useState(() => Math.floor(Math.random() * 3));
   const status = statuses[statusIndex] ?? statuses[0];
 
@@ -157,8 +152,6 @@ export function MessageList({
       lastUserMessageId
     };
 
-    // Do not move the viewport on initial history load. Force-scroll only when
-    // a genuinely new user message is appended to the already-mounted thread.
     if (!previous) return;
 
     const hasNewUserMessage =
@@ -188,8 +181,6 @@ export function MessageList({
         align: 'end',
         behavior: reduceMotion ? 'auto' : 'smooth'
       });
-      // Once the user submits a fresh message, subsequent pending/streaming
-      // output should follow naturally until the user deliberately scrolls up.
       setAtBottom(true);
     });
   }, [items.length, lastUserMessageId, messages.length]);
@@ -256,9 +247,6 @@ export function MessageList({
       }
     }
 
-    // Highlight the user message that is actually visible at the top of the
-    // viewport. The previous logic always resolved to the anchor *before* the
-    // first visible row, which made the rail lag one tick behind.
     const { startIndex, endIndex } = range;
     const visible = userAnchors.find(
       (anchor) =>
@@ -306,10 +294,6 @@ export function MessageList({
         ref={virtuosoRef}
         data={items}
         className="h-full w-full"
-        // A scrollable spacer that belongs to the list content itself. Padding on
-        // the item wrapper cannot be used here: every Virtuoso row lives in its
-        // own container, so `first:` would match each row instead of only the
-        // topmost message.
         components={VIRTUOSO_COMPONENTS}
         followOutput={atBottom ? 'auto' : false}
         atBottomStateChange={(bottom) => setAtBottom(bottom)}
@@ -318,7 +302,7 @@ export function MessageList({
         itemContent={(index, message) => {
           if (message.role === 'assistant-pending') {
             return (
-              <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
+              <div className="group mx-auto w-full max-w-4xl px-3 py-2.5 sm:px-6 sm:py-3">
                 <AssistantPendingBubble />
               </div>
             );
@@ -327,7 +311,7 @@ export function MessageList({
           const anchorId =
             message.role === 'user' ? `msg-${message.id}` : undefined;
           return (
-            <div className="group mx-auto w-full max-w-4xl px-4 py-3 sm:px-6">
+            <div className="group mx-auto w-full max-w-4xl px-3 py-2.5 sm:px-6 sm:py-3">
               <MessageBubble
                 message={message}
                 onCopyMessage={onCopyMessage}
@@ -350,7 +334,7 @@ export function MessageList({
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-5 left-1/2 z-10 h-10 w-10 -translate-x-1/2 rounded-full shadow-lg"
+          className="absolute bottom-4 right-[max(0.75rem,env(safe-area-inset-right))] z-10 h-9 w-9 rounded-full shadow-lg sm:bottom-5 sm:left-1/2 sm:right-auto sm:h-10 sm:w-10 sm:-translate-x-1/2"
           onClick={scrollToBottom}
           aria-label={t('message.scrollToBottom')}
           title={t('message.scrollToBottom')}

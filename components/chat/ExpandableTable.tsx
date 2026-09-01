@@ -13,17 +13,19 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
     ? {
         table: 'جدول',
         expand: 'نمایش تمام‌صفحه جدول',
-        hint: 'برای مشاهده کامل جدول، آن را بزرگ کنید.'
+        hint: 'برای مشاهده کامل جدول، آن را بزرگ کنید.',
+        mobileHint: 'برای دیدن ستون‌های بیشتر، جدول را افقی بکشید.'
       }
     : {
         table: 'Table',
         expand: 'Open table fullscreen',
-        hint: 'Expand the table for a complete view.'
+        hint: 'Expand the table for a complete view.',
+        mobileHint: 'Swipe horizontally to view more columns.'
       };
 
   return (
     <>
-      <div className="my-4 overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
+      <div className="my-4 min-w-0 overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/60 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -51,8 +53,8 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="relative">
-          <div className="max-h-72 overflow-auto overscroll-contain">
+        <div className="relative min-w-0">
+          <div className="max-h-[min(16rem,45dvh)] max-w-full overflow-auto overscroll-contain sm:max-h-72">
             <table className="chat-table !text-[13px] [&_td]:!min-w-28 [&_td]:!max-w-72 [&_td]:!px-2.5 [&_td]:!py-2 [&_th]:!min-w-28 [&_th]:!max-w-72 [&_th]:!px-2.5 [&_th]:!py-2">
               {children}
             </table>
@@ -67,21 +69,27 @@ export function ExpandableTable({ children }: { children: ReactNode }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           dir={isRtl ? 'rtl' : 'ltr'}
-          className="h-[100dvh] max-h-none w-screen max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-none border-0 bg-background p-0 pe-0 shadow-none sm:rounded-none"
+          className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-background p-0 pe-0 shadow-card sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:rounded-3xl lg:h-[100dvh] lg:max-h-none lg:w-screen lg:max-w-none lg:rounded-none lg:border-0 lg:shadow-none"
         >
           <DialogTitle className="sr-only">{labels.expand}</DialogTitle>
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] px-4 pe-14 sm:px-6 sm:pe-16">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+
+          <div className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] px-3 pe-12 py-2.5 sm:px-5 sm:pe-14 lg:min-h-14 lg:px-6 lg:pe-16 lg:py-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary lg:h-8 lg:w-8 lg:rounded-lg">
               <Table2 className="h-4 w-4" />
             </span>
-            <span className="text-sm font-semibold text-foreground">
-              {labels.table}
-            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {labels.table}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground lg:hidden">
+                {labels.mobileHint}
+              </p>
+            </div>
           </div>
 
-          <div className="min-h-0 overflow-auto p-3 sm:p-6">
-            <div className="prose-chat min-w-max rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm">
-              <table className="chat-table min-w-full !text-sm [&_td]:!min-w-36 [&_td]:!max-w-[30rem] [&_td]:!px-4 [&_td]:!py-3 [&_th]:!min-w-36 [&_th]:!max-w-[30rem] [&_th]:!px-4 [&_th]:!py-3">
+          <div className="min-h-0 overflow-auto overscroll-contain p-2 sm:p-4 lg:p-6 [scrollbar-gutter:stable]">
+            <div className="prose-chat min-w-max overflow-hidden rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm sm:rounded-2xl">
+              <table className="chat-table min-w-full !text-[12px] sm:!text-sm [&_td]:!min-w-32 [&_td]:!max-w-[18rem] [&_td]:!px-3 [&_td]:!py-2.5 [&_th]:!min-w-32 [&_th]:!max-w-[18rem] [&_th]:!px-3 [&_th]:!py-2.5 sm:[&_td]:!min-w-36 sm:[&_td]:!max-w-[30rem] sm:[&_td]:!px-4 sm:[&_td]:!py-3 sm:[&_th]:!min-w-36 sm:[&_th]:!max-w-[30rem] sm:[&_th]:!px-4 sm:[&_th]:!py-3">
                 {children}
               </table>
             </div>

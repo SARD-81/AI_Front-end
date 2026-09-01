@@ -77,18 +77,15 @@ function ThinkingIndicator() {
   );
 }
 
-// A full component map: without it react-markdown renders bare tags that the
-// Tailwind preflight strips of every margin, list marker and heading size,
-// which is why answers looked like unformatted plain text.
 const markdownComponents: Components = {
-  p: ({ children }) => <p className="my-3 text-justify leading-8">{children}</p>,
-  h1: ({ children }) => <h1 className="mb-3 mt-5 text-xl font-bold leading-8">{children}</h1>,
-  h2: ({ children }) => <h2 className="mb-2.5 mt-5 text-lg font-bold leading-8">{children}</h2>,
-  h3: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold leading-7">{children}</h3>,
-  h4: ({ children }) => <h4 className="mb-2 mt-4 text-sm font-bold leading-7">{children}</h4>,
+  p: ({ children }) => <p dir="auto" className="my-3 text-justify leading-8">{children}</p>,
+  h1: ({ children }) => <h1 dir="auto" className="mb-3 mt-5 text-xl font-bold leading-8">{children}</h1>,
+  h2: ({ children }) => <h2 dir="auto" className="mb-2.5 mt-5 text-lg font-bold leading-8">{children}</h2>,
+  h3: ({ children }) => <h3 dir="auto" className="mb-2 mt-4 text-base font-bold leading-7">{children}</h3>,
+  h4: ({ children }) => <h4 dir="auto" className="mb-2 mt-4 text-sm font-bold leading-7">{children}</h4>,
   ul: ({ children }) => <ul className="my-3 list-disc space-y-1.5 ps-6">{children}</ul>,
   ol: ({ children }) => <ol className="my-3 list-decimal space-y-1.5 ps-6">{children}</ol>,
-  li: ({ children }) => <li className="leading-8 marker:text-muted-foreground">{children}</li>,
+  li: ({ children }) => <li dir="auto" className="leading-8 marker:text-muted-foreground">{children}</li>,
   strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   del: ({ children }) => <del className="opacity-70">{children}</del>,
@@ -99,7 +96,7 @@ const markdownComponents: Components = {
     </a>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="my-4 rounded-e-lg border-s-4 border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/60 px-4 py-2">
+    <blockquote dir="auto" className="my-4 rounded-e-lg border-s-4 border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/60 px-4 py-2">
       {children}
     </blockquote>
   ),
@@ -122,8 +119,8 @@ const markdownComponents: Components = {
   pre: ({ children }) => <>{children}</>,
   table: ({ children }) => <ExpandableTable>{children}</ExpandableTable>,
   thead: ({ children }) => <thead>{children}</thead>,
-  th: ({ children }) => <th>{children}</th>,
-  td: ({ children }) => <td>{children}</td>
+  th: ({ children }) => <th dir="auto">{children}</th>,
+  td: ({ children }) => <td dir="auto">{children}</td>
 };
 
 type MessageBubbleProps = {
@@ -243,8 +240,6 @@ function MessageBubbleComponent({
           <>
             <div
               className={cn(
-                // Both roles share one column (ChatGPT-like); only the bubble
-                // inside it is aligned to the user's side.
                 'relative w-full text-[15px] leading-7 transition-all duration-200',
                 isUser
                   ? 'msg-user-row'
@@ -262,6 +257,7 @@ function MessageBubbleComponent({
                     />
                   ) : null}
                   <p
+                    dir="auto"
                     className={cn(
                       'm-0 whitespace-pre-wrap break-words rounded-3xl border border-[hsl(var(--bubble-user-border))] bg-[hsl(var(--bubble-user))] px-4 py-3 text-foreground shadow-sm',
                       sendStatus === 'failed'
@@ -323,7 +319,7 @@ function MessageBubbleComponent({
                 </div>
               ) : (
                 <div
-                  dir={isAssistantEnglish ? 'ltr' : undefined}
+                  dir={isAssistantEnglish ? 'ltr' : 'auto'}
                   className={cn(
                     'prose-chat',
                     isAssistantEnglish ? 'text-left ltr:text-left' : undefined

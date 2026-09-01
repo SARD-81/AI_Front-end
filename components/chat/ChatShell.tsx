@@ -23,8 +23,6 @@ import { ApiError } from '@/lib/api/client';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 
-// WS error codes for which the backend sends a user-facing Persian message
-// that the integration guide says can be shown verbatim.
 const BACKEND_WS_USER_FACING_CODES = new Set([
   'rate_limited',
   'server_busy',
@@ -133,9 +131,6 @@ export function ChatShell({
     !hasMessages &&
     !hasSubmittedMessage;
   const headerTitle = useMemo(() => {
-    // The backend generates the conversation topic (topic generator) after the
-    // first answer, so the title always comes from the server. Falling back to
-    // the first user message would show a different title than the sidebar.
     const rawTitle = chat?.title?.trim() || t('chat.defaultTitle');
     const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
     const maxLength = 72;
@@ -265,9 +260,6 @@ export function ChatShell({
     try {
       let activeChatId = chatId;
 
-      // Conversation creation is deliberately lazy: opening the chat shell or
-      // pressing "New chat" never persists an empty conversation. The backend
-      // conversation is created only when the first real message is submitted.
       if (!activeChatId) {
         const created = await actions.create.mutateAsync({ title: t('newChat') });
         activeChatId = created.id;
@@ -298,8 +290,6 @@ export function ChatShell({
 
       if (result?.assistantCommitted) {
         clearStreamingState();
-        // The topic is generated server-side after the first answer, so refetch
-        // the conversation and the list to display the real title.
         queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
         queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
@@ -346,9 +336,6 @@ export function ChatShell({
     toast.error(t('chat.copyError'));
   };
 
-  // The API has no "edit message" endpoint, so editing is handled purely on the
-  // client: the edited message (and the answer it produced) is removed from the
-  // thread and the new text is sent as a fresh message in its place.
   const dropMessagesFrom = (messageId: string) => {
     if (!chatId) return;
     queryClient.setQueryData(['chat', chatId], (previous: unknown) => {
@@ -407,23 +394,21 @@ export function ChatShell({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
       <div className="hidden h-full shrink-0 lg:block">
         <Sidebar locale={locale} />
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent className="w-[304px] p-0 sm:max-w-[304px] lg:hidden">
+        <SheetContent className="h-[100dvh] w-[304px] p-0 sm:max-w-[304px] lg:hidden">
           <Sidebar locale={locale} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
 
         <main id="main-content" className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Floating glass bar: no divider, and the conversation scrolls *under*
-              it so the content blurs away behind the frosted background. */}
           <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-h-14 items-center border-0 bg-transparent py-1 sm:h-14 sm:py-0">
             <div className="pointer-events-none absolute inset-0 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)]" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background)/0.82)] to-transparent" />
-            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center px-4 sm:px-6">
+            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center px-3 sm:px-6">
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
@@ -438,7 +423,7 @@ export function ChatShell({
             </div>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="max-w-[min(32rem,72%)] truncate rounded-full px-4 text-center text-sm font-semibold leading-6 text-foreground/90 md:text-base">
+              <h1 className="max-w-[min(32rem,68%)] truncate rounded-full px-3 text-center text-sm font-semibold leading-6 text-foreground/90 sm:max-w-[min(32rem,72%)] sm:px-4 md:text-base">
                 {headerTitle}
               </h1>
             </div>
@@ -494,8 +479,8 @@ export function ChatShell({
             </section>
 
             {!shouldShowEmptyState ? (
-              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]/95 py-3 backdrop-blur md:py-4">
-                <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]/95 py-2 backdrop-blur sm:py-3 md:py-4">
+                <div className="mx-auto w-full max-w-3xl px-3 sm:px-6">
                   <Composer
                     value={value}
                     onChange={setValue}

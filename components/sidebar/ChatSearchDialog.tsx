@@ -19,10 +19,6 @@ type ChatSearchDialogProps = {
   onNavigate?: () => void;
 };
 
-/**
- * ChatGPT-style command palette for conversations: it lists the recent chats
- * and filters them by title as the user types. Selecting a row opens that chat.
- */
 export function ChatSearchDialog({
   open,
   onOpenChange,
@@ -59,27 +55,32 @@ export function ChatSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0 pe-0"
+        className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:max-h-[min(44rem,calc(100dvh-3rem))] sm:w-full sm:max-w-xl"
       >
         <DialogTitle className="sr-only">
           {t('sidebar.searchDialogTitle')}
         </DialogTitle>
 
-        {/* Search row: borderless, the dialog itself is the visual frame. */}
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
+          <Search
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           <input
             autoFocus
-            type="text"
+            type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('sidebar.searchPlaceholder')}
             aria-label={t('sidebar.searchPlaceholder')}
-            className="w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0"
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-w-0 w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:hidden"
           />
         </div>
 
-        <div className="max-h-[60vh] min-h-[8rem] overflow-y-auto px-2 py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-2 px-2 py-3 sm:min-h-[8rem]">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
             {normalizedQuery
               ? t('sidebar.searchResults')
@@ -115,7 +116,9 @@ export function ChatSearchDialog({
                       className="h-4 w-4 shrink-0 text-muted-foreground"
                       aria-hidden
                     />
-                    <span className="truncate">{chat.title}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {chat.title}
+                    </span>
                   </button>
                 </li>
               ))}

@@ -86,13 +86,21 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('max-w-xl', isRtl ? 'text-right' : 'text-left')} dir={isRtl ? 'rtl' : 'ltr'}>
-        <DialogTitle className="text-lg font-semibold">{t('title')}</DialogTitle>
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
+      <DialogContent
+        className={cn(
+          'flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-xl flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:w-full',
+          isRtl ? 'text-right' : 'text-left'
+        )}
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        <div className="shrink-0 border-b border-border/70 px-4 pb-3 pt-4 pe-11 sm:px-6 sm:pb-4 sm:pt-6 sm:pe-12">
+          <DialogTitle className="text-base font-semibold sm:text-lg">{t('title')}</DialogTitle>
+          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{t('description')}</p>
+        </div>
 
         <Form {...form}>
           <form
-            className="space-y-4"
+            className="flex min-h-0 flex-1 flex-col"
             onSubmit={form.handleSubmit(async (values) => {
               await onSubmit({
                 is_liked: false,
@@ -102,85 +110,100 @@ export function FeedbackDialog({open, onOpenChange, initialValue, isSubmitting, 
               onOpenChange(false);
             })}
           >
-            <FormField
-              control={form.control}
-              name="selectedChipKey"
-              render={({field}) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="flex flex-wrap gap-2">
-                      {FEEDBACK_CHIPS.map((chip) => {
-                        const selected = field.value === chip.key;
-                        return (
-                          <button
-                            key={chip.key}
-                            type="button"
-                            onClick={() => {
-                              field.onChange(chip.key);
-                              form.setValue('mappedReasonCategory', chip.reasonCategory, {shouldValidate: true});
-                            }}
-                            className={cn(
-                              'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2',
-                              selected
-                                ? 'border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] text-[hsl(var(--info-text))] shadow-sm'
-                                : 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] text-foreground hover:bg-[hsl(var(--surface-elevated))]'
-                            )}
-                          >
-                            {chipLabels[chip.key]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+              <FormField
+                control={form.control}
+                name="selectedChipKey"
+                render={({field}) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex min-w-0 flex-wrap gap-1.5 sm:gap-2">
+                        {FEEDBACK_CHIPS.map((chip) => {
+                          const selected = field.value === chip.key;
+                          return (
+                            <button
+                              key={chip.key}
+                              type="button"
+                              onClick={() => {
+                                field.onChange(chip.key);
+                                form.setValue('mappedReasonCategory', chip.reasonCategory, {shouldValidate: true});
+                              }}
+                              className={cn(
+                                'min-w-0 max-w-full rounded-full border px-2.5 py-1.5 text-xs font-medium leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 sm:px-3 sm:text-sm',
+                                selected
+                                  ? 'border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] text-[hsl(var(--info-text))] shadow-sm'
+                                  : 'border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] text-foreground hover:bg-[hsl(var(--surface-elevated))]'
+                              )}
+                            >
+                              <span className="break-words">{chipLabels[chip.key]}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="text_comment"
-              render={({field}) => (
-                <FormItem>
-                  <Label htmlFor="feedback-comment" className="text-sm font-medium">
-                    {t('commentLabel')}
-                  </Label>
-                  <FormControl>
-                    <textarea
-                      id="feedback-comment"
-                      className="flex min-h-24 w-full rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
-                      maxLength={1000}
-                      placeholder={t('placeholder')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="text_comment"
+                render={({field}) => (
+                  <FormItem>
+                    <Label htmlFor="feedback-comment" className="text-sm font-medium">
+                      {t('commentLabel')}
+                    </Label>
+                    <FormControl>
+                      <textarea
+                        id="feedback-comment"
+                        className="flex min-h-20 max-h-[32dvh] w-full resize-none rounded-md border border-[hsl(var(--field-border))] bg-[hsl(var(--field))] px-3 py-2 text-sm leading-6 text-[hsl(var(--field-foreground))] outline-none ring-offset-background placeholder:text-[hsl(var(--field-placeholder))] focus-visible:border-[hsl(var(--field-focus))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] sm:min-h-24 sm:resize-y"
+                        maxLength={1000}
+                        placeholder={t('placeholder')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <AnimatePresence>
-              {canClear ? (
-                <motion.div
-                  initial={{opacity: 0, scale: 0.98}}
-                  animate={{opacity: 1, scale: 1}}
-                  exit={{opacity: 0, scale: 0.98}}
-                  transition={{duration: 0.2, ease: 'easeOut'}}
+              <AnimatePresence>
+                {canClear ? (
+                  <motion.div
+                    initial={{opacity: 0, scale: 0.98}}
+                    animate={{opacity: 1, scale: 1}}
+                    exit={{opacity: 0, scale: 0.98}}
+                    transition={{duration: 0.2, ease: 'easeOut'}}
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-auto min-h-9 px-0 text-danger-text hover:bg-danger-surface hover:text-danger-text focus-visible:ring-danger"
+                      onClick={onClear}
+                      disabled={isSubmitting}
+                    >
+                      {t('clear')}
+                    </Button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+
+            <div className="shrink-0 border-t border-border/70 bg-[hsl(var(--surface-elevated))] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:flex sm:items-center sm:justify-end sm:gap-2 sm:px-6 sm:pb-4 sm:pt-4">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
                 >
-                  <Button type="button" variant="ghost" className="px-0 text-danger-text hover:bg-danger-surface hover:text-danger-text focus-visible:ring-danger" onClick={onClear} disabled={isSubmitting}>
-                    {t('clear')}
-                  </Button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
-            <div className="flex items-center justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={submitDisabled}>
-                {t('submit')}
-              </Button>
+                  {t('cancel')}
+                </Button>
+                <Button type="submit" disabled={submitDisabled}>
+                  {t('submit')}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

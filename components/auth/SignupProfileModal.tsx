@@ -40,7 +40,7 @@ const inputClassName =
 const selectClassName =
   'flex h-11 w-full rounded-xl border border-field-border bg-field/90 px-3 text-sm text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus dark:bg-field/75';
 const chipClassName =
-  'inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-sky-50 shadow-sm';
+  'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-sky-50 shadow-sm';
 const passwordToggleClassName =
   'absolute inset-y-0 end-2 inline-flex items-center rounded-lg px-2 text-field-placeholder transition-colors hover:text-field-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-focus';
 
@@ -117,8 +117,6 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
     const valid = await form.trigger(fieldsForStep(currentStep), {shouldFocus: true});
     if (!valid) return;
 
-    // The student ID cannot be changed later, so ask for an explicit
-    // confirmation before leaving the step that captures it.
     if (currentStep === 'academic' && role === 'student') {
       setStudentIdConfirmOpen(true);
       return;
@@ -157,7 +155,6 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
       setRegisterError(message);
       toast.error(message);
       if (error instanceof ServiceError && error.status === 403) {
-        // Flow token expired or already consumed: restart the OTP flow.
         onOpenChange(false);
         onFlowExpired?.();
       }
@@ -170,13 +167,6 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
   const stepDescription = currentStep === 'role' ? t('signup.stepHelpers.role') : currentStep === 'personal' ? t('signup.stepHelpers.personal') : currentStep === 'academic' ? (role === 'staff' ? t('signup.stepHelpers.employment') : t('signup.stepHelpers.academic')) : t('signup.stepHelpers.password');
   const roleLabel = role === 'student' ? t('signup.studentRoleLabel') : role === 'professor' ? t('signup.professorRoleLabel') : role === 'staff' ? t('signup.staffRoleLabel') : null;
 
-  // --- Live password checklist ------------------------------------------
-  // Only the password step gets a checklist; the other steps rely on the
-  // regular inline field errors so the form stays calm and uncluttered.
-  // --- Cascading academic selectors --------------------------------------
-  // Faculty -> major -> degree level -> specialization. Every level filters
-  // the next one, and any invalid leftover value is cleared automatically so
-  // the API never receives an impossible combination.
   const watchedStudentId = form.watch('studentId') ?? '';
   const watchedFaculty = form.watch('faculty') ?? '';
   const watchedMajor = form.watch('major') ?? '';
@@ -234,29 +224,29 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={locale === 'fa' ? 'rtl' : 'ltr'}
-        className="flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-3xl border-white/10 bg-slate-950/95 p-0 pe-0 text-white shadow-2xl backdrop-blur-xl"
+        className="flex max-h-[calc(100dvh-0.75rem)] w-[calc(100vw-0.75rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-white/10 bg-slate-950/95 p-0 pe-0 text-white shadow-2xl backdrop-blur-xl sm:max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:rounded-3xl"
       >
-        {/* Header: fixed 24/28px rhythm, close button gets its own reserved gutter. */}
-        <header className="shrink-0 space-y-5 border-b border-white/10 px-6 pb-5 pt-6 pe-14 sm:px-7 sm:pb-6 sm:pt-7 sm:pe-16">
-          <div className="space-y-3">
-            <DialogTitle className="text-xl font-black leading-8 text-white sm:text-2xl">{t('signup.modalTitle')}</DialogTitle>
-            <div className="flex flex-wrap items-center gap-2">
+        <header className="shrink-0 space-y-3 border-b border-white/10 px-4 pb-3 pt-4 pe-12 sm:space-y-5 sm:px-7 sm:pb-6 sm:pt-7 sm:pe-16">
+          <div className="space-y-2 sm:space-y-3">
+            <DialogTitle className="text-lg font-black leading-7 text-white sm:text-2xl sm:leading-8">{t('signup.modalTitle')}</DialogTitle>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
               <span className={chipClassName}>
-                <Check className="h-3.5 w-3.5 text-emerald-300" />
-                {t('signup.verifiedEmail')}: <span dir="ltr">{email}</span>
+                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                <span className="shrink-0">{t('signup.verifiedEmail')}:</span>
+                <span className="min-w-0 truncate" dir="ltr">{email}</span>
               </span>
               {roleLabel ? <span className={chipClassName}>{roleLabel}</span> : null}
             </div>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2 sm:space-y-2.5">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-base font-bold text-sky-100">{stepTitle}</p>
+              <p className="text-sm font-bold text-sky-100 sm:text-base">{stepTitle}</p>
               <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-400">
                 {stepIndex + 1}/{steps.length}
               </span>
             </div>
-            <p className="text-sm leading-6 text-slate-300">{stepDescription}</p>
+            <p className="text-xs leading-5 text-slate-300 sm:text-sm sm:leading-6">{stepDescription}</p>
             <div className="flex gap-1.5" aria-hidden="true">
               {steps.map((item, index) => (
                 <span key={item} className={`h-1.5 flex-1 rounded-full transition-colors ${index <= stepIndex ? 'bg-sky-300/80' : 'bg-white/10'}`} />
@@ -267,8 +257,8 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
 
         <Form {...form}>
           <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-6 py-6 sm:px-7">
-              <section className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-inner shadow-white/[0.02] sm:p-6">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:space-y-4 sm:px-7 sm:py-6">
+              <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-inner shadow-white/[0.02] sm:space-y-5 sm:p-6">
                 <AnimatePresence mode="wait" custom={direction}>
                   <motion.div
                     key={currentStep}
@@ -277,7 +267,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
                     animate={{opacity: 1, x: 0}}
                     exit={reduceMotion ? {opacity: 0} : {opacity: 0, x: direction * (locale === 'fa' ? 18 : -18)}}
                     transition={{duration: 0.22, ease: 'easeOut'}}
-                    className="space-y-5"
+                    className="space-y-4 sm:space-y-5"
                   >
                     {currentStep === 'role' ? (
                       <FormField
@@ -394,7 +384,6 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
                                   ))}
                                 </select>
                               </FormControl>
-                              {/* Bachelor programmes have no branches at SBU. */}
                               {!specializationEnabled && watchedDegreeLevel ? (
                                 <p className="text-xs leading-5 text-slate-400">{t('signup.specializationHint')}</p>
                               ) : null}
@@ -483,9 +472,8 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
               ) : null}
             </div>
 
-            {/* Footer: back is a quiet outlined control, primary action stays dominant. */}
-            <footer className="shrink-0 border-t border-white/10 bg-slate-950/90 px-6 py-4 sm:px-7 sm:py-5">
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+            <footer className="shrink-0 border-t border-white/10 bg-slate-950/90 px-4 py-3 sm:px-7 sm:py-5">
+              <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                 <Button
                   type="button"
                   variant="ghost"
@@ -516,19 +504,18 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
         </Form>
       </DialogContent>
 
-      {/* Student ID is immutable after registration -> explicit confirmation. */}
       <Dialog open={studentIdConfirmOpen} onOpenChange={setStudentIdConfirmOpen}>
         <DialogContent
           dir={locale === 'fa' ? 'rtl' : 'ltr'}
-          className="w-[calc(100vw-2rem)] max-w-md gap-0 rounded-3xl border-white/10 bg-slate-950/95 p-0 pe-0 text-white shadow-2xl"
+          className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-md gap-0 overflow-y-auto rounded-2xl border-white/10 bg-slate-950/95 p-0 pe-0 text-white shadow-2xl sm:w-[calc(100vw-2rem)] sm:rounded-3xl"
         >
-          <div className="space-y-3 px-6 pb-4 pt-6 pe-14">
+          <div className="space-y-3 px-4 pb-4 pt-5 pe-12 sm:px-6 sm:pt-6 sm:pe-14">
             <DialogTitle className="text-lg font-black leading-7">{t('signup.studentIdConfirmTitle')}</DialogTitle>
             <DialogDescription className="text-sm leading-6 text-slate-300">
               {t('signup.studentIdConfirmDescription')}
             </DialogDescription>
           </div>
-          <div className="px-6 pb-5">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-5">
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3">
               <p className="text-xs text-slate-400">{t('signup.studentIdLabel')}</p>
               <p className="mt-1 text-lg font-bold tabular-nums tracking-[0.2em] text-white" dir="ltr">
@@ -536,7 +523,7 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
               </p>
             </div>
           </div>
-          <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-6 py-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
             <Button
               type="button"
               variant="ghost"

@@ -47,8 +47,6 @@ export function Composer({
   const thinkingLevels: ThinkingLevel[] = ['low', 'medium', 'high'];
   const characterCount = value.length;
   const showCharacterCounter = characterCount > MAX_MESSAGE_LENGTH * 0.8;
-  // Once the cap is reached the browser silently drops further keystrokes, so
-  // the counter switches to a warning style to explain why typing "stopped".
   const isAtCharacterLimit = characterCount >= MAX_MESSAGE_LENGTH;
   const canSend = !disabled && value.trim().length > 0;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -66,12 +64,7 @@ export function Composer({
     <motion.div
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
-      /*
-       * Gemini-style single pill: one rounded container owns the border, the
-       * textarea inside is completely chrome-less so focusing it does not draw
-       * a second box or ring.
-       */
-      className="mx-auto w-full max-w-[800px] rounded-[28px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-4 py-3 shadow-card"
+      className="mx-auto w-full max-w-[800px] rounded-[24px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-3 py-2.5 shadow-card sm:rounded-[28px] sm:px-4 sm:py-3"
     >
       <TextareaAutosize
         minRows={1}
@@ -82,11 +75,9 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="w-full resize-none border-0 bg-transparent px-1 py-1 text-[15px] leading-7 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+        className="max-h-[9.5rem] w-full resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-0.5 text-[14px] leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:max-h-[13rem] sm:py-1 sm:text-[15px] sm:leading-7"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
-            // Don't submit while an IME composition session is active
-            // (e.g. Japanese/Chinese input), Enter confirms the composition.
             if (event.nativeEvent.isComposing) return;
             event.preventDefault();
             onSubmit();
@@ -96,7 +87,7 @@ export function Composer({
         aria-describedby="composer-keyboard-hint composer-character-counter"
       />
 
-      <div className="mt-1.5 flex items-center gap-2">
+      <div className="mt-1 flex items-center gap-1.5 sm:mt-1.5 sm:gap-2">
         <DropdownMenu dir={locale === 'fa' ? 'rtl' : 'ltr'}>
           <DropdownMenuTrigger asChild>
             <button
@@ -104,16 +95,16 @@ export function Composer({
               disabled={disabled}
               aria-label={t('thinkingLevel.label')}
               title={t('thinkingLevel.description')}
-              className="flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground"
+              className="flex min-w-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
             >
-              <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
               <span className="truncate">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
             sideOffset={10}
-            className="w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border-menu-border bg-menu p-2 shadow-xl"
+            className="w-[19rem] max-w-[calc(100vw-1rem)] rounded-2xl border-menu-border bg-menu p-2 shadow-xl sm:max-w-[calc(100vw-2rem)]"
           >
             {thinkingLevels.map((level) => {
               const isActive = level === thinkLevel;
@@ -143,12 +134,11 @@ export function Composer({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Counter only appears near the cap so the bar stays clean. */}
         <div
           id="composer-character-counter"
           aria-live="polite"
           className={cn(
-            'text-xs tabular-nums transition-opacity',
+            'text-[11px] tabular-nums transition-opacity sm:text-xs',
             showCharacterCounter ? 'text-muted-foreground opacity-100' : 'sr-only opacity-0',
             isAtCharacterLimit && 'font-medium text-[hsl(var(--danger-text))]'
           )}
@@ -164,7 +154,7 @@ export function Composer({
             onClick={onStop}
             aria-label={t('stop')}
             title={t('stop')}
-            className="ms-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]"
+            className="ms-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97] sm:h-9 sm:w-9"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </button>
@@ -176,7 +166,7 @@ export function Composer({
             aria-label={t('send')}
             title={t('send')}
             className={cn(
-              'ms-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]',
+              'ms-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97] sm:h-9 sm:w-9',
               canSend
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'cursor-not-allowed bg-[hsl(var(--surface-elevated))] text-muted-foreground/60'
@@ -187,7 +177,6 @@ export function Composer({
         )}
       </div>
 
-      {/* Kept for screen readers and aria-describedby, no longer visual noise. */}
       <p id="composer-keyboard-hint" className="sr-only">
         {t('composerKeyboardHint')}
       </p>
