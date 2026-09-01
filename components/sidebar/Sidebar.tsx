@@ -588,10 +588,7 @@ export function Sidebar({
                 <div className="space-y-1">
                   <DropdownMenuItem
                     className="group/item h-11 gap-3 rounded-xl px-3 font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 data-[highlighted]:translate-x-0.5 rtl:data-[highlighted]:-translate-x-0.5"
-                    onClick={() => {
-                      setSettingsOpen(true);
-                      onNavigate?.();
-                    }}
+                    onClick={() => setSettingsOpen(true)}
                   >
                     <Settings className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-data-[highlighted]/item:text-[hsl(var(--menu-hover-foreground))]" />
                     <span>{t('sidebar.settings')}</span>
@@ -627,25 +624,35 @@ export function Sidebar({
         setSettings={setSettings}
         user={user}
         isUserLoading={profileQuery.isLoading}
+        onNavigate={onNavigate}
       />
 
       <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
-        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
-          <DialogTitle className="text-base font-semibold">
+        <DialogContent
+          className="!w-[calc(100vw-2rem)] !max-w-sm gap-4 rounded-2xl p-5 pe-10 shadow-card sm:!w-full sm:p-6 sm:pe-12"
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+        >
+          <DialogTitle className="text-lg font-semibold leading-7">
             {t('sidebar.logoutConfirmTitle')}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-6 text-muted-foreground">
             {t('sidebar.logoutConfirmDescription')}
           </p>
-          <div className="flex justify-end gap-2">
+          <div className="grid grid-cols-2 gap-2 pt-1 sm:flex sm:justify-end">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
+              className="w-full sm:w-auto"
               onClick={() => setLogoutConfirmOpen(false)}
             >
               {t('sidebar.cancelLogout')}
             </Button>
-            <Button type="button" variant="destructive" onClick={handleLogout}>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleLogout}
+            >
               {t('sidebar.confirmLogout')}
             </Button>
           </div>
