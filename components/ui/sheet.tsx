@@ -3,6 +3,7 @@
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {X} from 'lucide-react';
+import {useLocale} from 'next-intl';
 import {cn} from '@/lib/utils';
 
 export const Sheet = Dialog.Root;
@@ -14,13 +15,15 @@ type SheetSide = 'left' | 'right';
 export function SheetContent({
   className,
   children,
-  side = 'right',
+  side,
   ...props
 }: Dialog.DialogContentProps & {
   children: React.ReactNode;
   side?: SheetSide;
 }) {
-  const opensFromRight = side === 'right';
+  const locale = useLocale();
+  const resolvedSide = side ?? (locale === 'fa' ? 'right' : 'left');
+  const opensFromRight = resolvedSide === 'right';
 
   return (
     <Dialog.Portal>
