@@ -35,7 +35,7 @@ type UserAnchor = {
 
 const VIRTUOSO_COMPONENTS = {
   Header: () => <div className="h-20 w-full shrink-0" aria-hidden />,
-  Footer: () => <div className="h-14 w-full shrink-0 sm:h-4" aria-hidden />
+  Footer: () => <div className="h-16 w-full shrink-0 sm:h-4" aria-hidden />
 };
 
 function AssistantPendingBubble() {
@@ -334,7 +334,7 @@ export function MessageList({
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-3 end-3 left-auto z-10 h-9 w-9 translate-x-0 rounded-full shadow-lg sm:bottom-5 sm:end-auto sm:left-1/2 sm:h-10 sm:w-10 sm:-translate-x-1/2"
+          className="absolute bottom-4 right-[max(0.75rem,env(safe-area-inset-right))] z-10 h-9 w-9 rounded-full shadow-lg sm:bottom-5 sm:left-1/2 sm:right-auto sm:h-10 sm:w-10 sm:-translate-x-1/2"
           onClick={scrollToBottom}
           aria-label={t('message.scrollToBottom')}
           title={t('message.scrollToBottom')}
