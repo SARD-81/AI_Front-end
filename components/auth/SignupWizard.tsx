@@ -203,7 +203,7 @@ export function SignupWizard({
             <div
               className={`min-w-0 flex-1 rounded-xl border px-3 py-2 transition ${stepClasses}`}
             >
-              <span className="font-semibold">{item.id}.</span> {item.label}
+              {item.label}
             </div>
             {index < items.length - 1 ? (
               <div
