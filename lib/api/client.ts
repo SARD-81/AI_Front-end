@@ -121,7 +121,8 @@ async function parseResponse<T>(response: Response): Promise<T> {
           ? data.error.message.trim()
           : '';
     const errorMessage = payloadMessage || 'API request failed';
-    const errorCode = getErrorCode(data);
+    const errorCode =
+      getErrorCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
     const retryAfter = getRetryAfter(data, response);
     const error = new ApiError(
       errorMessage,

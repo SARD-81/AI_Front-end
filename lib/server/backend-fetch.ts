@@ -72,8 +72,6 @@ export async function backendFetch<T = unknown>(
   const clientIp = await getTrustedClientIp();
 
   const outgoingHeaders = new Headers(init?.headers);
-  // Never relay forwarding headers supplied by the caller/browser. The BFF
-  // owns these headers and creates them only from a trusted proxy signal.
   outgoingHeaders.delete('x-forwarded-for');
   outgoingHeaders.delete('x-real-ip');
   outgoingHeaders.set('Accept', 'application/json');
@@ -120,7 +118,8 @@ export async function backendFetch<T = unknown>(
       joinStrings(data?.error) ||
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
-    const code = extractCode(data);
+    const code =
+      extractCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
     const retryAfter = extractRetryAfter(data, response);
 
     throw new ApiError(message, response.status, code, data, retryAfter);
