@@ -18,7 +18,7 @@ import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { uuid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
-import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
+import type { ChatDetail, ChatMessage, ThinkingLevel } from '@/lib/api/chat';
 import { ApiError } from '@/lib/api/client';
 import { formatRateLimitMessage, isRateLimitCode } from '@/lib/api/rate-limit';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
@@ -33,6 +33,12 @@ const BACKEND_WS_USER_FACING_CODES = new Set([
   'invalid_ai_response',
   'internal_error'
 ]);
+
+const THINKING_LEVEL_STORAGE_KEY = 'soha:chat:thinking-level';
+
+function isThinkingLevel(value: string | null): value is ThinkingLevel {
+  return value === 'low' || value === 'medium' || value === 'high';
+}
 
 export function ChatShell({
   locale,
@@ -58,12 +64,35 @@ export function ChatShell({
   const isOnline = useOnlineStatus();
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
+  const [activeChatId, setActiveChatId] = useState(chatId);
   const regenerateTargetRef = useRef<{ userId: string; assistantId: string } | null>(null);
 
-  const chatQuery = useChat(chatId);
+  const chatQuery = useChat(activeChatId);
   const chat = chatQuery.data;
   const actions = useChatActions();
   const sendMutation = useSendMessage();
+
+  useEffect(() => {
+    setActiveChatId(chatId);
+  }, [chatId]);
+
+  useEffect(() => {
+    const storedThinkingLevel = window.localStorage.getItem(
+      THINKING_LEVEL_STORAGE_KEY
+    );
+    if (isThinkingLevel(storedThinkingLevel)) {
+      setThinkLevel(storedThinkingLevel);
+    }
+  }, []);
+
+  const handleThinkLevelChange = (nextLevel: ThinkingLevel) => {
+    setThinkLevel(nextLevel);
+    try {
+      window.localStorage.setItem(THINKING_LEVEL_STORAGE_KEY, nextLevel);
+    } catch {
+      // The in-memory selection still persists for the current ChatShell.
+    }
+  };
 
   const messages = useMemo(() => {
     const list = chat?.messages ?? [];
@@ -122,7 +151,8 @@ export function ChatShell({
   }, []);
 
   const shouldAutoFocus = searchParams.get('focus') === '1';
-  const isChatLoading = Boolean(chatId) && !chat && chatQuery.isFetching;
+  const isChatLoading =
+    Boolean(activeChatId) && !chat && chatQuery.isFetching;
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState =
@@ -269,13 +299,15 @@ export function ChatShell({
     setStreamContent('');
     setHasSubmittedMessage(true);
 
-    try {
-      let activeChatId = chatId;
+    let resolvedChatId = activeChatId;
+    let createdChatId: string | undefined;
 
-      if (!activeChatId) {
+    try {
+      if (!resolvedChatId) {
         const created = await actions.create.mutateAsync({ title: t('newChat') });
-        activeChatId = created.id;
-        router.push(`/${locale}/chat/${activeChatId}`);
+        resolvedChatId = created.id;
+        createdChatId = created.id;
+        setActiveChatId(created.id);
       }
 
       abortControllerRef.current?.abort();
@@ -283,7 +315,7 @@ export function ChatShell({
       abortControllerRef.current = abortController;
 
       const result = await sendMutation.mutateAsync({
-        chatId: activeChatId,
+        chatId: resolvedChatId,
         payload,
         clientMessageId: stableClientMessageId,
         replaceAssistantMessageId: options?.replaceAssistantMessageId,
@@ -302,7 +334,7 @@ export function ChatShell({
 
       if (result?.assistantCommitted) {
         clearStreamingState();
-        queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
+        queryClient.invalidateQueries({ queryKey: ['chat', resolvedChatId] });
         queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
       abortControllerRef.current = null;
@@ -310,6 +342,20 @@ export function ChatShell({
     } catch (error) {
       clearStreamingState();
       if (abortControllerRef.current?.signal.aborted) {
+        queryClient.setQueryData<ChatDetail>(
+          ['chat', resolvedChatId],
+          (previous) => {
+            if (!previous) return previous;
+            return {
+              ...previous,
+              messages: previous.messages.map((message) =>
+                message.id === stableClientMessageId
+                  ? { ...message, sendStatus: 'sent' as const }
+                  : message
+              )
+            };
+          }
+        );
         abortControllerRef.current = null;
         return;
       }
@@ -328,6 +374,9 @@ export function ChatShell({
       if (options?.replaceAssistantMessageId) {
         regenerateTargetRef.current = null;
       }
+      if (createdChatId) {
+        router.replace(`/${locale}/chat/${createdChatId}`);
+      }
     }
   };
 
@@ -335,6 +384,7 @@ export function ChatShell({
 
   const handleStopGeneration = () => {
     abortControllerRef.current?.abort();
+    clearStreamingState();
   };
 
   const handleCopyMessage = async (content: string) => {
@@ -349,8 +399,8 @@ export function ChatShell({
   };
 
   const dropMessagesFrom = (messageId: string) => {
-    if (!chatId) return;
-    queryClient.setQueryData(['chat', chatId], (previous: unknown) => {
+    if (!activeChatId) return;
+    queryClient.setQueryData(['chat', activeChatId], (previous: unknown) => {
       const current = previous as {messages?: ChatMessage[]} | undefined;
       if (!current?.messages) return previous;
       const index = current.messages.findIndex((item) => item.id === messageId);
@@ -367,8 +417,8 @@ export function ChatShell({
 
   useEffect(() => {
     const deletedChatId = actions.remove.variables;
-    if (!deletedChatId || !actions.remove.isSuccess || !chatId) return;
-    if (deletedChatId !== chatId) return;
+    if (!deletedChatId || !actions.remove.isSuccess || !activeChatId) return;
+    if (deletedChatId !== activeChatId) return;
 
     queryClient.removeQueries({ queryKey: ['chat', deletedChatId] });
     queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -376,7 +426,7 @@ export function ChatShell({
   }, [
     actions.remove.isSuccess,
     actions.remove.variables,
-    chatId,
+    activeChatId,
     locale,
     queryClient,
     router
@@ -465,7 +515,7 @@ export function ChatShell({
                   autoFocus={shouldAutoFocus}
                   focusTrigger={focusTrigger}
                   thinkLevel={thinkLevel}
-                  onThinkLevelChange={setThinkLevel}
+                  onThinkLevelChange={handleThinkLevelChange}
                   onPromptSelect={(prompt) => {
                     void submitMessage(prompt);
                   }}
@@ -504,7 +554,7 @@ export function ChatShell({
                     onStop={handleStopGeneration}
                     focusTrigger={focusTrigger}
                     thinkLevel={thinkLevel}
-                    onThinkLevelChange={setThinkLevel}
+                    onThinkLevelChange={handleThinkLevelChange}
                   />
                 </div>
               </div>
