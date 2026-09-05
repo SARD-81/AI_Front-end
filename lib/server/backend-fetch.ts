@@ -1,5 +1,6 @@
 import 'server-only';
 import {ApiError} from '@/lib/server/backend-types';
+import {getTrustedClientIp} from '@/lib/server/client-ip';
 
 function getBackendOrigin() {
   const origin = process.env.BACKEND_ORIGIN?.trim();
@@ -68,16 +69,29 @@ export async function backendFetch<T = unknown>(
   const basePath = init?.base === 'auth' ? '/api/auth' : '/api';
   const normalizedPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
   const url = `${origin}${basePath}${normalizedPath}`;
+  const clientIp = await getTrustedClientIp();
+
+  const outgoingHeaders = new Headers(init?.headers);
+  // Never relay forwarding headers supplied by the caller/browser. The BFF
+  // owns these headers and creates them only from a trusted proxy signal.
+  outgoingHeaders.delete('x-forwarded-for');
+  outgoingHeaders.delete('x-real-ip');
+  outgoingHeaders.set('Accept', 'application/json');
+  if (!outgoingHeaders.has('Content-Type')) {
+    outgoingHeaders.set('Content-Type', 'application/json');
+  }
+  if (init?.accessToken) {
+    outgoingHeaders.set('Authorization', `Bearer ${init.accessToken}`);
+  }
+  if (clientIp) {
+    outgoingHeaders.set('X-Real-IP', clientIp);
+    outgoingHeaders.set('X-Forwarded-For', clientIp);
+  }
 
   const response = await fetch(url, {
     ...init,
     cache: 'no-store',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(init?.accessToken ? {Authorization: `Bearer ${init.accessToken}`} : {}),
-      ...init?.headers
-    }
+    headers: outgoingHeaders
   });
 
   if (response.status === 204) {
