@@ -4,6 +4,7 @@ const backendFetchMock = vi.hoisted(() => vi.fn());
 const setAuthCookiesMock = vi.hoisted(() => vi.fn());
 const clearAuthCookiesMock = vi.hoisted(() => vi.fn());
 
+vi.mock('server-only', () => ({}));
 vi.mock('@/lib/server/backend-fetch', () => ({backendFetch: backendFetchMock}));
 vi.mock('@/lib/server/auth-cookies', () => ({
   setAuthCookies: setAuthCookiesMock,
