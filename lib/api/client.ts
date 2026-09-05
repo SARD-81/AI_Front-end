@@ -1,3 +1,5 @@
+import {formatRateLimitMessage, isRateLimitCode} from '@/lib/api/rate-limit';
+
 const DEFAULT_HEADERS = {
   'Content-Type': 'application/json'
 };
@@ -32,6 +34,12 @@ export function getApiBaseUrl() {
 
 export function resolveApiUrl(path: string) {
   return joinUrl(getApiBaseUrl(), path);
+}
+
+function getClientLocale() {
+  if (typeof window === 'undefined') return 'fa';
+  const locale = window.location.pathname.split('/').filter(Boolean)[0];
+  return locale === 'en' ? 'en' : 'fa';
 }
 
 function redirectToLogin() {
@@ -120,10 +128,12 @@ async function parseResponse<T>(response: Response): Promise<T> {
             typeof data.error.message === 'string'
           ? data.error.message.trim()
           : '';
-    const errorMessage = payloadMessage || 'API request failed';
     const errorCode =
       getErrorCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
     const retryAfter = getRetryAfter(data, response);
+    const errorMessage = isRateLimitCode(errorCode)
+      ? formatRateLimitMessage(getClientLocale(), errorCode, retryAfter)
+      : payloadMessage || 'API request failed';
     const error = new ApiError(
       errorMessage,
       response.status,

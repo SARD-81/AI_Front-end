@@ -20,11 +20,11 @@ import { uuid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
 import type { ChatMessage, ThinkingLevel } from '@/lib/api/chat';
 import { ApiError } from '@/lib/api/client';
+import { formatRateLimitMessage, isRateLimitCode } from '@/lib/api/rate-limit';
 import { ChatWebSocketError } from '@/lib/services/chat-service';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 
 const BACKEND_WS_USER_FACING_CODES = new Set([
-  'rate_limited',
   'server_busy',
   'ai_starting',
   'ai_unavailable',
@@ -149,6 +149,10 @@ export function ChatShell({
         return t('chat.accountLocked');
       }
 
+      if (isRateLimitCode(error.code)) {
+        return formatRateLimitMessage(locale, error.code, null);
+      }
+
       if (
         error.code &&
         BACKEND_WS_USER_FACING_CODES.has(error.code) &&
@@ -182,6 +186,14 @@ export function ChatShell({
     }
 
     if (error instanceof ApiError) {
+      if (error.status === 429 || isRateLimitCode(error.code)) {
+        return formatRateLimitMessage(
+          locale,
+          error.code ?? 'rate_limited',
+          error.retryAfter
+        );
+      }
+
       if (error.status === 401 || error.status === 403) {
         return t('chat.sessionExpired');
       }
