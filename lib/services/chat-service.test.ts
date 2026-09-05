@@ -24,6 +24,7 @@ vi.mock('@/lib/api/client', () => {
 
 import {
   ChatWebSocketError,
+  requestChatWsTicket,
   sendMessageWithWebSocket
 } from '@/lib/services/chat-service';
 
@@ -112,6 +113,50 @@ describe('chat websocket hardening contract', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('passes the abort signal while requesting a websocket ticket', async () => {
+    const controller = new AbortController();
+
+    await requestChatWsTicket({signal: controller.signal});
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        method: 'POST',
+        signal: controller.signal
+      })
+    );
+  });
+
+  it('does not start ticket or socket work when already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      sendMessageWithWebSocket('conversation', payload(), {
+        signal: controller.signal
+      })
+    ).rejects.toMatchObject({code: 'ABORTED'});
+
+    expect(apiFetchMock).not.toHaveBeenCalled();
+    expect(sockets).toHaveLength(0);
+  });
+
+  it('preserves an explicitly configured wss base URL', async () => {
+    vi.stubEnv('NEXT_PUBLIC_WS_BASE_URL', 'wss://socket.example.test');
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({type: 'connected'});
+      socket.emitMessage(answer());
+    });
+
+    await sendMessageWithWebSocket('conversation', payload());
+
+    expect(sockets[0]?.url).toMatch(
+      /^wss:\/\/socket\.example\.test\/ws\/chat\/conversation\//
+    );
   });
 
   it('does not send until the backend connected frame arrives', async () => {

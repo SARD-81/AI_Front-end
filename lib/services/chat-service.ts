@@ -252,8 +252,28 @@ export class ChatWebSocketError extends Error {
 function resolveChatWebSocketUrl(conversationId: string, ticket: string) {
   const configuredBase = process.env.NEXT_PUBLIC_WS_BASE_URL?.trim() || getApiBaseUrl();
   const base = configuredBase || (typeof window !== 'undefined' ? window.location.origin : '');
-  const url = new URL(base || 'http://localhost');
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+
+  let url: URL;
+  try {
+    url = new URL(base || 'http://localhost');
+  } catch {
+    throw new ChatWebSocketError(
+      'WebSocket base URL is invalid.',
+      'INVALID_WS_BASE_URL'
+    );
+  }
+
+  if (url.protocol === 'https:') {
+    url.protocol = 'wss:';
+  } else if (url.protocol === 'http:') {
+    url.protocol = 'ws:';
+  } else if (url.protocol !== 'ws:' && url.protocol !== 'wss:') {
+    throw new ChatWebSocketError(
+      'WebSocket base URL must use http, https, ws, or wss.',
+      'INVALID_WS_BASE_URL'
+    );
+  }
+
   url.pathname = `/ws/chat/${encodeURIComponent(conversationId)}/`;
   url.search = '';
   url.searchParams.set('ticket', ticket);
@@ -276,8 +296,11 @@ function mapCloseError(event: CloseEvent) {
   return new ChatWebSocketError(event.reason || 'WebSocket connection closed before an answer.', undefined, event.code);
 }
 
-export async function requestChatWsTicket() {
-  return apiFetch<WsTicketResponse>(API_ENDPOINTS.chat.wsTicket, {method: 'POST'});
+export async function requestChatWsTicket(opts?: {signal?: AbortSignal}) {
+  return apiFetch<WsTicketResponse>(API_ENDPOINTS.chat.wsTicket, {
+    method: 'POST',
+    signal: opts?.signal
+  });
 }
 
 const WS_CONNECT_TIMEOUT_MS = 15_000;
@@ -309,13 +332,23 @@ function normalizeWsErrorCode(code?: string) {
   return code?.trim().toLowerCase();
 }
 
+function abortedError() {
+  return new ChatWebSocketError('WebSocket send was aborted.', 'ABORTED');
+}
+
 function wsRetryDelay(ms: number, signal?: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortedError());
+      return;
+    }
+
+    let timer: ReturnType<typeof setTimeout>;
     const onAbort = () => {
       clearTimeout(timer);
-      reject(new ChatWebSocketError('WebSocket send was aborted.'));
+      reject(abortedError());
     };
-    const timer = setTimeout(() => {
+    timer = setTimeout(() => {
       signal?.removeEventListener('abort', onAbort);
       resolve();
     }, ms);
@@ -331,6 +364,11 @@ function attemptSendMessageOverWebSocket(
   opts?: {onAck?: () => void; signal?: AbortSignal}
 ) {
   return new Promise<ChatMessage>((resolve, reject) => {
+    if (opts?.signal?.aborted) {
+      reject(abortedError());
+      return;
+    }
+
     let settled = false;
     let answered = false;
     const socket = new WebSocket(resolveChatWebSocketUrl(conversationId, wsTicket));
@@ -355,7 +393,7 @@ function attemptSendMessageOverWebSocket(
       reject(error);
     };
 
-    const handleAbort = () => fail(new ChatWebSocketError('WebSocket send was aborted.'));
+    const handleAbort = () => fail(abortedError());
 
     opts?.signal?.addEventListener('abort', handleAbort, {once: true});
 
@@ -382,6 +420,10 @@ function attemptSendMessageOverWebSocket(
 
       if (message.type === 'connected') {
         if (state.messageSent) return;
+        if (opts?.signal?.aborted) {
+          handleAbort();
+          return;
+        }
         clearTimeout(connectTimer);
         socket.send(
           JSON.stringify({
@@ -453,6 +495,9 @@ export async function sendMessageWithWebSocket(
   if (payload.content.length > WS_MESSAGE_MAX_LENGTH) {
     throw new ChatWebSocketError('Message is too long.', 'message_too_long');
   }
+  if (opts?.signal?.aborted) {
+    throw abortedError();
+  }
 
   const requestedClientMessageId = payload.clientMessageId;
   const stablePayload: SendMessagePayload = {
@@ -466,10 +511,14 @@ export async function sendMessageWithWebSocket(
   let duplicateAttempts = 0;
 
   for (;;) {
+    if (opts?.signal?.aborted) {
+      throw abortedError();
+    }
+
     attempt += 1;
     const state = {messageSent: false};
     try {
-      const ticket = await requestChatWsTicket();
+      const ticket = await requestChatWsTicket({signal: opts?.signal});
       return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, stablePayload, state, opts);
     } catch (error) {
       if (opts?.signal?.aborted) {
