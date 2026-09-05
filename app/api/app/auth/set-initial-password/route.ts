@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { setAuthCookies } from '@/lib/server/auth-cookies';
+import { clearAuthCookies, setAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
+import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/server/auth-contract';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await backendFetch<{ access: string; refresh?: string }>(
+    const data = await backendFetch<BackendAuthContract>(
       '/set-initial-password/',
       {
         base: 'auth',
@@ -52,9 +53,26 @@ export async function POST(request: Request) {
       }
     );
 
-    await setAuthCookies({ access: data.access, refresh: data.refresh });
+    const {access, refresh, result} = normalizeBackendAuthContract(data);
 
-    return NextResponse.json({ ok: true });
+    if (result.isLocked === true || result.user?.isLocked === true) {
+      await clearAuthCookies();
+      return NextResponse.json(
+        { message: 'Account is locked.', code: 'ACCOUNT_LOCKED' },
+        { status: 423 }
+      );
+    }
+
+    if (
+      result.mustChangePassword === true ||
+      result.user?.mustChangePassword === true
+    ) {
+      await clearAuthCookies();
+    } else {
+      await setAuthCookies({ access, refresh });
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     return routeErrorResponse(error);
   }

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {OtpInput} from '@/components/auth/OtpInput';
@@ -25,6 +25,10 @@ import {
   ServiceError,
   verifyOtp
 } from '@/lib/services/auth-service';
+import {
+  formatAuthRateLimitMessage,
+  isAuthRateLimitCode
+} from '@/lib/services/auth-error-policy';
 import {
   createSignupStep1Schema,
   type AuthSchemaTranslator,
@@ -61,6 +65,7 @@ export function SignupWizard({
   const [pendingAction, setPendingAction] = useState<
     'send' | 'verify' | null
   >(null);
+  const locale = useLocale();
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
 
@@ -80,14 +85,14 @@ export function SignupWizard({
   }, [resetToken, step1Form]);
 
   useEffect(() => {
-    if (!otpSent || resendSeconds <= 0) return;
+    if (resendSeconds <= 0) return;
 
     const timer = window.setInterval(() => {
       setResendSeconds((seconds) => Math.max(seconds - 1, 0));
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [otpSent, resendSeconds]);
+  }, [resendSeconds]);
 
   const resetOtpState = () => {
     controllerRefs.verifyOtp.current?.abort();
@@ -99,7 +104,25 @@ export function SignupWizard({
     step1Form.clearErrors('otpCode');
   };
 
+  const getRateLimitMessage = (error: unknown) => {
+    if (!(error instanceof ServiceError) || !isAuthRateLimitCode(error.code)) {
+      return null;
+    }
+
+    if (typeof error.retryAfter === 'number' && error.retryAfter > 0) {
+      setResendSeconds(Math.ceil(error.retryAfter));
+    }
+
+    return formatAuthRateLimitMessage(
+      locale,
+      error.code,
+      error.retryAfter
+    );
+  };
+
   const onSendOtp = async () => {
+    if (resendSeconds > 0) return;
+
     const isValid = await step1Form.trigger('email');
     if (!isValid) return;
 
@@ -118,11 +141,9 @@ export function SignupWizard({
       toast.success(result.message);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('signup.sendOtpErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('signup.sendOtpErrorFallback')
+      );
     } finally {
       setBusy(false);
       setPendingAction(null);
@@ -147,17 +168,14 @@ export function SignupWizard({
       toast.success(result.message);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('signup.verifyErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('signup.verifyErrorFallback')
+      );
     } finally {
       setBusy(false);
       setPendingAction(null);
     }
   });
-
 
   const isSendingOtp = pendingAction === 'send';
   const isVerifyingOtp = pendingAction === 'verify';
@@ -185,7 +203,7 @@ export function SignupWizard({
             <div
               className={`min-w-0 flex-1 rounded-xl border px-3 py-2 transition ${stepClasses}`}
             >
-              <span className="font-semibold">{item.id}.</span> {item.label}
+              {item.label}
             </div>
             {index < items.length - 1 ? (
               <div
@@ -253,14 +271,20 @@ export function SignupWizard({
                     type="button"
                     className="w-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
                     onClick={onSendOtp}
-                    disabled={busy || step1Form.formState.isSubmitting}
+                    disabled={
+                      busy ||
+                      step1Form.formState.isSubmitting ||
+                      resendSeconds > 0
+                    }
                   >
                     {isSendingOtp ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : null}
-                    {isSendingOtp
-                      ? t('signup.sendingOtp')
-                      : t('signup.sendOtp')}
+                    {resendSeconds > 0
+                      ? t('signup.resendCountdown', {seconds: resendSeconds})
+                      : isSendingOtp
+                        ? t('signup.sendingOtp')
+                        : t('signup.sendOtp')}
                   </Button>
                 ) : (
                   <div className="space-y-4 rounded-xl border border-sky-300/35 bg-slate-950/45 p-4 shadow-[0_0_22px_rgba(14,165,233,0.12)]">

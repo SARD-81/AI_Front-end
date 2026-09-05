@@ -2,16 +2,16 @@ export class ApiError extends Error {
   status: number;
   code?: string;
   payload?: unknown;
-  // Seconds to wait before retrying; mirrors the backend `retry_after` field
-  // and the `Retry-After` header on 429 responses.
-  retryAfter?: number;
+  // Seconds to wait before retrying. `null` means the backend/edge did not
+  // provide a usable delay (for example an Nginx-generated 429).
+  retryAfter: number | null;
 
   constructor(
     message: string,
     status: number,
     code?: string,
     payload?: unknown,
-    retryAfter?: number
+    retryAfter: number | null = null
   ) {
     super(message);
     this.name = 'ApiError';

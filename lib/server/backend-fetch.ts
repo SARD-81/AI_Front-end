@@ -1,5 +1,6 @@
 import 'server-only';
 import {ApiError} from '@/lib/server/backend-types';
+import {getTrustedClientIp} from '@/lib/server/client-ip';
 
 function getBackendOrigin() {
   const origin = process.env.BACKEND_ORIGIN?.trim();
@@ -7,6 +8,57 @@ function getBackendOrigin() {
     throw new ApiError('تنظیمات سرور ناقص است.', 500, 'BACKEND_ORIGIN_MISSING');
   }
   return origin.replace(/\/+$/, '');
+}
+
+function extractCode(data: Record<string, unknown> | undefined) {
+  if (!data) return undefined;
+
+  const rawCode = data.code;
+  if (typeof rawCode === 'string' && rawCode.trim()) {
+    return rawCode.trim();
+  }
+  if (Array.isArray(rawCode) && typeof rawCode[0] === 'string') {
+    const code = rawCode[0].trim();
+    return code || undefined;
+  }
+
+  const nestedError = data.error;
+  if (
+    nestedError &&
+    typeof nestedError === 'object' &&
+    !Array.isArray(nestedError)
+  ) {
+    const nestedCode = (nestedError as Record<string, unknown>).code;
+    if (typeof nestedCode === 'string' && nestedCode.trim()) {
+      return nestedCode.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function extractRetryAfter(
+  data: Record<string, unknown> | undefined,
+  response: Response
+): number | null {
+  const rawRetryAfter = data?.retry_after;
+  if (
+    typeof rawRetryAfter === 'number' &&
+    Number.isFinite(rawRetryAfter) &&
+    rawRetryAfter >= 0
+  ) {
+    return rawRetryAfter;
+  }
+
+  const headerValue = response.headers.get('Retry-After');
+  if (headerValue) {
+    const parsed = Number(headerValue);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return null;
 }
 
 export async function backendFetch<T = unknown>(
@@ -17,16 +69,27 @@ export async function backendFetch<T = unknown>(
   const basePath = init?.base === 'auth' ? '/api/auth' : '/api';
   const normalizedPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
   const url = `${origin}${basePath}${normalizedPath}`;
+  const clientIp = await getTrustedClientIp();
+
+  const outgoingHeaders = new Headers(init?.headers);
+  outgoingHeaders.delete('x-forwarded-for');
+  outgoingHeaders.delete('x-real-ip');
+  outgoingHeaders.set('Accept', 'application/json');
+  if (!outgoingHeaders.has('Content-Type')) {
+    outgoingHeaders.set('Content-Type', 'application/json');
+  }
+  if (init?.accessToken) {
+    outgoingHeaders.set('Authorization', `Bearer ${init.accessToken}`);
+  }
+  if (clientIp) {
+    outgoingHeaders.set('X-Real-IP', clientIp);
+    outgoingHeaders.set('X-Forwarded-For', clientIp);
+  }
 
   const response = await fetch(url, {
     ...init,
     cache: 'no-store',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(init?.accessToken ? {Authorization: `Bearer ${init.accessToken}`} : {}),
-      ...init?.headers
-    }
+    headers: outgoingHeaders
   });
 
   if (response.status === 204) {
@@ -55,24 +118,10 @@ export async function backendFetch<T = unknown>(
       joinStrings(data?.error) ||
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
-    const rawCode = data?.code;
     const code =
-      typeof rawCode === 'string'
-        ? rawCode
-        : Array.isArray(rawCode) && typeof rawCode[0] === 'string'
-          ? rawCode[0]
-          : undefined;
-    // Rate-limit responses carry `retry_after` in the body and the same value
-    // in the `Retry-After` header. Edge (Nginx/CDN) 429s may carry neither a
-    // JSON body nor `retry_after`, so the header is used as a fallback.
-    const rawRetryAfter = data?.retry_after;
-    const headerRetryAfter = Number(response.headers.get('Retry-After'));
-    const retryAfter =
-      typeof rawRetryAfter === 'number' && Number.isFinite(rawRetryAfter)
-        ? rawRetryAfter
-        : Number.isFinite(headerRetryAfter) && headerRetryAfter > 0
-          ? headerRetryAfter
-          : undefined;
+      extractCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
+    const retryAfter = extractRetryAfter(data, response);
+
     throw new ApiError(message, response.status, code, data, retryAfter);
   }
 

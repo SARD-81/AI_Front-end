@@ -1,3 +1,5 @@
+import {formatRateLimitMessage, isRateLimitCode} from '@/lib/api/rate-limit';
+
 const DEFAULT_HEADERS = {
   'Content-Type': 'application/json'
 };
@@ -6,9 +8,12 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly payload?: unknown
+    public readonly code?: string,
+    public readonly payload?: unknown,
+    public readonly retryAfter: number | null = null
   ) {
     super(message);
+    this.name = 'ApiError';
   }
 }
 
@@ -29,6 +34,12 @@ export function getApiBaseUrl() {
 
 export function resolveApiUrl(path: string) {
   return joinUrl(getApiBaseUrl(), path);
+}
+
+function getClientLocale() {
+  if (typeof window === 'undefined') return 'fa';
+  const locale = window.location.pathname.split('/').filter(Boolean)[0];
+  return locale === 'en' ? 'en' : 'fa';
 }
 
 function redirectToLogin() {
@@ -66,7 +77,7 @@ function getErrorCode(payload: unknown): string | undefined {
 
   const record = payload as Record<string, unknown>;
   if (typeof record.code === 'string' && record.code.trim()) {
-    return record.code.trim().toUpperCase();
+    return record.code.trim();
   }
 
   const nestedError = record.error;
@@ -77,10 +88,29 @@ function getErrorCode(payload: unknown): string | undefined {
     typeof (nestedError as Record<string, unknown>).code === 'string'
   ) {
     const code = String((nestedError as Record<string, unknown>).code).trim();
-    return code ? code.toUpperCase() : undefined;
+    return code || undefined;
   }
 
   return undefined;
+}
+
+function getRetryAfter(payload: unknown, response: Response): number | null {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const value = (payload as Record<string, unknown>).retry_after;
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+  }
+
+  const headerValue = response.headers.get('Retry-After');
+  if (headerValue) {
+    const parsed = Number(headerValue);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return null;
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -98,19 +128,26 @@ async function parseResponse<T>(response: Response): Promise<T> {
             typeof data.error.message === 'string'
           ? data.error.message.trim()
           : '';
-    const errorMessage = payloadMessage || 'API request failed';
-    const error = new ApiError(errorMessage, response.status, data);
-    const errorCode = getErrorCode(data);
+    const errorCode =
+      getErrorCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
+    const retryAfter = getRetryAfter(data, response);
+    const errorMessage = isRateLimitCode(errorCode)
+      ? formatRateLimitMessage(getClientLocale(), errorCode, retryAfter)
+      : payloadMessage || 'API request failed';
+    const error = new ApiError(
+      errorMessage,
+      response.status,
+      errorCode,
+      data,
+      retryAfter
+    );
 
     if (response.status === 401) {
       redirectToLogin();
     } else if (
       response.status === 403 &&
-      errorCode === 'PROFILE_INCOMPLETE'
+      errorCode?.toUpperCase() === 'PROFILE_INCOMPLETE'
     ) {
-      // A generic 403 can mean account lock, permission denial, an expired
-      // registration flow, or another policy decision. Only the explicit
-      // backend profile-incomplete code is allowed to navigate to /profile.
       redirectToProfile();
     }
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,10 @@ import {
   ServiceError,
   setInitialPassword
 } from '@/lib/services/auth-service';
+import {
+  formatAuthRateLimitMessage,
+  isAuthRateLimitCode
+} from '@/lib/services/auth-error-policy';
 import type { LoginResultDTO } from '@/lib/types/auth';
 import {
   createLoginSchema,
@@ -81,6 +85,7 @@ export function LoginForm({
     temporaryPassword: string;
   } | null>(null);
   const inFlightRef = useRef(false);
+  const locale = useLocale();
   const t = useTranslations('auth');
   const appT = useTranslations('app');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
@@ -111,6 +116,20 @@ export function LoginForm({
     setPendingPasswordChange({ email, temporaryPassword });
     setPasswordForm.reset({ password: '', confirmPassword: '' });
     setFormError(null);
+  };
+
+  const showRateLimitError = (error: unknown) => {
+    if (!(error instanceof ServiceError) || !isAuthRateLimitCode(error.code)) {
+      return false;
+    }
+    const message = formatAuthRateLimitMessage(
+      locale,
+      error.code,
+      error.retryAfter
+    );
+    setFormError(message);
+    toast.error(message);
+    return true;
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -158,10 +177,9 @@ export function LoginForm({
         toast.error(message);
         return;
       }
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('login.errorFallback');
+      if (showRateLimitError(error)) return;
+
+      const message = t('login.errorFallback');
       setFormError(message);
       toast.error(message);
     } finally {
@@ -181,18 +199,13 @@ export function LoginForm({
     abortRef.current = controller;
 
     try {
-      await setInitialPassword(
+      const result = await setInitialPassword(
         {
           email: pendingPasswordChange.email,
           temporaryPassword: pendingPasswordChange.temporaryPassword,
           newPassword: values.password,
           newPasswordConfirm: values.confirmPassword
         },
-        { signal: controller.signal }
-      );
-
-      const result = await loginUser(
-        { email: pendingPasswordChange.email, password: values.password },
         { signal: controller.signal }
       );
 
@@ -225,10 +238,9 @@ export function LoginForm({
         toast.error(message);
         return;
       }
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('setPassword.errorFallback');
+      if (showRateLimitError(error)) return;
+
+      const message = t('setPassword.errorFallback');
       setFormError(message);
       toast.error(message);
     } finally {
@@ -237,8 +249,6 @@ export function LoginForm({
     }
   });
 
-  // Live checklist for the initial-password flow, mirroring the zod rules so
-  // the user sees which requirements are already satisfied while typing.
   const newPasswordValue = setPasswordForm.watch('password') ?? '';
   const confirmNewPasswordValue = setPasswordForm.watch('confirmPassword') ?? '';
   const newPasswordRuleState = evaluatePasswordRules(newPasswordValue);

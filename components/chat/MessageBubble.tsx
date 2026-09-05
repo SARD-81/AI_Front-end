@@ -4,7 +4,7 @@ import { memo, useMemo, useState } from 'react';
 import ReactMarkdown, {type Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { AlertCircle, Check, Clock, Copy } from 'lucide-react';
+import { AlertCircle, Check, Copy } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -259,18 +259,25 @@ function MessageBubbleComponent({
                   <p
                     dir="auto"
                     className={cn(
-                      'm-0 whitespace-pre-wrap break-words rounded-3xl border border-[hsl(var(--bubble-user-border))] bg-[hsl(var(--bubble-user))] px-4 py-3 text-foreground shadow-sm',
+                      'm-0 whitespace-pre-wrap break-words rounded-3xl border border-[hsl(var(--bubble-user-border))] bg-[hsl(var(--bubble-user))] px-4 py-3 text-foreground shadow-sm transition-opacity duration-200',
                       sendStatus === 'failed'
                         ? 'border-[hsl(var(--danger-border))] bg-[hsl(var(--danger-surface))] text-[hsl(var(--danger-text))]'
                         : undefined,
-                      sendStatus === 'pending' ? 'border-[hsl(var(--warning-border))] bg-[hsl(var(--warning-surface))] text-[hsl(var(--warning-text))]' : undefined
+                      sendStatus === 'pending' ? 'opacity-90' : undefined
                     )}
                   >
                     {message.content}
                   </p>
                   {sendStatus === 'pending' ? (
-                    <div className="msg-user-meta mt-1 flex items-center gap-1 text-xs text-[hsl(var(--warning-text))]">
-                      <Clock className="h-3 w-3" />
+                    <div
+                      role="status"
+                      className="msg-user-meta mt-1.5 flex items-center gap-2 px-1 text-[11px] font-medium text-muted-foreground"
+                    >
+                      <span className="loader-dots" aria-hidden>
+                        <i />
+                        <i />
+                        <i />
+                      </span>
                       <span>{t('message.pending')}</span>
                     </div>
                   ) : null}

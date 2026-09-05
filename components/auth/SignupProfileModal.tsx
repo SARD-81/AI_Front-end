@@ -154,7 +154,10 @@ export function SignupProfileModal({email, open, busy, setBusy, registerRef, onO
       const message = error instanceof ServiceError ? error.message : t('signup.registerErrorFallback');
       setRegisterError(message);
       toast.error(message);
-      if (error instanceof ServiceError && error.status === 403) {
+      if (
+        error instanceof ServiceError &&
+        error.code.trim().toLowerCase() === 'registration_flow_expired'
+      ) {
         onOpenChange(false);
         onFlowExpired?.();
       }

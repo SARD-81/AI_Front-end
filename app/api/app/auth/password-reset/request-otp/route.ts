@@ -15,13 +15,15 @@ export async function POST(request: Request) {
       return NextResponse.json({message: UNIVERSITY_EMAIL_HINT}, {status: 400});
     }
 
-    const data = await backendFetch('/password-reset/request-otp/', {
+    await backendFetch('/password-reset/request-otp/', {
       base: 'auth',
       method: 'POST',
       body: JSON.stringify({email})
     });
 
-    return NextResponse.json(data);
+    // Preserve reset anti-enumeration at the BFF boundary: the browser never
+    // receives a backend success payload that could vary by account existence.
+    return NextResponse.json({ok: true});
   } catch (error) {
     return routeErrorResponse(error);
   }

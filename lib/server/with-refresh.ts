@@ -19,7 +19,7 @@ async function requestNewTokens(refresh: string): Promise<RefreshedTokens> {
   });
 
   if (!refreshResult?.access) {
-    throw new ApiError('توکن جدید دریافت نشد.', 401);
+    throw new ApiError('توکن جدید دریافت نشد.', 401, 'REFRESH_ACCESS_MISSING');
   }
 
   return {access: refreshResult.access, refresh: refreshResult.refresh};
@@ -36,6 +36,15 @@ function getRefreshedTokens(refresh: string): Promise<RefreshedTokens> {
   return promise;
 }
 
+function isRefreshAuthenticationFailure(error: unknown) {
+  return error instanceof ApiError && (error.status === 401 || error.status === 403);
+}
+
+async function clearAndRequireLogin(): Promise<never> {
+  await clearAuthCookies();
+  throw new ApiError('نیاز به ورود مجدد دارید.', 401, 'SESSION_EXPIRED');
+}
+
 export async function callWithAutoRefresh<T>(fn: (accessToken: string) => Promise<T>): Promise<T> {
   const {access, refresh} = await getAuthCookies();
 
@@ -46,20 +55,38 @@ export async function callWithAutoRefresh<T>(fn: (accessToken: string) => Promis
       if (!(error instanceof ApiError) || error.status !== 401) {
         throw error;
       }
-      // Fall through to the refresh flow below.
+      // The access token is stale. Only this case enters the refresh flow.
     }
   }
 
   if (!refresh) {
-    throw new ApiError('نیاز به ورود مجدد دارید.', 401);
+    throw new ApiError('نیاز به ورود مجدد دارید.', 401, 'SESSION_EXPIRED');
   }
 
+  let tokens: RefreshedTokens;
   try {
-    const tokens = await getRefreshedTokens(refresh);
-    await setAuthCookies(tokens);
+    tokens = await getRefreshedTokens(refresh);
+  } catch (error) {
+    // Invalid/expired refresh credentials end the session. Transient failures
+    // such as 429/5xx/network errors must retain their original semantics and
+    // must not silently log the user out.
+    if (isRefreshAuthenticationFailure(error)) {
+      return clearAndRequireLogin();
+    }
+    throw error;
+  }
+
+  await setAuthCookies(tokens);
+
+  try {
+    // Keep this retry outside the refresh catch above. A valid refreshed
+    // session can still receive a legitimate endpoint error such as 429, 403,
+    // 404 or 503; those errors belong to the endpoint and must be propagated.
     return await fn(tokens.access);
-  } catch {
-    await clearAuthCookies();
-    throw new ApiError('نیاز به ورود مجدد دارید.', 401);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      return clearAndRequireLogin();
+    }
+    throw error;
   }
 }

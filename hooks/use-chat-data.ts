@@ -30,6 +30,12 @@ function prefersReducedMotion() {
   );
 }
 
+function throwIfRevealAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new ChatWebSocketError('Response generation was stopped.', 'ABORTED');
+  }
+}
+
 /**
  * The backend WebSocket delivers the whole answer in a single message.
  * To keep the UI feeling live (like ChatGPT), reveal the received answer
@@ -38,8 +44,10 @@ function prefersReducedMotion() {
  */
 async function revealAnswerProgressively(
   text: string,
-  onToken?: (chunk: string) => void
+  onToken?: (chunk: string) => void,
+  signal?: AbortSignal
 ) {
+  throwIfRevealAborted(signal);
   if (!onToken || text.length < STREAM_REVEAL_MIN_LENGTH) return;
   if (prefersReducedMotion()) return;
 
@@ -48,9 +56,12 @@ async function revealAnswerProgressively(
   const chunkSize = Math.ceil(text.length / steps);
 
   for (let index = 0; index < text.length; index += chunkSize) {
+    throwIfRevealAborted(signal);
     onToken(text.slice(index, index + chunkSize));
     await new Promise((resolve) => setTimeout(resolve, STREAM_REVEAL_TICK_MS));
   }
+
+  throwIfRevealAborted(signal);
 }
 
 export function useChats() {
@@ -198,9 +209,11 @@ export function useSendMessage() {
           }
         );
 
-        if (!signal?.aborted) {
-          await revealAnswerProgressively(assistantMessage.content, onToken);
-        }
+        await revealAnswerProgressively(
+          assistantMessage.content,
+          onToken,
+          signal
+        );
 
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
@@ -252,7 +265,10 @@ export function useSendMessage() {
             message.id === userMessage.id
               ? {
                   ...message,
-                  sendStatus: replaceAssistantMessageId ? ('sent' as const) : ('failed' as const)
+                  sendStatus:
+                    signal?.aborted || replaceAssistantMessageId
+                      ? ('sent' as const)
+                      : ('failed' as const)
                 }
               : message
           );
