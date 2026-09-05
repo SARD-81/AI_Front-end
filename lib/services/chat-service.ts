@@ -343,12 +343,12 @@ function wsRetryDelay(ms: number, signal?: AbortSignal) {
       return;
     }
 
-    let timer: ReturnType<typeof setTimeout>;
-    const onAbort = () => {
+    function onAbort() {
       clearTimeout(timer);
       reject(abortedError());
-    };
-    timer = setTimeout(() => {
+    }
+
+    const timer = setTimeout(() => {
       signal?.removeEventListener('abort', onAbort);
       resolve();
     }, ms);
