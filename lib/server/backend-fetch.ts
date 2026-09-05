@@ -9,6 +9,57 @@ function getBackendOrigin() {
   return origin.replace(/\/+$/, '');
 }
 
+function extractCode(data: Record<string, unknown> | undefined) {
+  if (!data) return undefined;
+
+  const rawCode = data.code;
+  if (typeof rawCode === 'string' && rawCode.trim()) {
+    return rawCode.trim();
+  }
+  if (Array.isArray(rawCode) && typeof rawCode[0] === 'string') {
+    const code = rawCode[0].trim();
+    return code || undefined;
+  }
+
+  const nestedError = data.error;
+  if (
+    nestedError &&
+    typeof nestedError === 'object' &&
+    !Array.isArray(nestedError)
+  ) {
+    const nestedCode = (nestedError as Record<string, unknown>).code;
+    if (typeof nestedCode === 'string' && nestedCode.trim()) {
+      return nestedCode.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function extractRetryAfter(
+  data: Record<string, unknown> | undefined,
+  response: Response
+): number | null {
+  const rawRetryAfter = data?.retry_after;
+  if (
+    typeof rawRetryAfter === 'number' &&
+    Number.isFinite(rawRetryAfter) &&
+    rawRetryAfter >= 0
+  ) {
+    return rawRetryAfter;
+  }
+
+  const headerValue = response.headers.get('Retry-After');
+  if (headerValue) {
+    const parsed = Number(headerValue);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 export async function backendFetch<T = unknown>(
   urlPath: string,
   init?: RequestInit & {base: 'auth' | 'api'; accessToken?: string}
@@ -55,24 +106,9 @@ export async function backendFetch<T = unknown>(
       joinStrings(data?.error) ||
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
-    const rawCode = data?.code;
-    const code =
-      typeof rawCode === 'string'
-        ? rawCode
-        : Array.isArray(rawCode) && typeof rawCode[0] === 'string'
-          ? rawCode[0]
-          : undefined;
-    // Rate-limit responses carry `retry_after` in the body and the same value
-    // in the `Retry-After` header. Edge (Nginx/CDN) 429s may carry neither a
-    // JSON body nor `retry_after`, so the header is used as a fallback.
-    const rawRetryAfter = data?.retry_after;
-    const headerRetryAfter = Number(response.headers.get('Retry-After'));
-    const retryAfter =
-      typeof rawRetryAfter === 'number' && Number.isFinite(rawRetryAfter)
-        ? rawRetryAfter
-        : Number.isFinite(headerRetryAfter) && headerRetryAfter > 0
-          ? headerRetryAfter
-          : undefined;
+    const code = extractCode(data);
+    const retryAfter = extractRetryAfter(data, response);
+
     throw new ApiError(message, response.status, code, data, retryAfter);
   }
 
