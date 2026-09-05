@@ -78,7 +78,10 @@ export async function POST(request: Request) {
     if (!flowToken) {
       // The single-use verification token is required by the backend contract.
       return NextResponse.json(
-        { message: 'نشست تأیید ایمیل منقضی شده است. لطفاً کد تأیید را دوباره دریافت کنید.' },
+        {
+          message: 'نشست تأیید ایمیل منقضی شده است. لطفاً کد تأیید را دوباره دریافت کنید.',
+          code: 'registration_flow_expired'
+        },
         { status: 403 }
       );
     }
