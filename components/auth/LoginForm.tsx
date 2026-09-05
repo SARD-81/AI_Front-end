@@ -181,18 +181,13 @@ export function LoginForm({
     abortRef.current = controller;
 
     try {
-      await setInitialPassword(
+      const result = await setInitialPassword(
         {
           email: pendingPasswordChange.email,
           temporaryPassword: pendingPasswordChange.temporaryPassword,
           newPassword: values.password,
           newPasswordConfirm: values.confirmPassword
         },
-        { signal: controller.signal }
-      );
-
-      const result = await loginUser(
-        { email: pendingPasswordChange.email, password: values.password },
         { signal: controller.signal }
       );
 
@@ -237,8 +232,6 @@ export function LoginForm({
     }
   });
 
-  // Live checklist for the initial-password flow, mirroring the zod rules so
-  // the user sees which requirements are already satisfied while typing.
   const newPasswordValue = setPasswordForm.watch('password') ?? '';
   const confirmNewPasswordValue = setPasswordForm.watch('confirmPassword') ?? '';
   const newPasswordRuleState = evaluatePasswordRules(newPasswordValue);

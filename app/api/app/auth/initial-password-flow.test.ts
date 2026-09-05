@@ -4,10 +4,7 @@ const backendFetchMock = vi.hoisted(() => vi.fn());
 const setAuthCookiesMock = vi.hoisted(() => vi.fn());
 const clearAuthCookiesMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/server/backend-fetch', () => ({
-  backendFetch: backendFetchMock
-}));
-
+vi.mock('@/lib/server/backend-fetch', () => ({backendFetch: backendFetchMock}));
 vi.mock('@/lib/server/auth-cookies', () => ({
   setAuthCookies: setAuthCookiesMock,
   clearAuthCookies: clearAuthCookiesMock
@@ -33,34 +30,26 @@ describe('forced initial-password flow', () => {
     clearAuthCookiesMock.mockResolvedValue(undefined);
   });
 
-  it('leaves the forced-password state after backend truth becomes false', async () => {
-    let loginAttempt = 0;
-
+  it('returns the normal auth contract directly after the initial password is set', async () => {
     backendFetchMock.mockImplementation(async (path: string) => {
-      if (path === '/set-initial-password/') {
-        return {access: 'changed-access', refresh: 'changed-refresh'};
+      if (path === '/login/') {
+        return {
+          access: 'test-access-before-change',
+          refresh: 'test-refresh-before-change',
+          identifier: '11229',
+          personnel_id: '11229',
+          full_name: 'Professor Example',
+          role: 'professor',
+          is_profile_completed: true,
+          must_change_password: true,
+          is_locked: false
+        };
       }
 
-      if (path === '/login/') {
-        loginAttempt += 1;
-
-        if (loginAttempt === 1) {
-          return {
-            access: 'temporary-access',
-            refresh: 'temporary-refresh',
-            identifier: '11229',
-            personnel_id: '11229',
-            full_name: 'Professor Example',
-            role: 'professor',
-            is_profile_completed: true,
-            must_change_password: true,
-            is_locked: false
-          };
-        }
-
+      if (path === '/set-initial-password/') {
         return {
-          access: 'final-access',
-          refresh: 'final-refresh',
+          access: 'test-access-after-change',
+          refresh: 'test-refresh-after-change',
           identifier: '11229',
           personnel_id: '11229',
           full_name: 'Professor Example',
@@ -77,7 +66,7 @@ describe('forced initial-password flow', () => {
     const firstLoginResponse = await login(
       jsonRequest('/api/app/auth/login', {
         email: 'professor@sbu.ac.ir',
-        password: 'Temporary123!'
+        password: 'test-temporary-value'
       })
     );
     const firstLoginBody = await firstLoginResponse.json();
@@ -90,35 +79,22 @@ describe('forced initial-password flow', () => {
     const passwordResponse = await setInitialPassword(
       jsonRequest('/api/app/auth/set-initial-password', {
         email: 'professor@sbu.ac.ir',
-        temporary_password: 'Temporary123!',
-        new_password: 'Permanent123!',
-        new_password_confirm: 'Permanent123!'
+        temporary_password: 'test-temporary-value',
+        new_password: 'test-new-value',
+        new_password_confirm: 'test-new-value'
       })
     );
+    const passwordBody = await passwordResponse.json();
 
     expect(passwordResponse.status).toBe(200);
-    expect(await passwordResponse.json()).toEqual({ok: true});
-    expect(setAuthCookiesMock).toHaveBeenCalledWith({
-      access: 'changed-access',
-      refresh: 'changed-refresh'
-    });
-
-    const secondLoginResponse = await login(
-      jsonRequest('/api/app/auth/login', {
-        email: 'professor@sbu.ac.ir',
-        password: 'Permanent123!'
-      })
-    );
-    const secondLoginBody = await secondLoginResponse.json();
-
-    expect(secondLoginResponse.status).toBe(200);
-    expect(secondLoginBody.mustChangePassword).toBe(false);
-    expect(secondLoginBody.user.mustChangePassword).toBe(false);
-    expect(secondLoginBody.user.role).toBe('professor');
+    expect(passwordBody.mustChangePassword).toBe(false);
+    expect(passwordBody.user.mustChangePassword).toBe(false);
+    expect(passwordBody.user.role).toBe('professor');
+    expect(setAuthCookiesMock).toHaveBeenCalledTimes(1);
     expect(setAuthCookiesMock).toHaveBeenLastCalledWith({
-      access: 'final-access',
-      refresh: 'final-refresh'
+      access: 'test-access-after-change',
+      refresh: 'test-refresh-after-change'
     });
-    expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+    expect(backendFetchMock).toHaveBeenCalledTimes(2);
   });
 });

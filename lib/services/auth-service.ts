@@ -332,7 +332,7 @@ function toServiceError(error: unknown): ServiceError {
       typeof (error.payload as {code?: unknown}).code === 'string'
         ? (error.payload as {code: string}).code
         : undefined;
-    return new ServiceError(message, error.status, payloadCode ?? 'API_ERROR');
+    return new ServiceError(message, error.status, error.code ?? payloadCode ?? 'API_ERROR');
   }
   return new ServiceError('خطای غیرمنتظره رخ داد.', 500, 'UNEXPECTED');
 }
@@ -357,18 +357,23 @@ export async function loginUser(
 export async function setInitialPassword(
   input: SetInitialPasswordInputDTO,
   opts?: { signal?: AbortSignal }
-): Promise<void> {
+): Promise<LoginResultDTO> {
   try {
-    await apiFetch<unknown>(API_ENDPOINTS.auth.setInitialPassword, {
-      method: 'POST',
-      signal: opts?.signal,
-      body: JSON.stringify({
-        email: input.email,
-        temporary_password: input.temporaryPassword,
-        new_password: input.newPassword,
-        new_password_confirm: input.newPasswordConfirm
-      })
-    });
+    const result = await apiFetch<LoginResponseDTO>(
+      API_ENDPOINTS.auth.setInitialPassword,
+      {
+        method: 'POST',
+        signal: opts?.signal,
+        body: JSON.stringify({
+          email: input.email,
+          temporary_password: input.temporaryPassword,
+          new_password: input.newPassword,
+          new_password_confirm: input.newPasswordConfirm
+        })
+      }
+    );
+
+    return loginSchema.parse(result);
   } catch (error) {
     throw toServiceError(error);
   }
