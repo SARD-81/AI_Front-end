@@ -226,12 +226,19 @@ const otpTokenSchema = z
 export class ServiceError extends Error {
   status: number;
   code: string;
+  retryAfter: number | null;
 
-  constructor(message: string, status: number, code = 'SERVICE_ERROR') {
+  constructor(
+    message: string,
+    status: number,
+    code = 'SERVICE_ERROR',
+    retryAfter: number | null = null
+  ) {
     super(message);
     this.name = 'ServiceError';
     this.status = status;
     this.code = code;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -332,7 +339,12 @@ function toServiceError(error: unknown): ServiceError {
       typeof (error.payload as {code?: unknown}).code === 'string'
         ? (error.payload as {code: string}).code
         : undefined;
-    return new ServiceError(message, error.status, error.code ?? payloadCode ?? 'API_ERROR');
+    return new ServiceError(
+      message,
+      error.status,
+      error.code ?? payloadCode ?? 'API_ERROR',
+      error.retryAfter
+    );
   }
   return new ServiceError('خطای غیرمنتظره رخ داد.', 500, 'UNEXPECTED');
 }

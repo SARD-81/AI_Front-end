@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {OtpInput} from '@/components/auth/OtpInput';
@@ -25,6 +25,10 @@ import {
   ServiceError,
   verifyOtp
 } from '@/lib/services/auth-service';
+import {
+  formatAuthRateLimitMessage,
+  isAuthRateLimitCode
+} from '@/lib/services/auth-error-policy';
 import {
   createSignupStep1Schema,
   type AuthSchemaTranslator,
@@ -61,6 +65,7 @@ export function SignupWizard({
   const [pendingAction, setPendingAction] = useState<
     'send' | 'verify' | null
   >(null);
+  const locale = useLocale();
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
 
@@ -99,6 +104,22 @@ export function SignupWizard({
     step1Form.clearErrors('otpCode');
   };
 
+  const getRateLimitMessage = (error: unknown) => {
+    if (!(error instanceof ServiceError) || !isAuthRateLimitCode(error.code)) {
+      return null;
+    }
+
+    if (otpSent && typeof error.retryAfter === 'number' && error.retryAfter > 0) {
+      setResendSeconds(Math.ceil(error.retryAfter));
+    }
+
+    return formatAuthRateLimitMessage(
+      locale,
+      error.code,
+      error.retryAfter
+    );
+  };
+
   const onSendOtp = async () => {
     const isValid = await step1Form.trigger('email');
     if (!isValid) return;
@@ -118,11 +139,9 @@ export function SignupWizard({
       toast.success(result.message);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('signup.sendOtpErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('signup.sendOtpErrorFallback')
+      );
     } finally {
       setBusy(false);
       setPendingAction(null);
@@ -147,17 +166,14 @@ export function SignupWizard({
       toast.success(result.message);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('signup.verifyErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('signup.verifyErrorFallback')
+      );
     } finally {
       setBusy(false);
       setPendingAction(null);
     }
   });
-
 
   const isSendingOtp = pendingAction === 'send';
   const isVerifyingOtp = pendingAction === 'verify';

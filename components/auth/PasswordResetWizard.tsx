@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,12 @@ import {
   ServiceError,
   verifyPasswordResetOtp
 } from '@/lib/services/auth-service';
+import {
+  formatAuthRateLimitMessage,
+  getResetAntiEnumerationMessage,
+  getResetOtpInstruction,
+  isAuthRateLimitCode
+} from '@/lib/services/auth-error-policy';
 import {
   createPasswordResetCompleteSchema,
   createSignupStep1EmailSchema,
@@ -71,6 +77,7 @@ export function PasswordResetWizard({
   const [resendSeconds, setResendSeconds] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const locale = useLocale();
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
 
@@ -104,7 +111,20 @@ export function PasswordResetWizard({
     [busy, resendSeconds, stage]
   );
 
-  const startCountdown = () => setResendSeconds(RESEND_SECONDS);
+  const startCountdown = (seconds = RESEND_SECONDS) =>
+    setResendSeconds(Math.max(0, Math.ceil(seconds)));
+
+  const getRateLimitMessage = (error: unknown) => {
+    if (!(error instanceof ServiceError) || !isAuthRateLimitCode(error.code)) {
+      return null;
+    }
+
+    if (typeof error.retryAfter === 'number' && error.retryAfter > 0) {
+      startCountdown(error.retryAfter);
+    }
+
+    return formatAuthRateLimitMessage(locale, error.code, error.retryAfter);
+  };
 
   const requestOtp = async (targetEmail: string) => {
     const controller = new AbortController();
@@ -113,20 +133,18 @@ export function PasswordResetWizard({
 
     try {
       setBusy(true);
-      const result = await requestPasswordResetOtp(
+      await requestPasswordResetOtp(
         { email: targetEmail },
         { signal: controller.signal }
       );
-      toast.success(result.message);
+      toast.success(getResetAntiEnumerationMessage(locale));
       startCountdown();
       return true;
     } catch (error) {
       if (isAbortError(error)) return false;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('reset.requestErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('reset.requestErrorFallback')
+      );
       return false;
     } finally {
       setBusy(false);
@@ -166,11 +184,9 @@ export function PasswordResetWizard({
       toast.success(result.message);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('reset.verifyErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('reset.verifyErrorFallback')
+      );
     } finally {
       setBusy(false);
     }
@@ -183,26 +199,22 @@ export function PasswordResetWizard({
 
     try {
       setBusy(true);
-      const result = await completePasswordReset(
+      await completePasswordReset(
         { email, otpToken, newPassword: values.password },
         { signal: controller.signal }
       );
-      toast.success(result.message || t('reset.success'));
+      toast.success(t('reset.success'));
       onCompleted(email);
     } catch (error) {
       if (isAbortError(error)) return;
-      const message =
-        error instanceof ServiceError
-          ? error.message
-          : t('reset.completeErrorFallback');
-      toast.error(message);
+      toast.error(
+        getRateLimitMessage(error) ?? t('reset.completeErrorFallback')
+      );
     } finally {
       setBusy(false);
     }
   });
 
-  // Live rule state for stage 3. Watching the fields (instead of relying on
-  // submit-time errors) lets the checklist update on every keystroke.
   const passwordValue = passwordForm.watch('password') ?? '';
   const confirmPasswordValue = passwordForm.watch('confirmPassword') ?? '';
   const passwordRuleState = evaluatePasswordRules(passwordValue);
@@ -261,7 +273,7 @@ export function PasswordResetWizard({
             <Form {...otpForm}>
               <form onSubmit={onVerifyOtp} className="space-y-5" noValidate>
                 <div className="rounded-2xl border border-field-border bg-field/70 px-3 py-2 text-sm text-field-foreground shadow-sm">
-                  {t('reset.codeSentTo')} <span dir="ltr">{email}</span>
+                  {getResetOtpInstruction(locale)} <span dir="ltr">{email}</span>
                 </div>
                 <FormField
                   control={otpForm.control}
