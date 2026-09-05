@@ -85,14 +85,14 @@ export function SignupWizard({
   }, [resetToken, step1Form]);
 
   useEffect(() => {
-    if (!otpSent || resendSeconds <= 0) return;
+    if (resendSeconds <= 0) return;
 
     const timer = window.setInterval(() => {
       setResendSeconds((seconds) => Math.max(seconds - 1, 0));
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [otpSent, resendSeconds]);
+  }, [resendSeconds]);
 
   const resetOtpState = () => {
     controllerRefs.verifyOtp.current?.abort();
@@ -109,7 +109,7 @@ export function SignupWizard({
       return null;
     }
 
-    if (otpSent && typeof error.retryAfter === 'number' && error.retryAfter > 0) {
+    if (typeof error.retryAfter === 'number' && error.retryAfter > 0) {
       setResendSeconds(Math.ceil(error.retryAfter));
     }
 
@@ -121,6 +121,8 @@ export function SignupWizard({
   };
 
   const onSendOtp = async () => {
+    if (resendSeconds > 0) return;
+
     const isValid = await step1Form.trigger('email');
     if (!isValid) return;
 
@@ -269,14 +271,20 @@ export function SignupWizard({
                     type="button"
                     className="w-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
                     onClick={onSendOtp}
-                    disabled={busy || step1Form.formState.isSubmitting}
+                    disabled={
+                      busy ||
+                      step1Form.formState.isSubmitting ||
+                      resendSeconds > 0
+                    }
                   >
                     {isSendingOtp ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : null}
-                    {isSendingOtp
-                      ? t('signup.sendingOtp')
-                      : t('signup.sendOtp')}
+                    {resendSeconds > 0
+                      ? t('signup.resendCountdown', {seconds: resendSeconds})
+                      : isSendingOtp
+                        ? t('signup.sendingOtp')
+                        : t('signup.sendOtp')}
                   </Button>
                 ) : (
                   <div className="space-y-4 rounded-xl border border-sky-300/35 bg-slate-950/45 p-4 shadow-[0_0_22px_rgba(14,165,233,0.12)]">

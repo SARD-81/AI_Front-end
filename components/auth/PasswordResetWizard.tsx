@@ -152,6 +152,8 @@ export function PasswordResetWizard({
   };
 
   const onRequestOtp = emailForm.handleSubmit(async (values) => {
+    if (resendSeconds > 0) return;
+
     const normalizedEmail = values.email.trim();
     const sent = await requestOtp(normalizedEmail);
     if (!sent) return;
@@ -259,9 +261,11 @@ export function PasswordResetWizard({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="h-12 w-full rounded-2xl bg-primary text-sm font-bold shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99]" disabled={busy || emailForm.formState.isSubmitting}>
+                <Button type="submit" className="h-12 w-full rounded-2xl bg-primary text-sm font-bold shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99]" disabled={busy || emailForm.formState.isSubmitting || resendSeconds > 0}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {t('reset.requestOtp')}
+                  {resendSeconds > 0
+                    ? t('reset.resendCountdown', {seconds: resendSeconds})
+                    : t('reset.requestOtp')}
                 </Button>
               </form>
             </Form>
