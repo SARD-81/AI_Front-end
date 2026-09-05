@@ -225,8 +225,9 @@ describe('chat websocket hardening contract', () => {
     );
 
     const pending = sendMessageWithWebSocket('conversation', payload());
-    await Promise.resolve();
-    await Promise.resolve();
+    // Flush the async ticket resolution and first socket scenario without
+    // coupling this test to an exact number of promise microtasks.
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(sockets).toHaveLength(1);
     expect(JSON.parse(sockets[0].sent[0]).client_message_id).toBe(
