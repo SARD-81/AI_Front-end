@@ -71,6 +71,8 @@ export function Composer({
         maxRows={8}
         maxLength={MAX_MESSAGE_LENGTH}
         value={value}
+        dir={value.trim() ? 'auto' : locale === 'fa' ? 'rtl' : 'ltr'}
+        style={{unicodeBidi: 'normal', textAlign: 'start'}}
         ref={textareaRef}
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}

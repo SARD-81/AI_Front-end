@@ -97,9 +97,9 @@
       }
     },
     "emptyState": {
-      "logoAlt": "Logo",
+      "logoAlt": "Shahid Beheshti University logo",
       "title": "Welcome to Shahid Beheshti University AI Assistant",
-      "description": "Start a conversation with the advanced AI assistant. Ask a question, get help, or just have a friendly chat.",
+      "description": "Start a conversation with the university AI assistant and get answers to your questions.",
       "suggestedPrompts": [
         "Eligibility for short-term research leave",
         "Requirements for changing major",
