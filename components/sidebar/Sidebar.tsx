@@ -2,7 +2,7 @@
 
 import { LayoutGroup, motion } from 'motion/react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { UniversityLogo } from '@/components/branding/UniversityLogo';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -313,21 +313,18 @@ export function Sidebar({
                 aria-label={t('sidebar.home')}
                 onClick={onNavigate}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-primary transition-colors hover:bg-[hsl(var(--surface-elevated))]',
-                  collapsed ? 'w-10 justify-center' : 'min-w-0 flex-1 gap-2 px-1.5'
+                  'flex h-12 items-center rounded-lg text-primary transition-colors hover:bg-[hsl(var(--surface-elevated))]',
+                  collapsed
+                    ? 'w-12 justify-center'
+                    : 'min-w-0 flex-1 gap-2 px-1.5'
                 )}
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-black/5 dark:bg-white dark:ring-white/25">
-                  <Image
-                    src="/Logo.png"
-                    alt={t('sidebar.logoAlt')}
-                    width={32}
-                    height={32}
-                    className="h-full w-full object-contain"
-                  />
-                </span>
+                <UniversityLogo
+                  alt={t('sidebar.logoAlt')}
+                  className="h-11 w-11"
+                />
                 {!collapsed ? (
-                  <span className="truncate text-sm font-semibold text-foreground">
+                  <span className="truncate text-sm font-bold text-foreground">
                     {t('sidebar.universityName')}
                   </span>
                 ) : null}
@@ -339,8 +336,12 @@ export function Sidebar({
                   variant="ghost"
                   size="icon"
                   onClick={toggleCollapsed}
-                  aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
-                  title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+                  aria-label={
+                    collapsed ? t('sidebar.expand') : t('sidebar.collapse')
+                  }
+                  title={
+                    collapsed ? t('sidebar.expand') : t('sidebar.collapse')
+                  }
                   className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground"
                 >
                   <PanelLeft className="h-[1.15rem] w-[1.15rem]" />
@@ -349,19 +350,26 @@ export function Sidebar({
             </div>
 
             {/* Primary actions as quiet rail rows (new chat + search). */}
-            <nav className={cn('mt-1 flex flex-col gap-0.5', collapsed && 'items-center')}>
+            <nav
+              className={cn(
+                'mt-1 flex flex-col gap-0.5',
+                collapsed && 'items-center'
+              )}
+            >
               <button
                 type="button"
                 onClick={createNewChat}
                 aria-label={t('newChat')}
                 title={collapsed ? t('newChat') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
                   collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
                 )}
               >
                 <MessageSquarePlus className="h-[1.15rem] w-[1.15rem] shrink-0" />
-                {!collapsed ? <span className="truncate">{t('newChat')}</span> : null}
+                {!collapsed ? (
+                  <span className="truncate">{t('newChat')}</span>
+                ) : null}
               </button>
 
               <button
@@ -370,13 +378,15 @@ export function Sidebar({
                 aria-label={t('sidebar.searchPlaceholder')}
                 title={collapsed ? t('sidebar.searchPlaceholder') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
                   collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
                 )}
               >
                 <Search className="h-[1.15rem] w-[1.15rem] shrink-0" />
                 {!collapsed ? (
-                  <span className="truncate">{t('sidebar.searchPlaceholder')}</span>
+                  <span className="truncate">
+                    {t('sidebar.searchPlaceholder')}
+                  </span>
                 ) : null}
               </button>
             </nav>
@@ -531,7 +541,9 @@ export function Sidebar({
             )}
           </SidebarContent>
 
-          <SidebarFooter>
+          <SidebarFooter
+            className={cn('mt-auto', collapsed && 'flex justify-center')}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -565,7 +577,7 @@ export function Sidebar({
                 align={collapsed ? 'center' : 'start'}
                 side="left"
                 className={cn(
-                  'w-72 overflow-hidden rounded-2xl border border-[hsl(var(--menu-border))] bg-[hsl(var(--menu)/0.92)] p-2 text-[hsl(var(--menu-foreground))] shadow-[0_22px_70px_-28px_hsl(var(--shadow-color)/0.75),0_0_0_1px_hsl(var(--foreground)/0.04)] backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+                  'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 w-72 overflow-hidden rounded-2xl border border-[hsl(var(--menu-border))] bg-[hsl(var(--menu)/0.92)] p-2 text-[hsl(var(--menu-foreground))] shadow-[0_22px_70px_-28px_hsl(var(--shadow-color)/0.75),0_0_0_1px_hsl(var(--foreground)/0.04)] backdrop-blur-xl',
                   collapsed && 'w-56',
                   isRtl ? '[direction:rtl]' : '[direction:ltr]'
                 )}
@@ -712,9 +724,15 @@ export function Sidebar({
                 <span className="text-danger-text">{renameError}</span>
                 {/* Only surfaces the counter when the user approaches the cap. */}
                 {renameTitle.length > RENAME_COUNTER_THRESHOLD ? (
-                  <span className="ms-auto shrink-0 tabular-nums text-muted-foreground" dir="ltr">
+                  <span
+                    className="ms-auto shrink-0 tabular-nums text-muted-foreground"
+                    dir="ltr"
+                  >
                     {formatDigitsForLocale(renameTitle.length, locale)} /{' '}
-                    {formatDigitsForLocale(MAX_CONVERSATION_TITLE_LENGTH, locale)}
+                    {formatDigitsForLocale(
+                      MAX_CONVERSATION_TITLE_LENGTH,
+                      locale
+                    )}
                   </span>
                 ) : null}
               </div>
@@ -751,7 +769,10 @@ export function Sidebar({
           setDeleteChatId(open ? deleteChatId : null)
         }
       >
-        <DialogContent className="max-w-sm" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+        <DialogContent
+          className="max-w-sm"
+          dir={locale === 'fa' ? 'rtl' : 'ltr'}
+        >
           <DialogTitle className="text-base font-semibold">
             {t('sidebar.deleteConfirmTitle')}
           </DialogTitle>

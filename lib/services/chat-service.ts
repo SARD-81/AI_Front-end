@@ -304,56 +304,14 @@ export async function requestChatWsTicket(opts?: {signal?: AbortSignal}) {
 }
 
 const WS_CONNECT_TIMEOUT_MS = 15_000;
-const WS_ANSWER_TIMEOUT_MS = 150_000;
-const WS_MAX_ATTEMPTS = 3;
-const WS_DUPLICATE_RETRY_DELAYS_MS = [10_000, 20_000, 30_000, 60_000];
-const WS_DUPLICATE_MAX_ATTEMPTS = WS_DUPLICATE_RETRY_DELAYS_MS.length + 1;
-const WS_RETRY_BASE_DELAY_MS = 1_500;
-
-const RETRYABLE_WS_ERROR_CODES = new Set([
-  'timeout',
-  'server_busy',
-  'ai_starting',
-  'ai_unavailable',
-  'ai_timeout',
-  'ai_error',
-  'internal_error',
-  'invalid_ai_response'
-]);
-
-const NON_RETRYABLE_WS_ERROR_CODES = new Set([
-  'rate_limited',
-  'locked',
-  'missing_client_message_id',
-  'invalid_client_message_id'
-]);
-
+// Allow the three-minute long-wait message; each attempt still has a finite limit.
+const WS_ANSWER_TIMEOUT_MS = 240_000;
 function normalizeWsErrorCode(code?: string) {
   return code?.trim().toLowerCase();
 }
 
 function abortedError() {
   return new ChatWebSocketError('WebSocket send was aborted.', 'ABORTED');
-}
-
-function wsRetryDelay(ms: number, signal?: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(abortedError());
-      return;
-    }
-
-    function onAbort() {
-      clearTimeout(timer);
-      reject(abortedError());
-    }
-
-    const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
-      resolve();
-    }, ms);
-    signal?.addEventListener('abort', onAbort, {once: true});
-  });
 }
 
 function attemptSendMessageOverWebSocket(
@@ -507,59 +465,12 @@ export async function sendMessageWithWebSocket(
         ? requestedClientMessageId
         : uuid()
   };
-  let attempt = 0;
-  let duplicateAttempts = 0;
-
-  for (;;) {
-    if (opts?.signal?.aborted) {
-      throw abortedError();
-    }
-
-    attempt += 1;
-    const state = {messageSent: false};
-    try {
-      const ticket = await requestChatWsTicket({signal: opts?.signal});
-      return await attemptSendMessageOverWebSocket(conversationId, ticket.ticket, stablePayload, state, opts);
-    } catch (error) {
-      if (opts?.signal?.aborted) {
-        throw error;
-      }
-
-      if (error instanceof ApiError && error.status === 503 && attempt < WS_MAX_ATTEMPTS) {
-        await wsRetryDelay(WS_RETRY_BASE_DELAY_MS * attempt, opts?.signal);
-        continue;
-      }
-
-      if (
-        error instanceof ChatWebSocketError &&
-        normalizeWsErrorCode(error.code) === 'duplicate_in_progress'
-      ) {
-        if (duplicateAttempts + 1 >= WS_DUPLICATE_MAX_ATTEMPTS) {
-          throw error;
-        }
-        const delay = WS_DUPLICATE_RETRY_DELAYS_MS[duplicateAttempts];
-        duplicateAttempts += 1;
-        await wsRetryDelay(delay, opts?.signal);
-        continue;
-      }
-
-      const normalizedCode =
-        error instanceof ChatWebSocketError
-          ? normalizeWsErrorCode(error.code)
-          : undefined;
-      const canRetry =
-        attempt < WS_MAX_ATTEMPTS &&
-        error instanceof ChatWebSocketError &&
-        !(normalizedCode !== undefined && NON_RETRYABLE_WS_ERROR_CODES.has(normalizedCode)) &&
-        (normalizedCode === undefined
-          ? !state.messageSent
-          : RETRYABLE_WS_ERROR_CODES.has(normalizedCode));
-      if (!canRetry) {
-        throw error;
-      }
-      await wsRetryDelay(WS_RETRY_BASE_DELAY_MS * attempt, opts?.signal);
-    }
-  }
+  // One user submission requests one ticket and opens one socket. Failures
+  // propagate immediately; neither transport errors nor duplicates are replayed.
+  const ticket = await requestChatWsTicket({signal: opts?.signal});
+  return attemptSendMessageOverWebSocket(
+    conversationId, ticket.ticket, stablePayload, {messageSent: false}, opts
+  );
 }
 
 export async function putMessageFeedback(messageId: string, body: FeedbackBody, opts?: {signal?: AbortSignal}) {

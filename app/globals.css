@@ -424,3 +424,10 @@ html.dark[data-accent='green'] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Lalezar is a display face: Persian product headings only, never chat content. */
+html[lang='fa'] .font-display-fa {
+  font-family: var(--font-lalezar), var(--font-vazirmatn), sans-serif;
+  font-weight: 400;
+  letter-spacing: normal;
+}

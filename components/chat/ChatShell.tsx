@@ -289,7 +289,7 @@ export function ChatShell({
 
     submissionInFlightRef.current = true;
     // Clear only a submitted draft, before either creation or generation waits.
-    // Retry/regenerate must leave any unrelated composer draft intact.
+    // Regenerate must leave any unrelated composer draft intact.
     if (options?.clearComposer) setValue('');
 
     const stableClientMessageId = clientMessageId ?? uuid();
@@ -548,9 +548,6 @@ export function ChatShell({
                     onCopyMessage={handleCopyMessage}
                     onEditMessage={handleEditMessage}
                     onRegenerate={handleRegenerate}
-                    onRetryMessage={(message) =>
-                      submitMessage(message.content, message.id)
-                    }
                     onRestoreMessage={(message) => {
                       setValue(message.content);
                       setFocusTrigger((prev) => prev + 1);

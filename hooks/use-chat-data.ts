@@ -14,55 +14,10 @@ import {
   getConversation,
   listConversations,
   renameConversation,
-  sendMessageWithWebSocket,
-  ChatWebSocketError
+  sendMessageWithWebSocket
 } from '@/lib/services/chat-service';
 import { uuid } from '@/lib/utils/uid';
-
-const STREAM_REVEAL_TICK_MS = 28;
-const STREAM_REVEAL_MAX_MS = 2200;
-const STREAM_REVEAL_MIN_LENGTH = 48;
-
-function prefersReducedMotion() {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
-function throwIfRevealAborted(signal?: AbortSignal) {
-  if (signal?.aborted) {
-    throw new ChatWebSocketError('Response generation was stopped.', 'ABORTED');
-  }
-}
-
-/**
- * The backend WebSocket delivers the whole answer in a single message.
- * To keep the UI feeling live (like ChatGPT), reveal the received answer
- * progressively before committing it to the cache. Skipped for short
- * answers and for users who prefer reduced motion.
- */
-async function revealAnswerProgressively(
-  text: string,
-  onToken?: (chunk: string) => void,
-  signal?: AbortSignal
-) {
-  throwIfRevealAborted(signal);
-  if (!onToken || text.length < STREAM_REVEAL_MIN_LENGTH) return;
-  if (prefersReducedMotion()) return;
-
-  const maxSteps = Math.floor(STREAM_REVEAL_MAX_MS / STREAM_REVEAL_TICK_MS);
-  const steps = Math.max(1, Math.min(maxSteps, Math.ceil(text.length / 3)));
-  const chunkSize = Math.ceil(text.length / steps);
-
-  for (let index = 0; index < text.length; index += chunkSize) {
-    throwIfRevealAborted(signal);
-    onToken(text.slice(index, index + chunkSize));
-    await new Promise((resolve) => setTimeout(resolve, STREAM_REVEAL_TICK_MS));
-  }
-
-  throwIfRevealAborted(signal);
-}
+import { revealAnswerProgressively } from '@/lib/chat/reveal-answer';
 
 export function useChats() {
   return useQuery({
@@ -124,6 +79,7 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
     mutationFn: async ({
       chatId,
       payload,
@@ -308,6 +264,7 @@ export function useChatActions() {
 
   return {
     create: useMutation({
+      retry: false,
       mutationFn: async (payload: { title?: string } = {}) =>
         createConversation(payload.title),
       onSuccess: (chat) => {

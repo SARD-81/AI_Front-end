@@ -1,6 +1,7 @@
 'use client';
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
+import { FacultyIdentity } from '@/components/branding/FacultyIdentity';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
@@ -216,7 +217,7 @@ export function AuthClient({ locale }: { locale: string }) {
   };
 
   return (
-    <main className="relative min-h-[100dvh] overflow-x-hidden overflow-y-auto bg-[#060a13] text-white">
+    <main className="relative min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#060a13] text-white">
       <div className="bg-slate-950/38 pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.86)_0%,rgba(15,23,42,0.54)_48%,rgba(2,6,23,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
@@ -234,7 +235,8 @@ export function AuthClient({ locale }: { locale: string }) {
               <div className="flex flex-1 items-center gap-4 sm:flex-col sm:justify-center sm:space-y-6 sm:text-center lg:space-y-8">
                 <UniversityLogo
                   alt={t('hero.logoAlt')}
-                  className="h-24 w-24 border-white/20 shadow-2xl shadow-black/35 sm:mx-auto sm:h-36 sm:w-36 sm:rounded-3xl sm:p-3 md:h-48 md:w-48"
+                  inverse
+                  className="h-16 w-16 sm:mx-auto sm:h-28 sm:w-28 md:h-40 md:w-40"
                 />
 
                 <div className="min-w-0 flex-1 space-y-1.5 text-start sm:mx-auto sm:max-w-2xl sm:space-y-5 sm:text-center">
@@ -242,15 +244,19 @@ export function AuthClient({ locale }: { locale: string }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
+                    className="font-display-fa text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
                   >
                     {t('hero.title')}
                   </motion.h1>
+                  <FacultyIdentity
+                    inverse
+                    className="justify-start sm:justify-center"
+                  />
                   <motion.p
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: 'easeOut', delay: 0.06 }}
-                    className="hidden max-w-xl text-sm leading-7 text-slate-200/82 sm:block md:text-base md:leading-8"
+                    className="text-slate-200/82 hidden max-w-xl text-sm leading-7 sm:block md:text-base md:leading-8"
                   >
                     {t('hero.description')}
                   </motion.p>

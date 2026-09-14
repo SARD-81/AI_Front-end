@@ -128,7 +128,6 @@ type MessageBubbleProps = {
   onCopyMessage: (content: string) => void;
   onEditMessage?: (message: ChatMessage) => void;
   onRegenerate?: (message: ChatMessage) => void;
-  onRetryMessage?: (message: ChatMessage) => void;
   onRestoreMessage?: (message: ChatMessage) => void;
   isLastAssistant?: boolean;
   anchorId?: string;
@@ -146,7 +145,6 @@ function MessageBubbleComponent({
   onCopyMessage,
   onEditMessage,
   onRegenerate,
-  onRetryMessage,
   onRestoreMessage,
   isLastAssistant,
   anchorId
@@ -274,15 +272,6 @@ function MessageBubbleComponent({
                         <AlertCircle className="h-3 w-3" />
                         {t('message.failed')}
                       </span>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => onRetryMessage?.(message)}
-                      >
-                        {t('chat.retryFailed')}
-                      </Button>
                       <Button
                         type="button"
                         size="sm"

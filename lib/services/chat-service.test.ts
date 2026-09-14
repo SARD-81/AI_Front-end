@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 
@@ -41,9 +41,9 @@ class FakeWebSocket {
   readyState = FakeWebSocket.CONNECTING;
   readonly sent: string[] = [];
   onopen: ((event: unknown) => void) | null = null;
-  onmessage: ((event: {data: string}) => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
   onerror: ((event: unknown) => void) | null = null;
-  onclose: ((event: {code: number; reason: string}) => void) | null = null;
+  onclose: ((event: { code: number; reason: string }) => void) | null = null;
 
   constructor(public readonly url: string) {
     sockets.push(this);
@@ -65,7 +65,7 @@ class FakeWebSocket {
   }
 
   emitMessage(data: unknown) {
-    this.onmessage?.({data: JSON.stringify(data)});
+    this.onmessage?.({ data: JSON.stringify(data) });
   }
 
   emitError() {
@@ -74,7 +74,7 @@ class FakeWebSocket {
 
   emitClose(code: number, reason = '') {
     this.readyState = FakeWebSocket.CLOSED;
-    this.onclose?.({code, reason});
+    this.onclose?.({ code, reason });
   }
 }
 
@@ -102,9 +102,40 @@ function answer() {
 }
 
 describe('chat websocket hardening contract', () => {
+  it('keeps a connected request alive past three minutes and accepts its answer', async () => {
+    vi.useFakeTimers();
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({ type: 'connected' });
+      socket.emitMessage({ type: 'ack', message_id: CLIENT_MESSAGE_ID });
+    });
+    const pending = sendMessageWithWebSocket('conversation', payload());
+    await vi.advanceTimersByTimeAsync(190_000);
+    expect(sockets).toHaveLength(1);
+    expect(sockets[0].readyState).toBe(FakeWebSocket.OPEN);
+    sockets[0].emitMessage(answer());
+    expect((await pending).content).toBe('answer');
+  });
+
+  it('ends a stalled request after four minutes without retrying', async () => {
+    vi.useFakeTimers();
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({type: 'connected'});
+    });
+    const pending = sendMessageWithWebSocket('conversation', payload());
+    const rejected = expect(pending).rejects.toMatchObject({code: 'TIMEOUT'});
+    await vi.advanceTimersByTimeAsync(240_000);
+    await rejected;
+    expect(sockets[0].readyState).toBe(FakeWebSocket.CLOSED);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
+  });
+
   beforeEach(() => {
     apiFetchMock.mockReset();
-    apiFetchMock.mockResolvedValue({ticket: 'ticket', expires_in: 30});
+    apiFetchMock.mockResolvedValue({ ticket: 'ticket', expires_in: 30 });
     scenarios.length = 0;
     sockets.length = 0;
     vi.stubGlobal('WebSocket', FakeWebSocket);
@@ -119,7 +150,7 @@ describe('chat websocket hardening contract', () => {
   it('passes the abort signal while requesting a websocket ticket', async () => {
     const controller = new AbortController();
 
-    await requestChatWsTicket({signal: controller.signal});
+    await requestChatWsTicket({ signal: controller.signal });
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       expect.any(String),
@@ -138,7 +169,7 @@ describe('chat websocket hardening contract', () => {
       sendMessageWithWebSocket('conversation', payload(), {
         signal: controller.signal
       })
-    ).rejects.toMatchObject({code: 'ABORTED'});
+    ).rejects.toMatchObject({ code: 'ABORTED' });
 
     expect(apiFetchMock).not.toHaveBeenCalled();
     expect(sockets).toHaveLength(0);
@@ -148,7 +179,7 @@ describe('chat websocket hardening contract', () => {
     vi.stubEnv('NEXT_PUBLIC_WS_BASE_URL', 'wss://socket.example.test');
     scenarios.push((socket) => {
       socket.emitOpen();
-      socket.emitMessage({type: 'connected'});
+      socket.emitMessage({ type: 'connected' });
       socket.emitMessage(answer());
     });
 
@@ -165,14 +196,14 @@ describe('chat websocket hardening contract', () => {
     scenarios.push((socket) => {
       socket.emitOpen();
       sentBeforeConnected = socket.sent.length;
-      socket.emitMessage({type: 'connected', conversation_id: 'conversation'});
+      socket.emitMessage({
+        type: 'connected',
+        conversation_id: 'conversation'
+      });
       socket.emitMessage(answer());
     });
 
-    const result = await sendMessageWithWebSocket(
-      'conversation',
-      payload()
-    );
+    const result = await sendMessageWithWebSocket('conversation', payload());
 
     expect(sentBeforeConnected).toBe(0);
     expect(sockets[0]?.sent).toHaveLength(1);
@@ -204,43 +235,67 @@ describe('chat websocket hardening contract', () => {
     }
   });
 
-  it('reuses the same client_message_id on a retryable replay', async () => {
+  it.each(['ai_timeout', 'server_busy', 'ai_starting', 'ai_unavailable', 'ai_error', 'internal_error', 'invalid_ai_response', 'timeout'])(
+    'propagates %s without replaying the message',
+    async (code) => {
+      vi.useFakeTimers();
+      scenarios.push((socket) => {
+        socket.emitOpen();
+        socket.emitMessage({type: 'connected'});
+        socket.emitMessage({type: 'error', code, error: 'failure'});
+      });
+      await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({code});
+      await vi.advanceTimersByTimeAsync(600_000);
+      expect(apiFetchMock).toHaveBeenCalledTimes(1);
+      expect(sockets).toHaveLength(1);
+      expect(sockets[0].sent).toHaveLength(1);
+      expect(sockets[0].readyState).toBe(FakeWebSocket.CLOSED);
+    }
+  );
+
+  it('does not replay duplicate-in-progress acknowledgements', async () => {
     vi.useFakeTimers();
-
-    scenarios.push(
-      (socket) => {
-        socket.emitOpen();
-        socket.emitMessage({type: 'connected'});
-        socket.emitMessage({
-          type: 'error',
-          code: 'ai_timeout',
-          error: 'temporary timeout'
-        });
-      },
-      (socket) => {
-        socket.emitOpen();
-        socket.emitMessage({type: 'connected'});
-        socket.emitMessage(answer());
-      }
-    );
-
-    const pending = sendMessageWithWebSocket('conversation', payload());
-    // Flush the async ticket resolution and first socket scenario without
-    // coupling this test to an exact number of promise microtasks.
-    await vi.advanceTimersByTimeAsync(0);
-
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({type: 'connected'});
+      socket.emitMessage({type: 'ack', message_id: CLIENT_MESSAGE_ID, duplicate_in_progress: true});
+    });
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({code: 'duplicate_in_progress'});
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
     expect(sockets).toHaveLength(1);
-    expect(JSON.parse(sockets[0].sent[0]).client_message_id).toBe(
-      CLIENT_MESSAGE_ID
-    );
+    expect(sockets[0].sent).toHaveLength(1);
+  });
 
-    await vi.advanceTimersByTimeAsync(1_500);
-    const result = await pending;
+  it('does not retry ticket failures', async () => {
+    vi.useFakeTimers();
+    const {ApiError} = await import('@/lib/api/client');
+    const error = new ApiError('unavailable', 503);
+    apiFetchMock.mockRejectedValue(error);
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toBe(error);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(0);
+  });
 
-    expect(sockets).toHaveLength(2);
-    expect(JSON.parse(sockets[1].sent[0]).client_message_id).toBe(
-      CLIENT_MESSAGE_ID
-    );
-    expect(result.content).toBe('answer');
+  it('does not reconnect after a close before sending', async () => {
+    vi.useFakeTimers();
+    scenarios.push((socket) => socket.emitClose(1006));
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({closeCode: 1006});
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
+    expect(sockets[0].sent).toHaveLength(0);
+  });
+
+  it('times out the handshake once without opening another socket', async () => {
+    vi.useFakeTimers();
+    const pending = sendMessageWithWebSocket('conversation', payload());
+    const rejected = expect(pending).rejects.toMatchObject({code: 'TIMEOUT'});
+    await vi.advanceTimersByTimeAsync(15_000);
+    await rejected;
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
   });
 });
