@@ -268,19 +268,6 @@ function MessageBubbleComponent({
                   >
                     {message.content}
                   </p>
-                  {sendStatus === 'pending' ? (
-                    <div
-                      role="status"
-                      className="msg-user-meta mt-1.5 flex items-center gap-2 px-1 text-[11px] font-medium text-muted-foreground"
-                    >
-                      <span className="loader-dots" aria-hidden>
-                        <i />
-                        <i />
-                        <i />
-                      </span>
-                      <span>{t('message.pending')}</span>
-                    </div>
-                  ) : null}
                   {sendStatus === 'failed' ? (
                     <div className="msg-user-meta mt-1 flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--danger-text))]">
                       <span className="inline-flex items-center gap-1">
@@ -308,20 +295,14 @@ function MessageBubbleComponent({
                     </div>
                   ) : null}
                   {sendStatus !== 'pending' ? (
-                    <>
-                      <div
-                        className="absolute right-0 top-full h-2 w-full"
-                        aria-hidden
-                      />
-                      <MessageActions
-                        role={message.role}
-                        onCopy={() => onCopyMessage(message.content)}
-                        onEdit={() => onEditMessage?.(message)}
-                        timeLabel={timeLabel}
-                        dateTime={message.createdAt}
-                        className="msg-user-actions pointer-events-none absolute top-full z-10 mt-1.5 translate-y-1 opacity-0 transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:translate-y-0 max-sm:opacity-100"
-                      />
-                    </>
+                    <MessageActions
+                      role={message.role}
+                      onCopy={() => onCopyMessage(message.content)}
+                      onEdit={() => onEditMessage?.(message)}
+                      timeLabel={timeLabel}
+                      dateTime={message.createdAt}
+                      className="msg-user-actions pointer-events-none relative mt-1.5 flex-wrap opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 max-sm:pointer-events-auto max-sm:opacity-100"
+                    />
                   ) : null}
                 </div>
               ) : (

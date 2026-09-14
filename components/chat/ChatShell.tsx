@@ -59,6 +59,7 @@ export function ChatShell({
   const streamFrameRef = useRef<number | null>(null);
   const streamCreatedAtRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const submissionInFlightRef = useRef(false);
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [, setErrorMessage] = useState('');
   const isOnline = useOnlineStatus();
@@ -272,13 +273,24 @@ export function ChatShell({
     nextValue: string,
     clientMessageId?: string,
     options?: {
+      clearComposer?: boolean;
       replaceAssistantMessageId?: string;
       restoreAssistantMessage?: ChatMessage;
     }
   ) => {
     const trimmedValue = nextValue.trim();
-    if (!trimmedValue || sendMutation.isPending || actions.create.isPending)
+    if (
+      !trimmedValue ||
+      submissionInFlightRef.current ||
+      sendMutation.isPending ||
+      actions.create.isPending
+    )
       return;
+
+    submissionInFlightRef.current = true;
+    // Clear only a submitted draft, before either creation or generation waits.
+    // Retry/regenerate must leave any unrelated composer draft intact.
+    if (options?.clearComposer) setValue('');
 
     const stableClientMessageId = clientMessageId ?? uuid();
     const payload = {
@@ -287,7 +299,9 @@ export function ChatShell({
       clientMessageId: stableClientMessageId
     };
 
-    const editedMessageId = editingMessageIdRef.current;
+    const editedMessageId = options?.clearComposer
+      ? editingMessageIdRef.current
+      : null;
     if (editedMessageId) {
       dropMessagesFrom(editedMessageId);
       editingMessageIdRef.current = null;
@@ -338,9 +352,13 @@ export function ChatShell({
         queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
       abortControllerRef.current = null;
-      setValue('');
     } catch (error) {
       clearStreamingState();
+      if (!resolvedChatId && options?.clearComposer) {
+        // No failed message exists yet when conversation creation fails.
+        setValue((current) => current || nextValue);
+        setHasSubmittedMessage(false);
+      }
       if (abortControllerRef.current?.signal.aborted) {
         queryClient.setQueryData<ChatDetail>(
           ['chat', resolvedChatId],
@@ -371,6 +389,7 @@ export function ChatShell({
       setErrorMessage(friendlyError);
       toast.error(friendlyError);
     } finally {
+      submissionInFlightRef.current = false;
       if (options?.replaceAssistantMessageId) {
         regenerateTargetRef.current = null;
       }
@@ -380,7 +399,8 @@ export function ChatShell({
     }
   };
 
-  const submit = async () => submitMessage(value);
+  const submit = async () =>
+    submitMessage(value, undefined, { clearComposer: true });
 
   const handleStopGeneration = () => {
     abortControllerRef.current?.abort();
@@ -517,7 +537,7 @@ export function ChatShell({
                   thinkLevel={thinkLevel}
                   onThinkLevelChange={handleThinkLevelChange}
                   onPromptSelect={(prompt) => {
-                    void submitMessage(prompt);
+                    void submitMessage(prompt, undefined, { clearComposer: true });
                   }}
                 />
               ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { UniversityLogo } from '@/components/branding/UniversityLogo';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
@@ -232,16 +232,10 @@ export function AuthClient({ locale }: { locale: string }) {
 
             <div className="relative z-10 flex h-full flex-col justify-between gap-4 sm:gap-8 lg:gap-12">
               <div className="flex flex-1 items-center gap-4 sm:flex-col sm:justify-center sm:space-y-6 sm:text-center lg:space-y-8">
-                <div className="bg-white/12 flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/20 p-2 shadow-2xl shadow-black/35 ring-1 ring-white/10 backdrop-blur-md sm:mx-auto sm:h-32 sm:w-32 sm:rounded-[2rem] sm:p-3 md:h-44 md:w-44 md:p-4">
-                  <Image
-                    src="/Logo.png"
-                    alt={t('hero.logoAlt')}
-                    width={176}
-                    height={176}
-                    className="h-full w-full object-contain drop-shadow-2xl"
-                    priority
-                  />
-                </div>
+                <UniversityLogo
+                  alt={t('hero.logoAlt')}
+                  className="h-24 w-24 border-white/20 shadow-2xl shadow-black/35 sm:mx-auto sm:h-36 sm:w-36 sm:rounded-3xl sm:p-3 md:h-48 md:w-48"
+                />
 
                 <div className="min-w-0 flex-1 space-y-1.5 text-start sm:mx-auto sm:max-w-2xl sm:space-y-5 sm:text-center">
                   <motion.h1

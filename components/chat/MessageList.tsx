@@ -52,7 +52,7 @@ function AssistantPendingBubble() {
   const status = statuses[statusIndex] ?? statuses[0];
 
   return (
-    <article className="w-full" aria-live="polite" aria-label={status}>
+    <article className="w-full" role="status" aria-live="polite">
       <div className="inline-flex max-w-full items-center gap-2.5 py-1.5 text-sm">
         <span
           className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] motion-safe:animate-pulse"

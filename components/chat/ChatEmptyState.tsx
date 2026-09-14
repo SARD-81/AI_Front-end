@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import {UniversityLogo} from '@/components/branding/UniversityLogo';
 import {useLocale, useTranslations} from 'next-intl';
 import {Button} from '@/components/ui/button';
 import type {ThinkingLevel} from '@/lib/api/chat';
@@ -40,18 +40,10 @@ export function ChatEmptyState({
       dir={locale === 'fa' ? 'rtl' : 'ltr'}
     >
       <div className="mx-auto flex min-h-full w-full max-w-[800px] flex-col justify-center gap-4 py-2 text-center sm:gap-6 sm:py-4 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:py-1">
-        <div className="mx-auto h-16 w-16 shrink-0 rounded-full border border-border bg-muted p-[3px] shadow-soft dark:border-white/15 sm:h-20 sm:w-20 [@media(max-height:700px)]:h-14 [@media(max-height:700px)]:w-14">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-white p-2 dark:bg-white">
-            <Image
-              src="/Logo.png"
-              alt={t('emptyState.logoAlt')}
-              width={60}
-              height={60}
-              priority
-              className="h-full w-full object-contain"
-            />
-          </div>
-        </div>
+        <UniversityLogo
+          alt={t('emptyState.logoAlt')}
+          className="mx-auto h-24 w-24 sm:h-28 sm:w-28 [@media(max-height:700px)]:h-20 [@media(max-height:700px)]:w-20"
+        />
 
         <div className="space-y-2 sm:space-y-3 [@media(max-height:700px)]:space-y-1.5">
           <h1 className="text-balance text-xl font-semibold leading-8 text-foreground sm:text-2xl sm:leading-10 md:text-3xl [@media(max-height:700px)]:text-lg [@media(max-height:700px)]:leading-7">
