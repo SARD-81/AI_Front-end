@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider, type AbstractIntlMessages } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,6 +48,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -87,6 +88,67 @@ const listProps = {
 };
 
 describe('chat presentation', () => {
+  it('advances one pending status at 1, 2 and 3 minutes and resets for the next request', async () => {
+    vi.useFakeTimers();
+    const messages: ChatMessage[] = [
+      {
+        id: 'waiting',
+        role: 'user',
+        content: 'سؤال',
+        createdAt: '2026-09-14T08:00:00Z',
+        sendStatus: 'pending'
+      }
+    ];
+    const view = render(
+      <Providers>
+        <MessageList {...listProps} messages={messages} typing />
+      </Providers>
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(59_000);
+    });
+    expect(
+      screen.queryByText(fa.app.message.pendingStatus.oneMinute)
+    ).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(
+      screen.getByText(fa.app.message.pendingStatus.oneMinute)
+    ).toBeTruthy();
+    view.rerender(
+      <Providers>
+        <MessageList {...listProps} messages={[...messages]} typing />
+      </Providers>
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(
+      screen.getByText(fa.app.message.pendingStatus.twoMinutes)
+    ).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(
+      screen.getByText(fa.app.message.pendingStatus.threeMinutes)
+    ).toBeTruthy();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    view.rerender(
+      <Providers>
+        <MessageList {...listProps} messages={messages} typing={false} />
+      </Providers>
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    view.rerender(
+      <Providers>
+        <MessageList {...listProps} messages={messages} typing />
+      </Providers>
+    );
+    expect(
+      screen.queryByText(fa.app.message.pendingStatus.threeMinutes)
+    ).toBeNull();
+  });
   it.each([
     ['fa', 'rtl'],
     ['en', 'ltr']

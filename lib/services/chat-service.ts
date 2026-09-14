@@ -304,7 +304,8 @@ export async function requestChatWsTicket(opts?: {signal?: AbortSignal}) {
 }
 
 const WS_CONNECT_TIMEOUT_MS = 15_000;
-const WS_ANSWER_TIMEOUT_MS = 150_000;
+// Allow the three-minute long-wait message; each attempt still has a finite limit.
+const WS_ANSWER_TIMEOUT_MS = 240_000;
 const WS_MAX_ATTEMPTS = 3;
 const WS_DUPLICATE_RETRY_DELAYS_MS = [10_000, 20_000, 30_000, 60_000];
 const WS_DUPLICATE_MAX_ATTEMPTS = WS_DUPLICATE_RETRY_DELAYS_MS.length + 1;

@@ -1,5 +1,9 @@
 {
   "app": {
+    "identity": {
+      "faculty": "Faculty of Computer Science and Engineering",
+      "beta": "Beta version"
+    },
     "newChat": "New chat",
     "emptyTitle": "What would you like to talk about?",
     "emptyDescription": "Choose a topic or start a fresh chat.",
@@ -93,22 +97,27 @@
       "pendingStatus": {
         "connecting": "Preparing the answer…",
         "thinking": "Thinking…",
-        "generating": "Generating answer…"
+        "generating": "Generating answer…",
+        "oneMinute": "Still waiting for your answer…",
+        "oneMinuteDetail": "Some questions take longer. You do not need to send your question again.",
+        "twoMinutes": "This is taking longer than usual…",
+        "twoMinutesDetail": "No answer has arrived yet. You can keep waiting or use Stop to cancel the request.",
+        "threeMinutes": "Thank you for your patience; this is a long wait…",
+        "threeMinutesDetail": "We have not received an answer yet. If the request times out, you will be able to retry.",
+        "elapsed": "Waiting time: {time}"
       }
     },
     "emptyState": {
       "logoAlt": "Shahid Beheshti University logo",
       "title": "Welcome to Shahid Beheshti University AI Assistant",
-      "description": "Start a conversation with the university AI assistant and get answers to your questions.",
+      "description": "Your educational assistant for the Faculty of Computer Science and Engineering. Ask about courses, schedules, and student services.",
       "suggestedPrompts": [
-        "Eligibility for short-term research leave",
-        "Requirements for changing major",
-        "Composition of the Supreme Council of the Cultural Revolution",
-        "How to launch a new academic program at the university",
-        "Studying two majors simultaneously",
-        "Transition from probationary to permanent appointment",
-        "Minimum and maximum credits per semester",
-        "Allowed duration of study in the PhD program"
+        "What should I do to register and prepare for my first semester?",
+        "Where can I find course registration, add/drop and exam dates?",
+        "Who is my academic advisor and how can I contact them?",
+        "Where can I find my class timetable and classroom locations?",
+        "How should I choose first-semester courses and check prerequisites?",
+        "How can I learn about the faculty members and their areas of expertise?"
       ]
     },
     "messageRail": {
@@ -188,7 +197,7 @@
     "hero": {
       "logoAlt": "University logo",
       "title": "Shahid Beheshti University AI Assistant",
-      "description": "Unified authentication gateway for secure access to the university’s smart educational and research services.",
+      "description": "Secure access to the educational assistant for the Faculty of Computer Science and Engineering.",
       "tagline": "Secure, role-aware access for students, professors, and university staff."
     },
     "card": {
@@ -237,11 +246,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",

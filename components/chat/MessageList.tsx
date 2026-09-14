@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso, type ListRange, type VirtuosoHandle } from 'react-virtuoso';
 import { ArrowDown } from 'lucide-react';
 import type { ChatMessage } from '@/lib/api/chat';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { MessageBubble } from './MessageBubble';
 import { UserMessageRail } from './UserMessageRail';
@@ -38,29 +38,69 @@ const VIRTUOSO_COMPONENTS = {
   Footer: () => <div className="h-16 w-full shrink-0 sm:h-4" aria-hidden />
 };
 
-function AssistantPendingBubble() {
+function AssistantPendingBubble({
+  elapsedSeconds
+}: {
+  elapsedSeconds: number;
+}) {
   const t = useTranslations('app');
-  const statuses = useMemo(
-    () => [
-      t('message.pendingStatus.connecting'),
-      t('message.pendingStatus.thinking'),
-      t('message.pendingStatus.generating')
-    ],
-    [t]
-  );
+  const locale = useLocale();
   const [statusIndex] = useState(() => Math.floor(Math.random() * 3));
-  const status = statuses[statusIndex] ?? statuses[0];
+  const stage = Math.min(3, Math.floor(elapsedSeconds / 60));
+  const initialKeys = ['connecting', 'thinking', 'generating'] as const;
+  const stageKeys = ['oneMinute', 'twoMinutes', 'threeMinutes'] as const;
+  const stageKey = stage > 0 ? stageKeys[stage - 1] : null;
+  const status = t(
+    `message.pendingStatus.${stageKey ?? initialKeys[statusIndex]}`
+  );
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  const number = new Intl.NumberFormat(locale, {
+    minimumIntegerDigits: 2,
+    useGrouping: false
+  });
+  const elapsed = `${number.format(minutes)}:${number.format(seconds)}`;
 
   return (
-    <article className="w-full" role="status" aria-live="polite">
-      <div className="inline-flex max-w-full items-center gap-2.5 py-1.5 text-sm">
+    <article
+      className="w-full"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div className="flex max-w-xl items-start gap-3 py-2 text-sm">
         <span
-          className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] motion-safe:animate-pulse"
-          aria-hidden
-        />
-        <span className="loader-shimmer min-w-0 truncate font-medium">
-          {status}
+          className="relative mt-1.5 flex h-3 w-3 shrink-0"
+          aria-hidden="true"
+        >
+          <span className="absolute inset-0 rounded-full bg-primary/30 motion-safe:animate-ping" />
+          <span className="relative h-3 w-3 rounded-full bg-primary" />
         </span>
+        <div className="min-w-0 flex-1">
+          <div key={stage} className="motion-safe:animate-message-in">
+            <p className="loader-shimmer font-medium leading-6">{status}</p>
+            {stageKey ? (
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                {t(`message.pendingStatus.${stageKey}Detail`)}
+              </p>
+            ) : null}
+          </div>
+          {stage > 0 ? (
+            <div
+              className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground"
+              aria-hidden="true"
+            >
+              <span className="tabular-nums">
+                {t('message.pendingStatus.elapsed', { time: elapsed })}
+              </span>
+              <span className="loader-dots">
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+          ) : null}
+        </div>
       </div>
     </article>
   );
@@ -76,6 +116,23 @@ export function MessageList({
   onRestoreMessage
 }: MessageListProps) {
   const t = useTranslations('app');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Own the timer above the virtual rows so scrolling cannot restart the wait.
+  useEffect(() => {
+    setElapsedSeconds(0);
+    if (!typing) return;
+    const startedAt = Date.now();
+    const update = () =>
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    const timer = window.setInterval(update, 1000);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, [typing]);
+
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const isAnchorNavRef = useRef(false);
   const anchorNavTimeoutRef = useRef<number | null>(null);
@@ -303,7 +360,7 @@ export function MessageList({
           if (message.role === 'assistant-pending') {
             return (
               <div className="group mx-auto w-full max-w-4xl px-3 py-2.5 sm:px-6 sm:py-3">
-                <AssistantPendingBubble />
+                <AssistantPendingBubble elapsedSeconds={elapsedSeconds} />
               </div>
             );
           }
