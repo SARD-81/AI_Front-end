@@ -103,7 +103,7 @@
         "twoMinutes": "This is taking longer than usual…",
         "twoMinutesDetail": "No answer has arrived yet. You can keep waiting or use Stop to cancel the request.",
         "threeMinutes": "Thank you for your patience; this is a long wait…",
-        "threeMinutesDetail": "We have not received an answer yet. If the request times out, you will be able to retry.",
+        "threeMinutesDetail": "We have not received an answer yet. If the request times out, an error will appear and your question will remain available.",
         "elapsed": "Waiting time: {time}"
       }
     },

@@ -28,12 +28,10 @@ vi.mock('@/components/sidebar/Sidebar', () => ({ Sidebar: () => null }));
 vi.mock('./MessageList', () => ({
   MessageList: ({
     messages,
-    onRetryMessage,
     onRestoreMessage,
     onRegenerate
   }: {
     messages: ChatMessage[];
-    onRetryMessage: (message: ChatMessage) => void;
     onRestoreMessage: (message: ChatMessage) => void;
     onRegenerate: (message: ChatMessage) => void;
   }) => (
@@ -43,7 +41,6 @@ vi.mock('./MessageList', () => ({
           <p>{message.content}</p>
           {message.sendStatus === 'failed' && (
             <>
-              <button onClick={() => onRetryMessage(message)}>Retry</button>
               <button onClick={() => onRestoreMessage(message)}>Restore</button>
             </>
           )}
@@ -73,7 +70,10 @@ function deferred<T>() {
 
 function setup(chatId?: string, messages: ChatMessage[] = []) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: Infinity } }
+    defaultOptions: {
+      queries: { retry: false, staleTime: Infinity },
+      mutations: { retry: 3, retryDelay: 0 }
+    }
   });
   if (chatId)
     client.setQueryData(['chat', chatId], {
@@ -174,7 +174,10 @@ describe('chat composer submission lifecycle', () => {
       target: { value: 'سؤال ناموفق' }
     });
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
-    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    const restore = await screen.findByRole('button', { name: 'Restore' });
+    expect(sendMessageWithWebSocket).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(restore);
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
       'سؤال ناموفق'
     );
@@ -236,31 +239,17 @@ describe('chat composer submission lifecycle', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
-  it.each(['retry', 'regenerate'])(
-    'does not erase an unrelated draft on %s',
-    async (action) => {
-      const response = deferred<ChatMessage>();
-      vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
-      setup(
-        'existing',
-        action === 'retry'
-          ? [{ ...question, sendStatus: 'failed' }]
-          : [question, answer]
-      );
-      fireEvent.change(screen.getByRole('textbox'), {
-        target: { value: 'پیش‌نویس بعدی' }
-      });
-      fireEvent.click(
-        screen.getByRole('button', {
-          name: action === 'retry' ? 'Retry' : 'Regenerate'
-        })
-      );
-      await act(async () => response.resolve(answer));
-      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
-        'پیش‌نویس بعدی'
-      );
-    }
-  );
+  it('does not erase an unrelated draft on regenerate', async () => {
+    const response = deferred<ChatMessage>();
+    vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
+    setup('existing', [question, answer]);
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'پیش‌نویس بعدی' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+    await act(async () => response.resolve(answer));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('پیش‌نویس بعدی');
+  });
 
   it('ignores blank submissions and Shift+Enter', () => {
     setup();

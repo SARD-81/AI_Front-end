@@ -117,21 +117,20 @@ describe('chat websocket hardening contract', () => {
     expect((await pending).content).toBe('answer');
   });
 
-  it('still times out a stalled connection after four minutes and supports cancellation', async () => {
+  it('ends a stalled request after four minutes without retrying', async () => {
     vi.useFakeTimers();
     scenarios.push((socket) => {
       socket.emitOpen();
-      socket.emitMessage({ type: 'connected' });
+      socket.emitMessage({type: 'connected'});
     });
-    const controller = new AbortController();
-    const pending = sendMessageWithWebSocket('conversation', payload(), {
-      signal: controller.signal
-    });
-    const rejected = expect(pending).rejects.toBeInstanceOf(ChatWebSocketError);
+    const pending = sendMessageWithWebSocket('conversation', payload());
+    const rejected = expect(pending).rejects.toMatchObject({code: 'TIMEOUT'});
     await vi.advanceTimersByTimeAsync(240_000);
-    expect(sockets[0].readyState).toBe(FakeWebSocket.CLOSED);
-    controller.abort();
     await rejected;
+    expect(sockets[0].readyState).toBe(FakeWebSocket.CLOSED);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
   });
 
   beforeEach(() => {
@@ -236,43 +235,67 @@ describe('chat websocket hardening contract', () => {
     }
   });
 
-  it('reuses the same client_message_id on a retryable replay', async () => {
+  it.each(['ai_timeout', 'server_busy', 'ai_starting', 'ai_unavailable', 'ai_error', 'internal_error', 'invalid_ai_response', 'timeout'])(
+    'propagates %s without replaying the message',
+    async (code) => {
+      vi.useFakeTimers();
+      scenarios.push((socket) => {
+        socket.emitOpen();
+        socket.emitMessage({type: 'connected'});
+        socket.emitMessage({type: 'error', code, error: 'failure'});
+      });
+      await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({code});
+      await vi.advanceTimersByTimeAsync(600_000);
+      expect(apiFetchMock).toHaveBeenCalledTimes(1);
+      expect(sockets).toHaveLength(1);
+      expect(sockets[0].sent).toHaveLength(1);
+      expect(sockets[0].readyState).toBe(FakeWebSocket.CLOSED);
+    }
+  );
+
+  it('does not replay duplicate-in-progress acknowledgements', async () => {
     vi.useFakeTimers();
-
-    scenarios.push(
-      (socket) => {
-        socket.emitOpen();
-        socket.emitMessage({ type: 'connected' });
-        socket.emitMessage({
-          type: 'error',
-          code: 'ai_timeout',
-          error: 'temporary timeout'
-        });
-      },
-      (socket) => {
-        socket.emitOpen();
-        socket.emitMessage({ type: 'connected' });
-        socket.emitMessage(answer());
-      }
-    );
-
-    const pending = sendMessageWithWebSocket('conversation', payload());
-    // Flush the async ticket resolution and first socket scenario without
-    // coupling this test to an exact number of promise microtasks.
-    await vi.advanceTimersByTimeAsync(0);
-
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({type: 'connected'});
+      socket.emitMessage({type: 'ack', message_id: CLIENT_MESSAGE_ID, duplicate_in_progress: true});
+    });
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({code: 'duplicate_in_progress'});
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
     expect(sockets).toHaveLength(1);
-    expect(JSON.parse(sockets[0].sent[0]).client_message_id).toBe(
-      CLIENT_MESSAGE_ID
-    );
+    expect(sockets[0].sent).toHaveLength(1);
+  });
 
-    await vi.advanceTimersByTimeAsync(1_500);
-    const result = await pending;
+  it('does not retry ticket failures', async () => {
+    vi.useFakeTimers();
+    const {ApiError} = await import('@/lib/api/client');
+    const error = new ApiError('unavailable', 503);
+    apiFetchMock.mockRejectedValue(error);
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toBe(error);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(0);
+  });
 
-    expect(sockets).toHaveLength(2);
-    expect(JSON.parse(sockets[1].sent[0]).client_message_id).toBe(
-      CLIENT_MESSAGE_ID
-    );
-    expect(result.content).toBe('answer');
+  it('does not reconnect after a close before sending', async () => {
+    vi.useFakeTimers();
+    scenarios.push((socket) => socket.emitClose(1006));
+    await expect(sendMessageWithWebSocket('conversation', payload())).rejects.toMatchObject({closeCode: 1006});
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
+    expect(sockets[0].sent).toHaveLength(0);
+  });
+
+  it('times out the handshake once without opening another socket', async () => {
+    vi.useFakeTimers();
+    const pending = sendMessageWithWebSocket('conversation', payload());
+    const rejected = expect(pending).rejects.toMatchObject({code: 'TIMEOUT'});
+    await vi.advanceTimersByTimeAsync(15_000);
+    await rejected;
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
   });
 });

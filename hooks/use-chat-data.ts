@@ -79,6 +79,7 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
     mutationFn: async ({
       chatId,
       payload,
@@ -263,6 +264,7 @@ export function useChatActions() {
 
   return {
     create: useMutation({
+      retry: false,
       mutationFn: async (payload: { title?: string } = {}) =>
         createConversation(payload.title),
       onSuccess: (chat) => {

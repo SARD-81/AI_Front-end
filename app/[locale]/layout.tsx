@@ -15,6 +15,15 @@ const vazirmatn = localFont({
   variable: '--font-vazirmatn'
 });
 
+const lalezar = localFont({
+  src: '../fonts/lalezar/Lalezar-Regular.ttf',
+  weight: '400',
+  style: 'normal',
+  display: 'swap',
+  preload: false,
+  variable: '--font-lalezar'
+});
+
 const METADATA_BY_LOCALE: Record<
   string,
   { title: string; description: string }
@@ -68,7 +77,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={direction} suppressHydrationWarning>
       <body
-        className={`${vazirmatn.variable} min-h-screen bg-background font-sans text-foreground`}
+        className={`${vazirmatn.variable} ${locale === 'fa' ? lalezar.variable : ''} min-h-screen bg-background font-sans text-foreground`}
       >
         <a
           href="#main-content"

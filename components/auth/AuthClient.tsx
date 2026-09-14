@@ -244,7 +244,7 @@ export function AuthClient({ locale }: { locale: string }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
+                    className="font-display-fa text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
                   >
                     {t('hero.title')}
                   </motion.h1>

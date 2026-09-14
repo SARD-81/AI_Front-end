@@ -83,7 +83,6 @@ const listProps = {
   onCopyMessage: vi.fn(),
   onEditMessage: vi.fn(),
   onRegenerate: vi.fn(),
-  onRetryMessage: vi.fn(),
   onRestoreMessage: vi.fn()
 };
 
@@ -226,7 +225,7 @@ describe('chat presentation', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('keeps retry and restore controls available for a failed question', () => {
+  it('keeps restore available without a retry control for a failed question', () => {
     render(
       <Providers>
         <MessageList
@@ -245,8 +244,8 @@ describe('chat presentation', () => {
       </Providers>
     );
     expect(
-      screen.getByRole('button', { name: fa.app.chat.retryFailed })
-    ).toBeTruthy();
+      screen.queryByRole('button', { name: fa.app.chat.retryFailed })
+    ).toBeNull();
     expect(
       screen.getByRole('button', { name: fa.app.chat.restoreToInput })
     ).toBeTruthy();

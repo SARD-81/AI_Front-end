@@ -324,7 +324,7 @@ export function Sidebar({
                   className="h-11 w-11"
                 />
                 {!collapsed ? (
-                  <span className="truncate text-sm font-semibold text-foreground">
+                  <span className="truncate text-sm font-bold text-foreground">
                     {t('sidebar.universityName')}
                   </span>
                 ) : null}
@@ -362,7 +362,7 @@ export function Sidebar({
                 aria-label={t('newChat')}
                 title={collapsed ? t('newChat') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
                   collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
                 )}
               >
@@ -378,7 +378,7 @@ export function Sidebar({
                 aria-label={t('sidebar.searchPlaceholder')}
                 title={collapsed ? t('sidebar.searchPlaceholder') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
                   collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
                 )}
               >

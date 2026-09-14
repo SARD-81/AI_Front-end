@@ -15,7 +15,6 @@ type MessageListProps = {
   onCopyMessage: (content: string) => void;
   onEditMessage: (message: ChatMessage) => void;
   onRegenerate: (message: ChatMessage) => void;
-  onRetryMessage: (message: ChatMessage) => void;
   onRestoreMessage: (message: ChatMessage) => void;
 };
 
@@ -112,7 +111,6 @@ export function MessageList({
   onCopyMessage,
   onEditMessage,
   onRegenerate,
-  onRetryMessage,
   onRestoreMessage
 }: MessageListProps) {
   const t = useTranslations('app');
@@ -374,7 +372,6 @@ export function MessageList({
                 onCopyMessage={onCopyMessage}
                 onEditMessage={onEditMessage}
                 onRegenerate={onRegenerate}
-                onRetryMessage={onRetryMessage}
                 onRestoreMessage={onRestoreMessage}
                 isLastAssistant={
                   message.role === 'assistant' &&
