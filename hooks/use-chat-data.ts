@@ -14,7 +14,8 @@ import {
   getConversation,
   listConversations,
   renameConversation,
-  sendMessageWithWebSocket
+  sendMessageWithWebSocket,
+  ChatWebSocketError
 } from '@/lib/services/chat-service';
 import { uuid } from '@/lib/utils/uid';
 import { revealAnswerProgressively } from '@/lib/chat/reveal-answer';
@@ -32,9 +33,9 @@ export function useChat(chatId?: string) {
     queryKey: ['chat', chatId],
     enabled: Boolean(chatId),
     staleTime: 15_000,
-    queryFn: async (): Promise<ChatDetail> => {
+    queryFn: async ({signal}): Promise<ChatDetail> => {
       if (!chatId) throw new Error('chatId is required');
-      return getConversation(chatId);
+      return getConversation(chatId, {signal});
     }
   });
 }
@@ -99,6 +100,8 @@ export function useSendMessage() {
       signal?: AbortSignal;
       fallbackTitle?: string;
     }) => {
+      // An older HTTP snapshot must not overwrite this submission's cache writes.
+      await queryClient.cancelQueries({queryKey: ['chat', chatId], exact: true}, {revert: false});
       const nowIso = new Date().toISOString();
       const userMessage: ChatMessage = {
         id: clientMessageId ?? uuid(),
@@ -171,13 +174,19 @@ export function useSendMessage() {
           signal
         );
 
+        await queryClient.cancelQueries({queryKey: ['chat', chatId], exact: true}, {revert: false});
+        if (signal?.aborted) throw new ChatWebSocketError('Response generation was stopped.', 'ABORTED');
         queryClient.setQueryData<ChatDetail>(['chat', chatId], (previous) => {
           const base = previous ?? {
             id: chatId,
             title: fallbackTitle,
             messages: []
           };
-          const messagesWithSentUser = base.messages.map((message) =>
+          // A background read may have completed while the backend was answering.
+          const withUser = base.messages.some(message => message.id === userMessage.id)
+            ? base.messages
+            : [...base.messages, userMessage];
+          const messagesWithSentUser = withUser.map((message) =>
             message.id === userMessage.id
               ? { ...message, sendStatus: 'sent' as const }
               : message

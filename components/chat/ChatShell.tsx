@@ -348,7 +348,8 @@ export function ChatShell({
 
       if (result?.assistantCommitted) {
         clearStreamingState();
-        queryClient.invalidateQueries({ queryKey: ['chat', resolvedChatId] });
+        // The WebSocket exchange is already committed. Do not replace it with
+        // an immediate history snapshot; only refresh sidebar metadata here.
         queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
       abortControllerRef.current = null;
