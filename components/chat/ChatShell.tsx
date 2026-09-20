@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ChatEmptyState } from './ChatEmptyState';
-import { useChat, useChatActions, useSendMessage } from '@/hooks/use-chat-data';
+import { useChat, useChatActions, useSendMessage, useOlderMessages } from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { uuid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
@@ -70,6 +70,7 @@ export function ChatShell({
 
   const chatQuery = useChat(activeChatId);
   const chat = chatQuery.data;
+  const olderHistory = useOlderMessages(activeChatId);
   const actions = useChatActions();
   const sendMutation = useSendMessage();
 
@@ -348,7 +349,8 @@ export function ChatShell({
 
       if (result?.assistantCommitted) {
         clearStreamingState();
-        queryClient.invalidateQueries({ queryKey: ['chat', resolvedChatId] });
+        // The WebSocket exchange is already committed. Do not replace it with
+        // an immediate history snapshot; only refresh sidebar metadata here.
         queryClient.invalidateQueries({ queryKey: ['chats'] });
       }
       abortControllerRef.current = null;
@@ -543,6 +545,12 @@ export function ChatShell({
               ) : (
                 <div className="h-full w-full">
                   <MessageList
+                    key={activeChatId}
+                    hasOlder={Boolean(chat?.olderCursor)}
+                    loadingOlder={olderHistory.isPending}
+                    olderError={olderHistory.isError}
+                    historyStartIndex={chat?.historyStartIndex}
+                    onLoadOlder={() => { if (!olderHistory.isPending) olderHistory.mutate(); }}
                     messages={messages}
                     typing={sendMutation.isPending && !streamContent}
                     onCopyMessage={handleCopyMessage}

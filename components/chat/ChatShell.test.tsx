@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatShell } from './ChatShell';
 import {
   createConversation,
+  getConversationWindow,
   sendMessageWithWebSocket
 } from '@/lib/services/chat-service';
 import type { ChatMessage } from '@/lib/api/chat';
@@ -55,6 +56,7 @@ vi.mock('./MessageList', () => ({
 vi.mock('@/lib/services/chat-service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services/chat-service')>()),
   createConversation: vi.fn(),
+  getConversationWindow: vi.fn(),
   sendMessageWithWebSocket: vi.fn()
 }));
 
@@ -81,8 +83,8 @@ function setup(chatId?: string, messages: ChatMessage[] = []) {
       title: 'Test',
       messages
     });
-  // Keep the completed cache available without reaching a real backend.
-  vi.spyOn(client, 'invalidateQueries').mockResolvedValue();
+  // Observe real invalidation behavior; mocking it hid post-send cache loss.
+  vi.spyOn(client, 'invalidateQueries');
   render(
     <QueryClientProvider client={client}>
       <NextIntlClientProvider
@@ -112,6 +114,11 @@ const question: ChatMessage = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getConversationWindow).mockResolvedValue({
+    id: 'existing',
+    title: 'Test',
+    messages: []
+  });
   window.localStorage.clear();
   vi.stubGlobal('matchMedia', () => ({
     matches: false,
@@ -128,6 +135,91 @@ afterEach(() => {
 });
 
 describe('chat composer submission lifecycle', () => {
+  it('keeps the committed question and answer without replacing them with a post-send snapshot', async () => {
+    vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
+    const client = setup('existing');
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'سؤال جدید' }
+    });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('textbox') as HTMLTextAreaElement).disabled
+      ).toBe(false)
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('سؤال جدید')).toBeTruthy();
+    expect(screen.getByText(answer.content)).toBeTruthy();
+    expect(getConversationWindow).not.toHaveBeenCalled();
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['chats']
+    });
+  });
+
+  it('does not let a read started before sending overwrite a completed exchange', async () => {
+    const read = deferred<Awaited<ReturnType<typeof getConversationWindow>>>();
+    vi.mocked(getConversationWindow).mockReturnValue(read.promise);
+    vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
+    const client = setup('existing');
+    let reading!: Promise<void>;
+    await act(async () => {
+      reading = client.refetchQueries({ queryKey: ['chat', 'existing'] });
+    });
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'سؤال تازه' }
+    });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+    await waitFor(() => expect(screen.getByText(answer.content)).toBeTruthy());
+    await act(async () => {
+      read.resolve({ id: 'existing', title: 'Test', messages: [] });
+      await reading;
+    });
+    expect(screen.getByText('سؤال تازه')).toBeTruthy();
+    expect(screen.getByText(answer.content)).toBeTruthy();
+  });
+
+  it.each([true, false])(
+    'keeps the exchange when a mid-send read finishes before commit: %s',
+    async (readFirst) => {
+      const read = deferred<Awaited<ReturnType<typeof getConversationWindow>>>();
+      const response = deferred<ChatMessage>();
+      vi.mocked(getConversationWindow).mockReturnValue(read.promise);
+      vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
+      const client = setup('existing');
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: 'سؤال همزمان' }
+      });
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+      await waitFor(() =>
+        expect(sendMessageWithWebSocket).toHaveBeenCalledOnce()
+      );
+      let reading!: Promise<void>;
+      await act(async () => {
+        reading = client.refetchQueries({ queryKey: ['chat', 'existing'] });
+      });
+      if (readFirst)
+        await act(async () => {
+          read.resolve({ id: 'existing', title: 'Test', messages: [] });
+          await reading;
+        });
+      await act(async () => {
+        response.resolve(answer);
+      });
+      await waitFor(() =>
+        expect(screen.getByText(answer.content)).toBeTruthy()
+      );
+      if (!readFirst)
+        await act(async () => {
+          read.resolve({ id: 'existing', title: 'Test', messages: [] });
+          await reading;
+        });
+      expect(screen.getByText('سؤال همزمان')).toBeTruthy();
+      expect(screen.getByText(answer.content)).toBeTruthy();
+    }
+  );
+
   it('clears immediately while the response is pending and preserves the selected thinking level', async () => {
     window.localStorage.setItem('soha:chat:thinking-level', 'high');
     const response = deferred<ChatMessage>();
@@ -248,7 +340,9 @@ describe('chat composer submission lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
     await act(async () => response.resolve(answer));
-    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('پیش‌نویس بعدی');
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'پیش‌نویس بعدی'
+    );
   });
 
   it('ignores blank submissions and Shift+Enter', () => {

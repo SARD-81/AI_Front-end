@@ -1,220 +1,189 @@
 'use client';
 
+import { BookOpen, ChevronDown, FileText, Search, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 import {
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  Database,
-  FileText
-} from 'lucide-react';
-import {useLocale, useTranslations} from 'next-intl';
-import {useMemo, useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
-import type {AiResource} from '@/lib/api/chat';
-import {cn} from '@/lib/utils';
-
-type SourcesDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  resources: AiResource[];
-};
-
-function dedupeResources(resources: AiResource[]) {
-  const byDocument = new Map<string, AiResource>();
-
-  resources.forEach((resource, index) => {
-    const key =
-      resource.documentId?.trim() ||
-      resource.segmentId?.trim() ||
-      `${resource.datasetName ?? ''}:${resource.documentName ?? ''}:${index}`;
-
-    const existing = byDocument.get(key);
-
-    if (!existing) {
-      byDocument.set(key, resource);
-      return;
-    }
-
-    const existingScore =
-      typeof existing.score === 'number' ? existing.score : -Infinity;
-
-    const nextScore =
-      typeof resource.score === 'number' ? resource.score : -Infinity;
-
-    if (nextScore > existingScore) {
-      byDocument.set(key, resource);
-    }
-  });
-
-  return Array.from(byDocument.values());
-}
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import type { AiResource } from '@/lib/api/chat';
+import { groupSources } from '@/lib/chat/sources';
 
 export function SourcesDialog({
   open,
   onOpenChange,
   resources
-}: SourcesDialogProps) {
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  resources: AiResource[];
+}) {
   const locale = useLocale();
   const t = useTranslations('app.sources');
-  const isRtl = locale === 'fa';
-
-  const [expandedSources, setExpandedSources] = useState<Set<string>>(
-    () => new Set()
+  const [search, setSearch] = useState('');
+  const sources = useMemo(() => groupSources(resources), [resources]);
+  const normalize = (text: string) =>
+    text
+      .toLocaleLowerCase(locale)
+      .replace(/ي/g, 'ی')
+      .replace(/ك/g, 'ک')
+      .replace(/\u200c/g, ' ');
+  const query = normalize(search.trim());
+  const filtered = sources.filter((source) =>
+    normalize(
+      [source.title, source.dataset, ...source.excerpts].join(' ')
+    ).includes(query)
   );
-
-  const sources = useMemo(() => dedupeResources(resources), [resources]);
-
-  const toggleSource = (key: string) => {
-    setExpandedSources((current) => {
-      const next = new Set(current);
-
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-
-      return next;
-    });
-  };
+  const number = new Intl.NumberFormat(locale);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setSearch('');
+        onOpenChange(next);
+      }}
+    >
       <DialogContent
-        className={cn(
-          'max-h-[85vh] max-w-2xl overflow-hidden',
-          isRtl ? 'text-right' : 'text-left'
-        )}
-        dir={isRtl ? 'rtl' : 'ltr'}
+        dir={locale === 'fa' ? 'rtl' : 'ltr'}
+        className="flex max-h-[90dvh] w-[calc(100%_-_1rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl p-0 pe-0 sm:max-h-[85dvh]"
       >
-        <div className="flex min-w-0 items-center gap-3 pe-8">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))]">
-            <BookOpen
-              className="h-5 w-5 text-[hsl(var(--info-text))]"
+        <header className="shrink-0 border-b border-border bg-primary/5 px-4 pb-4 pt-5 sm:px-6">
+          <div className="flex items-start gap-3 pe-8">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle className="text-lg font-bold leading-8">
+                {t('title', { count: sources.length })}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
+                {t('description')}
+              </DialogDescription>
+            </div>
+          </div>
+          <div className="relative mt-4">
+            <Search
+              className="pointer-events-none absolute start-3 top-3 h-4 w-4 text-muted-foreground"
               aria-hidden
             />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label={t('search')}
+              placeholder={t('search')}
+              className="h-10 w-full rounded-xl border border-border bg-background pe-10 ps-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            {search ? (
+              <button
+                type="button"
+                aria-label={t('clearSearch')}
+                onClick={() => setSearch('')}
+                className="absolute end-1 top-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            ) : null}
           </div>
-
-          <div className="min-w-0">
-            <DialogTitle className="text-lg font-semibold">
-              {t('title', {count: sources.length})}
-            </DialogTitle>
-
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {t('description')}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-3 max-h-[65vh] space-y-3 overflow-y-auto pe-1">
-          {sources.map((source, index) => {
-            const title =
-              source.documentName?.trim() || t('documentFallback');
-
-            const dataset =
-              source.datasetName?.trim() || t('datasetFallback');
-
-            const excerpt = source.content?.trim();
-
-            const sourceKey =
-              source.documentId ||
-              source.segmentId ||
-              `${title}-${index}`;
-
-            const expanded = expandedSources.has(sourceKey);
-
+        </header>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-6">
+          <p className="text-xs text-muted-foreground" role="status">
+            {t('resultCount', { count: filtered.length })}
+          </p>
+          {filtered.map((source) => {
+            const index = sources.indexOf(source);
             return (
               <article
-                key={sourceKey}
-                className="overflow-hidden rounded-2xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm transition-colors hover:border-[hsl(var(--info-border))]"
+                key={source.key}
+                className="overflow-hidden rounded-xl border border-border bg-background shadow-sm"
               >
-                <div className="border-b border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/65 px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))]">
-                      <FileText
-                        className="h-4 w-4 text-[hsl(var(--info-text))]"
-                        aria-hidden
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-medium text-muted-foreground">
-                          {t('documentLabel')}
+                <div className="flex items-start gap-3 p-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold tabular-nums text-primary">
+                    {number.format(index + 1)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3
+                      dir="auto"
+                      className="break-words text-sm font-bold leading-7 [overflow-wrap:anywhere]"
+                    >
+                      {source.title || t('documentFallback')}
+                    </h3>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] leading-5 text-muted-foreground">
+                      <span className="inline-flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
+                        <FileText className="h-3 w-3 shrink-0" aria-hidden />
+                        <span className="break-all">
+                          {source.dataset || t('datasetFallback')}
                         </span>
-
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(var(--info-border))] bg-[hsl(var(--info-surface))] px-2 py-0.5 text-[11px] font-medium text-[hsl(var(--info-text))]">
-                          <Database className="h-3 w-3" aria-hidden />
-                          {dataset}
-                        </span>
-                      </div>
-
-                      <h3 className="break-words text-sm font-semibold leading-6 text-foreground">
-                        {title}
-                      </h3>
+                      </span>
+                      <span>
+                        {t('excerptCount', { count: source.excerpts.length })}
+                      </span>
                     </div>
-
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground/60">
-                      {index + 1}
-                    </span>
                   </div>
                 </div>
-
-                {excerpt ? (
-                  <div className="px-4 py-3">
-                    <div className="mb-2 text-[11px] font-medium text-muted-foreground">
-                      {t('excerptLabel')}
-                    </div>
-
-                    <div
-                      className={cn(
-                        'relative overflow-hidden rounded-xl border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-elevated))]/45 px-3.5 py-3',
-                        !expanded ? 'max-h-[7.75rem]' : undefined
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
-                        {excerpt}
-                      </p>
-
-                      {!expanded ? (
-                        <div
-                          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[hsl(var(--surface-elevated))] to-transparent"
-                          aria-hidden
-                        />
-                      ) : null}
-                    </div>
-
-                    {excerpt.length > 180 ? (
-                      <div className="mt-2 flex justify-end">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1.5 px-2 text-xs text-[hsl(var(--info-text))] hover:bg-[hsl(var(--info-surface))] hover:text-[hsl(var(--info-text))]"
-                          onClick={() => toggleSource(sourceKey)}
-                          aria-expanded={expanded}
+                {source.excerpts.length ? (
+                  <details className="group border-t border-border">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-xs font-medium text-primary outline-none hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                      <span>{t('readExcerpts')}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                        aria-hidden
+                      />
+                    </summary>
+                    <div className="space-y-3 px-4 pb-4">
+                      {source.excerpts.map((excerpt, part) => (
+                        <section
+                          key={part}
+                          className="rounded-lg border-s-2 border-primary/30 bg-muted/40 p-3 sm:p-4"
                         >
-                          {expanded ? (
-                            <>
-                              <ChevronUp className="h-3.5 w-3.5" />
-                              {t('showLess')}
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="h-3.5 w-3.5" />
-                              {t('showMore')}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                          <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+                            {t('excerptLabel')} · {number.format(part + 1)}
+                          </p>
+                          <p
+                            dir="auto"
+                            className="whitespace-pre-wrap break-words text-sm leading-8 [overflow-wrap:anywhere]"
+                          >
+                            {excerpt}
+                          </p>
+                        </section>
+                      ))}
+                    </div>
+                  </details>
+                ) : (
+                  <p className="border-t border-border px-4 py-3 text-xs leading-6 text-muted-foreground">
+                    {t('noExcerpt')}
+                  </p>
+                )}
               </article>
             );
           })}
+          {!filtered.length ? (
+            <div className="py-10 text-center">
+              <Search
+                className="mx-auto mb-3 h-7 w-7 text-muted-foreground"
+                aria-hidden
+              />
+              <p className="text-sm text-muted-foreground">{t('noResults')}</p>
+              {search ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => setSearch('')}
+                >
+                  {t('clearSearch')}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
+        <footer className="shrink-0 border-t border-border px-4 py-3 text-xs leading-6 text-muted-foreground sm:px-6">
+          {t('notice')}
+        </footer>
       </DialogContent>
     </Dialog>
   );

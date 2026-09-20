@@ -1,6 +1,7 @@
 import {ApiError, apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import {uuid} from '@/lib/utils/uid';
+import {HISTORY_START_INDEX} from '@/lib/chat/history';
 import type {AiResource, ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
@@ -184,27 +185,44 @@ export async function deleteConversation(id: string) {
   return apiFetch<void>(API_ENDPOINTS.conversations.byId(id), {method: 'DELETE'});
 }
 
-export async function getConversation(id: string) {
-  const [detail, messagePage] = await Promise.all([
-    apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id)),
-    listMessages(id)
+async function listAllMessages(conversationId: string, signal?: AbortSignal) {
+  const messages = new Map<string, ChatMessage>();
+  const visited = new Set<string>();
+  let cursor: string | undefined;
+  do {
+    if (signal?.aborted) throw new DOMException('History read aborted.', 'AbortError');
+    const page = await listMessages(conversationId, cursor, {signal});
+    for (const message of page.results) messages.set(message.id, message);
+    cursor = page.nextCursor || undefined;
+    if (cursor) {
+      if (visited.has(cursor)) throw new Error('Repeated message cursor');
+      visited.add(cursor);
+    }
+  } while (cursor);
+  return [...messages.values()];
+}
+
+export async function getConversation(id: string, opts?: {signal?: AbortSignal}) {
+  const [detail, messages] = await Promise.all([
+    apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {signal: opts?.signal}),
+    listAllMessages(id, opts?.signal)
   ]);
 
   const summary = normalizeConversation({...detail, id: detail.id ?? id});
   return {
     id: summary.id,
     title: summary.title,
-    messages: messagePage.results
+    messages
   } as ChatDetail;
 }
 
-export async function listMessages(conversationId: string, cursor?: string) {
+export async function listMessages(conversationId: string, cursor?: string, opts?: {signal?: AbortSignal}) {
   const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
   const data = await apiFetch<{
     nextCursor?: string | null;
     previousCursor?: string | null;
     results?: BackendMessage[];
-  }>(`${API_ENDPOINTS.conversations.messages(conversationId)}${query}`);
+  }>(`${API_ENDPOINTS.conversations.messages(conversationId)}${query}`, {signal: opts?.signal});
 
   return {
     nextCursor: data.nextCursor ?? null,
@@ -483,4 +501,20 @@ export async function putMessageFeedback(messageId: string, body: FeedbackBody, 
       text_comment: body.text_comment
     })
   });
+}
+
+export async function getHistoryPage(id: string, cursor?: string, signal?: AbortSignal) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  const page = await apiFetch<{results: BackendMessage[]; olderCursor: string | null}>(
+    `${API_ENDPOINTS.conversations.byId(id)}/history${query}`, {signal}
+  );
+  return {messages: page.results.map(normalizeMessage), olderCursor: page.olderCursor};
+}
+
+export async function getConversationWindow(id: string, opts?: {signal?: AbortSignal}): Promise<ChatDetail> {
+  const [detail, page] = await Promise.all([
+    apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {signal: opts?.signal}),
+    getHistoryPage(id, undefined, opts?.signal)
+  ]);
+  return {...normalizeConversation({...detail, id: detail.id ?? id}), ...page, historyStartIndex: HISTORY_START_INDEX};
 }

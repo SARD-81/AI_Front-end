@@ -84,7 +84,15 @@
       "documentLabel": "Document",
       "excerptLabel": "Relevant excerpt",
       "showMore": "Show more",
-      "showLess": "Show less"
+      "showLess": "Show less",
+      "search": "Search source titles and text",
+      "clearSearch": "Clear search",
+      "resultCount": "{count} sources",
+      "excerptCount": "{count} excerpts",
+      "readExcerpts": "Read supporting excerpts",
+      "noExcerpt": "No excerpt was provided for this document.",
+      "noResults": "No matching sources found.",
+      "notice": "These excerpts were retrieved from the sources and may not include the complete document."
     },
     "message": {
       "codeLabel": "code",
@@ -191,7 +199,13 @@
         "source_issue": "There was a source issue"
       }
     },
-    "stop": "Stop generating"
+    "stop": "Stop generating",
+    "history": {
+      "loading": "Loading earlier messages…",
+      "loadOlder": "Load earlier messages",
+      "error": "Could not load earlier messages. Please try again.",
+      "beginning": "Beginning of conversation"
+    }
   },
   "auth": {
     "hero": {
@@ -246,7 +260,11 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
+      "degreeOptions": [
+        "Bachelor’s",
+        "Master’s",
+        "PhD"
+      ],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",
