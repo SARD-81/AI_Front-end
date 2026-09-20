@@ -5,11 +5,47 @@ import { Virtuoso, type ListRange, type VirtuosoHandle } from 'react-virtuoso';
 import { ArrowDown } from 'lucide-react';
 import type { ChatMessage } from '@/lib/api/chat';
 import { useLocale, useTranslations } from 'next-intl';
+import { HISTORY_START_INDEX } from '@/lib/chat/history';
 import { Button } from '@/components/ui/button';
 import { MessageBubble } from './MessageBubble';
 import { UserMessageRail } from './UserMessageRail';
 
-type MessageListProps = {
+type HistoryControls = {
+  hasOlder?: boolean;
+  loadingOlder?: boolean;
+  olderError?: boolean;
+  onLoadOlder?: () => void;
+};
+
+function HistoryHeader({ context }: { context?: HistoryControls }) {
+  const t = useTranslations('app.history');
+  return (
+    <div className="flex min-h-20 items-end justify-center px-4 pb-3 pt-16">
+      {context?.hasOlder ? (
+        <div className="text-center">
+          {context.olderError ? (
+            <p role="alert" className="mb-2 text-xs text-danger-text">
+              {t('error')}
+            </p>
+          ) : null}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={context.loadingOlder}
+            onClick={context.onLoadOlder}
+          >
+            {context.loadingOlder ? t('loading') : t('loadOlder')}
+          </Button>
+        </div>
+      ) : (
+        <span className="text-xs text-muted-foreground">{t('beginning')}</span>
+      )}
+    </div>
+  );
+}
+
+type MessageListProps = HistoryControls & {
+  historyStartIndex?: number;
   messages: ChatMessage[];
   typing: boolean;
   onCopyMessage: (content: string) => void;
@@ -33,7 +69,7 @@ type UserAnchor = {
 };
 
 const VIRTUOSO_COMPONENTS = {
-  Header: () => <div className="h-20 w-full shrink-0" aria-hidden />,
+  Header: HistoryHeader,
   Footer: () => <div className="h-16 w-full shrink-0 sm:h-4" aria-hidden />
 };
 
@@ -111,9 +147,31 @@ export function MessageList({
   onCopyMessage,
   onEditMessage,
   onRegenerate,
-  onRestoreMessage
+  onRestoreMessage,
+  hasOlder = false,
+  loadingOlder = false,
+  olderError = false,
+  onLoadOlder,
+  historyStartIndex = HISTORY_START_INDEX
 }: MessageListProps) {
   const t = useTranslations('app');
+  const interactedWithHistory = useRef(false);
+  const atTop = useRef(false);
+  const loadOlder = () => {
+    setAtBottom(false);
+    onLoadOlder?.();
+  };
+  const requestOlder = () => {
+    if (
+      hasOlder &&
+      !loadingOlder &&
+      !olderError &&
+      interactedWithHistory.current
+    ) {
+      interactedWithHistory.current = false;
+      loadOlder();
+    }
+  };
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Own the timer above the virtual rows so scrolling cannot restart the wait.
@@ -137,6 +195,7 @@ export function MessageList({
   const forceBottomFrameRef = useRef<number | null>(null);
   const previousMessagesRef = useRef<{
     count: number;
+    historyStartIndex: number;
     lastUserMessageId?: string;
   } | null>(null);
   const initializedHashScrollRef = useRef(false);
@@ -204,10 +263,11 @@ export function MessageList({
     const previous = previousMessagesRef.current;
     previousMessagesRef.current = {
       count: messages.length,
+      historyStartIndex,
       lastUserMessageId
     };
 
-    if (!previous) return;
+    if (!previous || historyStartIndex < previous.historyStartIndex) return;
 
     const hasNewUserMessage =
       messages.length > previous.count &&
@@ -238,7 +298,7 @@ export function MessageList({
       });
       setAtBottom(true);
     });
-  }, [items.length, lastUserMessageId, messages.length]);
+  }, [items.length, lastUserMessageId, messages.length, historyStartIndex]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -295,14 +355,15 @@ export function MessageList({
       const target = hash ? anchorsById.get(hash) : undefined;
       if (
         target &&
-        target.messageIndex >= range.startIndex &&
-        target.messageIndex <= range.endIndex
+        target.messageIndex + historyStartIndex >= range.startIndex &&
+        target.messageIndex + historyStartIndex <= range.endIndex
       ) {
         isAnchorNavRef.current = false;
       }
     }
 
-    const { startIndex, endIndex } = range;
+    const startIndex = range.startIndex - historyStartIndex;
+    const endIndex = range.endIndex - historyStartIndex;
     const visible = userAnchors.find(
       (anchor) =>
         anchor.messageIndex >= startIndex && anchor.messageIndex <= endIndex
@@ -321,7 +382,25 @@ export function MessageList({
   };
 
   return (
-    <div className="relative h-full min-h-0 w-full">
+    <div
+      className="relative h-full min-h-0 w-full"
+      onWheel={(event) => {
+        if (event.deltaY < 0) {
+          interactedWithHistory.current = true;
+          if (atTop.current) requestOlder();
+        }
+      }}
+      onTouchMove={() => {
+        interactedWithHistory.current = true;
+        if (atTop.current) requestOlder();
+      }}
+      onKeyDown={(event) => {
+        if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) {
+          interactedWithHistory.current = true;
+          if (atTop.current) requestOlder();
+        }
+      }}
+    >
       <UserMessageRail
         anchors={userAnchors}
         activeAnchorId={activeAnchorId}
@@ -348,6 +427,18 @@ export function MessageList({
       <Virtuoso
         ref={virtuosoRef}
         data={items}
+        computeItemKey={(_index, item) => item.id}
+        firstItemIndex={historyStartIndex}
+        initialTopMostItemIndex={{
+          index: Math.max(0, items.length - 1),
+          align: 'end'
+        }}
+        context={{ hasOlder, loadingOlder, olderError, onLoadOlder: loadOlder }}
+        atTopThreshold={120}
+        atTopStateChange={(top) => {
+          atTop.current = top;
+          if (top) requestOlder();
+        }}
         className="h-full w-full"
         components={VIRTUOSO_COMPONENTS}
         followOutput={atBottom ? 'auto' : false}

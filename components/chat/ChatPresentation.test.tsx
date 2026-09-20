@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider, type AbstractIntlMessages } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,22 +12,29 @@ import fa from '@/messages/fa.json';
 import en from '@/messages/en.json';
 import type { ChatMessage } from '@/lib/api/chat';
 
+const listEvents = vi.hoisted(() => ({top: undefined as ((top: boolean) => void) | undefined}));
+
 // jsdom has no layout engine. Render every virtual row for content assertions;
 // Actual row geometry requires separate browser verification.
 vi.mock('react-virtuoso', () => ({
   Virtuoso: forwardRef(function TestList(
     {
       data,
-      itemContent
+      itemContent, context, components, atTopStateChange
     }: {
       data: { id: string }[];
+      context?: unknown;
+      components: {Header: React.ComponentType<{context?: unknown}>};
+      atTopStateChange?: (value: boolean) => void;
       itemContent: (index: number, item: { id: string }) => React.ReactNode;
     },
     ref
   ) {
+    listEvents.top = atTopStateChange;
     useImperativeHandle(ref, () => ({ scrollToIndex: vi.fn() }));
     return (
       <div>
+        <components.Header context={context} />
         {data.map((item, index) => (
           <div key={item.id}>{itemContent(index, item)}</div>
         ))}
@@ -87,6 +94,21 @@ const listProps = {
 };
 
 describe('chat presentation', () => {
+  it('loads older history only after user interaction and pauses on errors', () => {
+    const load = vi.fn();
+    const view = render(<Providers><MessageList {...listProps} messages={[]} typing={false} hasOlder onLoadOlder={load} /></Providers>);
+    act(() => listEvents.top?.(true));
+    expect(load).not.toHaveBeenCalled();
+    fireEvent.wheel(view.container.firstElementChild!, {deltaY: -100});
+    expect(load).toHaveBeenCalledTimes(1);
+    view.rerender(<Providers><MessageList {...listProps} messages={[]} typing={false} hasOlder olderError onLoadOlder={load} /></Providers>);
+    fireEvent.wheel(view.container.firstElementChild!, {deltaY: -100});
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe(fa.app.history.error);
+    fireEvent.click(screen.getByRole('button', {name: fa.app.history.loadOlder}));
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
   it('advances one pending status at 1, 2 and 3 minutes and resets for the next request', async () => {
     vi.useFakeTimers();
     const messages: ChatMessage[] = [

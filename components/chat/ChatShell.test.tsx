@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatShell } from './ChatShell';
 import {
   createConversation,
-  getConversation,
+  getConversationWindow,
   sendMessageWithWebSocket
 } from '@/lib/services/chat-service';
 import type { ChatMessage } from '@/lib/api/chat';
@@ -56,7 +56,7 @@ vi.mock('./MessageList', () => ({
 vi.mock('@/lib/services/chat-service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services/chat-service')>()),
   createConversation: vi.fn(),
-  getConversation: vi.fn(),
+  getConversationWindow: vi.fn(),
   sendMessageWithWebSocket: vi.fn()
 }));
 
@@ -114,7 +114,7 @@ const question: ChatMessage = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getConversation).mockResolvedValue({
+  vi.mocked(getConversationWindow).mockResolvedValue({
     id: 'existing',
     title: 'Test',
     messages: []
@@ -152,15 +152,15 @@ describe('chat composer submission lifecycle', () => {
     });
     expect(screen.getByText('سؤال جدید')).toBeTruthy();
     expect(screen.getByText(answer.content)).toBeTruthy();
-    expect(getConversation).not.toHaveBeenCalled();
+    expect(getConversationWindow).not.toHaveBeenCalled();
     expect(client.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['chats']
     });
   });
 
   it('does not let a read started before sending overwrite a completed exchange', async () => {
-    const read = deferred<Awaited<ReturnType<typeof getConversation>>>();
-    vi.mocked(getConversation).mockReturnValue(read.promise);
+    const read = deferred<Awaited<ReturnType<typeof getConversationWindow>>>();
+    vi.mocked(getConversationWindow).mockReturnValue(read.promise);
     vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
     const client = setup('existing');
     let reading!: Promise<void>;
@@ -183,9 +183,9 @@ describe('chat composer submission lifecycle', () => {
   it.each([true, false])(
     'keeps the exchange when a mid-send read finishes before commit: %s',
     async (readFirst) => {
-      const read = deferred<Awaited<ReturnType<typeof getConversation>>>();
+      const read = deferred<Awaited<ReturnType<typeof getConversationWindow>>>();
       const response = deferred<ChatMessage>();
-      vi.mocked(getConversation).mockReturnValue(read.promise);
+      vi.mocked(getConversationWindow).mockReturnValue(read.promise);
       vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
       const client = setup('existing');
       fireEvent.change(screen.getByRole('textbox'), {

@@ -6,7 +6,7 @@ vi.mock('@/lib/api/client', () => ({
   ApiError: class extends Error {},
   getApiBaseUrl: () => ''
 }));
-import { getConversation } from './chat-service';
+import { getConversation, getConversationWindow } from './chat-service';
 
 const message = (id: string) => ({
   id,
@@ -69,4 +69,16 @@ describe('complete conversation history', () => {
     ).rejects.toMatchObject({ name: 'AbortError' });
     expect(apiFetch).toHaveBeenCalledTimes(2);
   });
+});
+
+
+it('loads just one ten-message history window and metadata on initial open', async () => {
+  apiFetch.mockImplementation(async (url: string) => url.endsWith('/history')
+    ? {results: Array.from({length: 10}, (_, i) => message(String(i))), olderCursor: 'older'}
+    : {id: 'chat', title: 'Conversation'});
+  const result = await getConversationWindow('chat');
+  expect(result.messages).toHaveLength(10);
+  expect(result.olderCursor).toBe('older');
+  expect(apiFetch).toHaveBeenCalledTimes(2);
+  expect(apiFetch.mock.calls.some(([url]) => url.includes('/messages'))).toBe(false);
 });

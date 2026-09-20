@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ChatDetail,
@@ -11,12 +11,14 @@ import type {
 import {
   createConversation,
   deleteConversation,
-  getConversation,
+  getConversationWindow,
+  getHistoryPage,
   listConversations,
   renameConversation,
   sendMessageWithWebSocket,
   ChatWebSocketError
 } from '@/lib/services/chat-service';
+import {prependHistory} from '@/lib/chat/history';
 import { uuid } from '@/lib/utils/uid';
 import { revealAnswerProgressively } from '@/lib/chat/reveal-answer';
 
@@ -32,12 +34,41 @@ export function useChat(chatId?: string) {
   return useQuery({
     queryKey: ['chat', chatId],
     enabled: Boolean(chatId),
-    staleTime: 15_000,
+    staleTime: Infinity,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
     queryFn: async ({signal}): Promise<ChatDetail> => {
       if (!chatId) throw new Error('chatId is required');
-      return getConversation(chatId, {signal});
+      return getConversationWindow(chatId, {signal});
     }
   });
+}
+
+export function useOlderMessages(chatId?: string) {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationKey: ['older-history', chatId],
+    retry: false,
+    mutationFn: async () => {
+      if (!chatId) return;
+      const cursor = queryClient.getQueryData<ChatDetail>(['chat', chatId])?.olderCursor;
+      if (!cursor) return;
+      // fetchQuery deduplicates concurrent requests for this exact page.
+      const page = await queryClient.fetchQuery({
+        queryKey: ['history-page', chatId, cursor],
+        queryFn: ({signal}) => getHistoryPage(chatId, cursor, signal),
+        staleTime: Infinity,
+        retry: false
+      });
+      if (page.olderCursor === cursor) throw new Error('Repeated history cursor');
+      queryClient.setQueryData<ChatDetail>(['chat', chatId], current =>
+        current ? prependHistory(current, cursor, page) : current
+      );
+    }
+  });
+  const {reset} = mutation;
+  useEffect(() => { reset(); }, [chatId, reset]);
+  return mutation;
 }
 
 export function useGroupedChats(chats: ChatSummary[] | undefined) {

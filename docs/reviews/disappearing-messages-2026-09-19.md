@@ -51,3 +51,11 @@ Trade-off: loading a complete history performs one GET per cursor page before
 publishing the snapshot. This favors correctness within the existing complete-list
 UI. Very large histories should later use an explicit paginated UI rather than
 silently treating one page as the entire conversation.
+
+
+## Follow-up: incremental history
+
+The initial full-history read was subsequently replaced in the active UI by ten-message
+windows. See `docs/chat-history.md` for the authenticated compatibility adapter,
+backend-native mode, cursor/cache behavior and deployment constraints. The no-refetch
+and stale-read cancellation protections above still apply.

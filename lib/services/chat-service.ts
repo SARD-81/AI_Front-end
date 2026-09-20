@@ -1,6 +1,7 @@
 import {ApiError, apiFetch, getApiBaseUrl} from '@/lib/api/client';
 import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
 import {uuid} from '@/lib/utils/uid';
+import {HISTORY_START_INDEX} from '@/lib/chat/history';
 import type {AiResource, ChatDetail, ChatMessage, ChatSummary, MessageFeedbackPayload, SendMessagePayload} from '@/lib/api/chat';
 
 type PaginatedMessages = {
@@ -500,4 +501,20 @@ export async function putMessageFeedback(messageId: string, body: FeedbackBody, 
       text_comment: body.text_comment
     })
   });
+}
+
+export async function getHistoryPage(id: string, cursor?: string, signal?: AbortSignal) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  const page = await apiFetch<{results: BackendMessage[]; olderCursor: string | null}>(
+    `${API_ENDPOINTS.conversations.byId(id)}/history${query}`, {signal}
+  );
+  return {messages: page.results.map(normalizeMessage), olderCursor: page.olderCursor};
+}
+
+export async function getConversationWindow(id: string, opts?: {signal?: AbortSignal}): Promise<ChatDetail> {
+  const [detail, page] = await Promise.all([
+    apiFetch<BackendConversation>(API_ENDPOINTS.conversations.byId(id), {signal: opts?.signal}),
+    getHistoryPage(id, undefined, opts?.signal)
+  ]);
+  return {...normalizeConversation({...detail, id: detail.id ?? id}), ...page, historyStartIndex: HISTORY_START_INDEX};
 }

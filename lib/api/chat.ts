@@ -30,6 +30,8 @@ export type ChatMessage = {
 };
 
 export type ChatDetail = {
+  olderCursor?: string | null;
+  historyStartIndex?: number;
   id: string;
   title: string;
   messages: ChatMessage[];
