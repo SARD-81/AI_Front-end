@@ -49,9 +49,16 @@ export function ChatEmptyState({
           <h1 className="font-display-fa text-balance text-xl font-semibold leading-8 text-foreground sm:text-2xl sm:leading-10 md:text-3xl [@media(max-height:700px)]:text-lg [@media(max-height:700px)]:leading-7">
             {t('emptyState.title')}
           </h1>
-          <p className="mx-auto max-w-[720px] text-pretty text-sm leading-6 text-muted-foreground sm:leading-7 md:text-base [@media(max-height:700px)]:text-xs [@media(max-height:700px)]:leading-5">
-            {t('emptyState.description')}
-          </p>
+
+          <div className="mx-auto max-w-[760px] space-y-1 text-pretty text-muted-foreground">
+            <p className="text-sm leading-6 sm:leading-7 md:text-base [@media(max-height:700px)]:text-xs [@media(max-height:700px)]:leading-5">
+              {t('emptyState.description')}
+            </p>
+
+            <p className="text-xs leading-5 sm:text-sm sm:leading-6 [@media(max-height:700px)]:text-[11px] [@media(max-height:700px)]:leading-5">
+              {t('emptyState.facultyDescription')}
+            </p>
+          </div>
         </div>
 
         <div className="min-w-0 space-y-3 sm:space-y-4 [@media(max-height:700px)]:space-y-2.5">
