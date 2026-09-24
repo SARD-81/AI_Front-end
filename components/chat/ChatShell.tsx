@@ -14,7 +14,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ChatEmptyState } from './ChatEmptyState';
-import { useChat, useChatActions, useSendMessage, useOlderMessages } from '@/hooks/use-chat-data';
+import {
+  useChat,
+  useChatActions,
+  useSendMessage,
+  useOlderMessages
+} from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { uuid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
@@ -66,7 +71,10 @@ export function ChatShell({
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
   const [activeChatId, setActiveChatId] = useState(chatId);
-  const regenerateTargetRef = useRef<{ userId: string; assistantId: string } | null>(null);
+  const regenerateTargetRef = useRef<{
+    userId: string;
+    assistantId: string;
+  } | null>(null);
 
   const chatQuery = useChat(activeChatId);
   const chat = chatQuery.data;
@@ -153,8 +161,7 @@ export function ChatShell({
   }, []);
 
   const shouldAutoFocus = searchParams.get('focus') === '1';
-  const isChatLoading =
-    Boolean(activeChatId) && !chat && chatQuery.isFetching;
+  const isChatLoading = Boolean(activeChatId) && !chat && chatQuery.isFetching;
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState =
@@ -173,7 +180,10 @@ export function ChatShell({
 
   const getChatUserErrorMessage = (error: unknown) => {
     if (error instanceof ChatWebSocketError) {
-      if (error.shouldRedirectToProfile || error.code === 'PROFILE_INCOMPLETE') {
+      if (
+        error.shouldRedirectToProfile ||
+        error.code === 'PROFILE_INCOMPLETE'
+      ) {
         return t('chat.profileIncomplete');
       }
 
@@ -252,7 +262,10 @@ export function ChatShell({
     if (error instanceof Error) {
       const normalizedMessage = error.message.toLowerCase();
 
-      if (error.name === 'AbortError' || normalizedMessage.includes('timeout')) {
+      if (
+        error.name === 'AbortError' ||
+        normalizedMessage.includes('timeout')
+      ) {
         return t('chat.timeout');
       }
 
@@ -319,7 +332,9 @@ export function ChatShell({
 
     try {
       if (!resolvedChatId) {
-        const created = await actions.create.mutateAsync({ title: t('newChat') });
+        const created = await actions.create.mutateAsync({
+          title: t('newChat')
+        });
         resolvedChatId = created.id;
         createdChatId = created.id;
         setActiveChatId(created.id);
@@ -383,7 +398,10 @@ export function ChatShell({
         console.error('Chat send failed', error);
       }
 
-      if (error instanceof ChatWebSocketError && error.shouldRedirectToProfile) {
+      if (
+        error instanceof ChatWebSocketError &&
+        error.shouldRedirectToProfile
+      ) {
         router.push(`/${locale}/profile`);
       }
 
@@ -423,11 +441,11 @@ export function ChatShell({
   const dropMessagesFrom = (messageId: string) => {
     if (!activeChatId) return;
     queryClient.setQueryData(['chat', activeChatId], (previous: unknown) => {
-      const current = previous as {messages?: ChatMessage[]} | undefined;
+      const current = previous as { messages?: ChatMessage[] } | undefined;
       if (!current?.messages) return previous;
       const index = current.messages.findIndex((item) => item.id === messageId);
       if (index < 0) return previous;
-      return {...current, messages: current.messages.slice(0, index)};
+      return { ...current, messages: current.messages.slice(0, index) };
     });
   };
 
@@ -478,44 +496,50 @@ export function ChatShell({
   };
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background">
+    <div className="chat-workspace flex h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <div className="hidden h-full shrink-0 lg:block">
         <Sidebar locale={locale} />
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent className="h-[100dvh] w-[304px] p-0 sm:max-w-[304px] lg:hidden">
+        <SheetContent className="h-[100dvh] !w-[min(88vw,330px)] !max-w-none overflow-hidden !border-[#0d607c] !bg-[#064763] p-0 lg:hidden [&>button]:!end-3 [&>button]:!start-auto [&>button]:top-[max(0.875rem,env(safe-area-inset-top))] [&>button]:flex [&>button]:h-11 [&>button]:w-11 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-xl [&>button]:text-white [&>button]:hover:bg-white/15 [&>button]:focus-visible:ring-[#8ce4eb]">
           <Sidebar locale={locale} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
 
-        <main id="main-content" className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-h-14 items-center border-0 bg-transparent py-1 sm:h-14 sm:py-0">
-            <div className="pointer-events-none absolute inset-0 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)]" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background)/0.82)] to-transparent" />
-            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center px-3 sm:px-6">
+        <main
+          id="main-content"
+          className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.65),transparent_42%)]"
+        >
+          <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-h-[60px] items-center border-b border-[hsl(var(--border)/0.8)] bg-[hsl(var(--surface-card)/0.92)] shadow-[0_6px_22px_-18px_rgba(4,72,101,0.6)] backdrop-blur-xl sm:min-h-16">
+            <div className="pointer-events-auto relative mx-auto flex w-full max-w-4xl items-center px-3 sm:px-6">
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden"
+                  className="h-11 w-11 rounded-xl text-primary hover:bg-accent hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
                   aria-label={t('chat.openConversations')}
                   title={t('chat.openConversations')}
                 >
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
             </div>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="max-w-[min(32rem,68%)] truncate rounded-full px-3 text-center text-sm font-semibold leading-6 text-foreground/90 sm:max-w-[min(32rem,72%)] sm:px-4 md:text-base">
+              <h1 className="max-w-[min(32rem,66%)] truncate px-3 text-center text-sm font-bold leading-6 text-foreground sm:max-w-[min(32rem,72%)] sm:px-4 md:text-base">
                 {headerTitle}
               </h1>
             </div>
           </header>
 
           {!isOnline ? (
-            <div role="status" className="mt-14 bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]">
-              <div className="mx-auto w-full max-w-3xl">{t('chat.offline')}</div>
+            <div
+              role="status"
+              className="mt-[60px] bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))] sm:mt-16"
+            >
+              <div className="mx-auto w-full max-w-3xl">
+                {t('chat.offline')}
+              </div>
             </div>
           ) : null}
 
@@ -539,7 +563,9 @@ export function ChatShell({
                   thinkLevel={thinkLevel}
                   onThinkLevelChange={handleThinkLevelChange}
                   onPromptSelect={(prompt) => {
-                    void submitMessage(prompt, undefined, { clearComposer: true });
+                    void submitMessage(prompt, undefined, {
+                      clearComposer: true
+                    });
                   }}
                 />
               ) : (
@@ -550,7 +576,9 @@ export function ChatShell({
                     loadingOlder={olderHistory.isPending}
                     olderError={olderHistory.isError}
                     historyStartIndex={chat?.historyStartIndex}
-                    onLoadOlder={() => { if (!olderHistory.isPending) olderHistory.mutate(); }}
+                    onLoadOlder={() => {
+                      if (!olderHistory.isPending) olderHistory.mutate();
+                    }}
                     messages={messages}
                     typing={sendMutation.isPending && !streamContent}
                     onCopyMessage={handleCopyMessage}
@@ -566,7 +594,7 @@ export function ChatShell({
             </section>
 
             {!shouldShowEmptyState ? (
-              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]/95 py-2 backdrop-blur sm:py-3 md:py-4">
+              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card)/0.94)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur sm:py-3 md:py-4">
                 <div className="mx-auto w-full max-w-3xl px-3 sm:px-6">
                   <Composer
                     value={value}

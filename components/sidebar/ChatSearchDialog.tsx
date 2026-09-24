@@ -76,11 +76,11 @@ export function ChatSearchDialog({
             enterKeyHint="search"
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 w-full border-0 bg-transparent text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:hidden"
+            className="w-full min-w-0 border-0 bg-transparent text-base text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 sm:text-sm [&::-webkit-search-cancel-button]:hidden"
           />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-2 px-2 py-3 sm:min-h-[8rem]">
+        <div className="min-h-0 flex-1 scroll-py-2 overflow-y-auto overscroll-contain px-2 py-3 sm:min-h-[8rem]">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
             {normalizedQuery
               ? t('sidebar.searchResults')
@@ -107,7 +107,7 @@ export function ChatSearchDialog({
                     type="button"
                     onClick={() => openChat(chat.id)}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                      'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
                       chat.id === currentChatId &&
                         'bg-[hsl(var(--surface-elevated))] font-medium'
                     )}

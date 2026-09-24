@@ -64,7 +64,7 @@ export function Composer({
     <motion.div
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
-      className="mx-auto w-full max-w-[800px] rounded-[24px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-3 py-2.5 shadow-card sm:rounded-[28px] sm:px-4 sm:py-3"
+      className="mx-auto w-full max-w-[800px] rounded-[22px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-3 py-2.5 shadow-[0_12px_32px_-24px_rgba(4,72,101,0.45)] transition-colors focus-within:border-[hsl(var(--primary)/0.6)] focus-within:ring-2 focus-within:ring-[hsl(var(--primary)/0.1)] sm:rounded-[26px] sm:px-4 sm:py-3"
     >
       <TextareaAutosize
         minRows={1}
@@ -77,7 +77,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-[9.5rem] w-full resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-0.5 text-[14px] leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:max-h-[13rem] sm:py-1 sm:text-[15px] sm:leading-7"
+        className="max-h-[9.5rem] w-full resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-0.5 text-base leading-7 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:max-h-[13rem] sm:py-1 sm:leading-7"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             if (event.nativeEvent.isComposing) return;
@@ -97,7 +97,7 @@ export function Composer({
               disabled={disabled}
               aria-label={t('thinkingLevel.label')}
               title={t('thinkingLevel.description')}
-              className="flex min-w-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
+              className="flex min-h-11 min-w-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
             >
               <ChevronDown className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
               <span className="truncate">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
@@ -156,7 +156,7 @@ export function Composer({
             onClick={onStop}
             aria-label={t('stop')}
             title={t('stop')}
-            className="ms-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97] sm:h-9 sm:w-9"
+            className="ms-auto inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </button>
@@ -168,7 +168,7 @@ export function Composer({
             aria-label={t('send')}
             title={t('send')}
             className={cn(
-              'ms-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97] sm:h-9 sm:w-9',
+              'ms-auto inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] active:scale-[0.97]',
               canSend
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'cursor-not-allowed bg-[hsl(var(--surface-elevated))] text-muted-foreground/60'

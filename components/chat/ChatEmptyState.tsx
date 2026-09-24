@@ -36,28 +36,30 @@ export function ChatEmptyState({
 
   return (
     <div
-      className="h-full min-h-0 scroll-py-20 overflow-y-auto overscroll-y-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[calc(4.5rem+env(safe-area-inset-top))] sm:px-4 sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-20"
+      className="h-full min-h-0 scroll-py-20 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-24"
       dir={locale === 'fa' ? 'rtl' : 'ltr'}
     >
-      <div className="mx-auto flex min-h-full w-full max-w-[800px] flex-col justify-center gap-4 py-2 text-center sm:gap-6 sm:py-4 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:py-1">
-        <UniversityLogo
-          alt={t('emptyState.logoAlt')}
-          className="mx-auto h-16 w-16 sm:h-20 sm:w-20 [@media(max-height:700px)]:h-12 [@media(max-height:700px)]:w-12"
-        />
+      <div className="mx-auto flex min-h-full w-full max-w-[800px] flex-col justify-between gap-5 py-3 text-center sm:justify-center sm:gap-6 sm:py-4 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:py-1">
+        <div className="space-y-5 sm:space-y-3">
+          <UniversityLogo
+            alt={t('emptyState.logoAlt')}
+            className="mx-auto h-14 w-14 rounded-2xl bg-[hsl(var(--primary)/0.08)] ring-1 ring-[hsl(var(--primary)/0.13)] sm:h-20 sm:w-20 [@media(max-height:700px)]:h-12 [@media(max-height:700px)]:w-12"
+          />
 
-        <div className="space-y-2 sm:space-y-3 [@media(max-height:700px)]:space-y-1.5">
-          <h1 className="font-display-fa text-balance text-xl font-semibold leading-8 text-foreground sm:text-2xl sm:leading-10 md:text-3xl [@media(max-height:700px)]:text-lg [@media(max-height:700px)]:leading-7">
-            {t('emptyState.title')}
-          </h1>
+          <div className="space-y-2 sm:space-y-3 [@media(max-height:700px)]:space-y-1.5">
+            <h1 className="font-display-fa text-balance text-2xl font-semibold leading-9 text-foreground sm:text-3xl sm:leading-10 md:text-4xl [@media(max-height:700px)]:text-xl [@media(max-height:700px)]:leading-8">
+              {t('emptyState.title')}
+            </h1>
 
-          <div className="mx-auto max-w-[760px] space-y-1 text-pretty text-muted-foreground">
-            <p className="text-sm leading-6 sm:leading-7 md:text-base [@media(max-height:700px)]:text-xs [@media(max-height:700px)]:leading-5">
-              {t('emptyState.description')}
-            </p>
+            <div className="mx-auto max-w-[760px] space-y-1 text-pretty text-muted-foreground">
+              <p className="text-[15px] leading-7 sm:text-base sm:leading-8 [@media(max-height:700px)]:text-sm [@media(max-height:700px)]:leading-6">
+                {t('emptyState.description')}
+              </p>
 
-            <p className="text-xs leading-5 sm:text-sm sm:leading-6 [@media(max-height:700px)]:text-[11px] [@media(max-height:700px)]:leading-5">
-              {t('emptyState.facultyDescription')}
-            </p>
+              <p className="text-sm leading-6 sm:leading-7 [@media(max-height:700px)]:text-xs [@media(max-height:700px)]:leading-5">
+                {t('emptyState.facultyDescription')}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -82,9 +84,9 @@ export function ChatEmptyState({
                 size="sm"
                 onClick={() => onPromptSelect(prompt)}
                 className={cn(
-                  index >= 3 && 'hidden sm:inline-flex',
-                  'h-auto min-w-0 max-w-full rounded-full border-border bg-background px-3 py-2 text-xs leading-5 text-foreground transition-colors sm:px-4 sm:text-sm [@media(max-height:700px)]:py-1.5',
-                  'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
+                  index >= 2 && 'hidden sm:inline-flex',
+                  'h-auto min-h-11 min-w-0 max-w-full rounded-2xl border-border bg-[hsl(var(--surface-card))] px-3 py-2 text-[13px] leading-5 text-foreground shadow-sm transition-all sm:px-4 sm:text-sm [@media(max-height:700px)]:py-1.5',
+                  'hover:-translate-y-0.5 hover:border-primary/35 hover:bg-accent hover:text-accent-foreground hover:shadow-md active:translate-y-0 active:bg-accent/80',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                 )}
               >

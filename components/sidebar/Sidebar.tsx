@@ -11,6 +11,7 @@ import {
   EllipsisVertical,
   LogOut,
   MessageCircle,
+  MessageSquareText,
   MessageSquarePlus,
   Search,
   Settings,
@@ -237,10 +238,11 @@ export function Sidebar({
   const chatGroups = useMemo(
     () => [
       { title: t('today'), ids: groups.today.map((item) => item.id) },
+      { title: t('yesterday'), ids: groups.yesterday.map((item) => item.id) },
       { title: t('month'), ids: groups.month.map((item) => item.id) },
       { title: t('older'), ids: groups.older.map((item) => item.id) }
     ],
-    [groups.month, groups.older, groups.today, t]
+    [groups.month, groups.older, groups.today, groups.yesterday, t]
   );
 
   const chatsById = useMemo(() => {
@@ -288,23 +290,23 @@ export function Sidebar({
         className="h-full"
         style={{
           width: isMobile
-            ? EXPANDED_WIDTH
+            ? '100%'
             : collapsed
               ? COLLAPSED_WIDTH
               : EXPANDED_WIDTH
         }}
       >
-        <SidebarRoot className="h-full w-full">
+        <SidebarRoot className="soha-sidebar h-full w-full !border-l-0 !border-s border-[#0d607c] text-white shadow-[inset_-1px_0_0_rgba(255,255,255,0.06)]">
           <SidebarHeader
             className={cn(
-              'flex flex-col gap-1 border-b-0 px-3 py-3',
+              'flex flex-col gap-4 !border-b border-white/15 px-3 pb-5 pt-[max(1rem,env(safe-area-inset-top))]',
               collapsed && 'items-center px-2'
             )}
           >
             {/* Brand row + collapse control, like ChatGPT's top rail. */}
             <div
               className={cn(
-                'flex items-center gap-1',
+                'flex items-center gap-1 max-lg:pe-10',
                 collapsed && 'flex-col gap-1.5'
               )}
             >
@@ -313,19 +315,25 @@ export function Sidebar({
                 aria-label={t('sidebar.home')}
                 onClick={onNavigate}
                 className={cn(
-                  'flex h-12 items-center rounded-lg text-primary transition-colors hover:bg-[hsl(var(--surface-elevated))]',
+                  'flex min-h-16 items-center rounded-2xl text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
                   collapsed
                     ? 'w-12 justify-center'
-                    : 'min-w-0 flex-1 gap-2 px-1.5'
+                    : 'min-w-0 flex-1 gap-3 px-2'
                 )}
               >
                 <UniversityLogo
                   alt={t('sidebar.logoAlt')}
-                  className="h-11 w-11"
+                  inverse
+                  className="h-12 w-12"
                 />
                 {!collapsed ? (
-                  <span className="truncate text-sm font-bold text-foreground">
-                    {t('sidebar.universityName')}
+                  <span className="flex min-w-0 flex-col text-start">
+                    <span className="font-display-fa text-2xl leading-8 text-white">
+                      {t('sidebar.productName')}
+                    </span>
+                    <span className="truncate text-[11px] font-medium leading-5 text-[#b7dbe4]">
+                      {t('sidebar.productSubtitle')}
+                    </span>
                   </span>
                 ) : null}
               </Link>
@@ -342,19 +350,16 @@ export function Sidebar({
                   title={
                     collapsed ? t('sidebar.expand') : t('sidebar.collapse')
                   }
-                  className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground"
+                  className="h-10 w-10 shrink-0 rounded-xl text-[#b7dbe4] hover:bg-white/10 hover:text-white focus-visible:ring-[#8ce4eb]"
                 >
                   <PanelLeft className="h-[1.15rem] w-[1.15rem]" />
                 </Button>
               ) : null}
             </div>
 
-            {/* Primary actions as quiet rail rows (new chat + search). */}
+            {/* Actions remain visually distinct from conversation history. */}
             <nav
-              className={cn(
-                'mt-1 flex flex-col gap-0.5',
-                collapsed && 'items-center'
-              )}
+              className={cn('flex flex-col gap-2', collapsed && 'items-center')}
             >
               <button
                 type="button"
@@ -362,13 +367,23 @@ export function Sidebar({
                 aria-label={t('newChat')}
                 title={collapsed ? t('newChat') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
-                  collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
+                  'flex min-h-12 items-center rounded-xl bg-[#0b8ba8] text-[15px] font-bold text-white shadow-[0_8px_20px_-12px_rgba(0,24,36,0.9),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0d9bb5] hover:shadow-[0_13px_24px_-12px_rgba(0,24,36,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:translate-y-0',
+                  collapsed ? 'w-12 justify-center' : 'w-full gap-3 px-3'
                 )}
               >
-                <MessageSquarePlus className="h-[1.15rem] w-[1.15rem] shrink-0" />
+                <MessageSquarePlus className="h-5 w-5 shrink-0" />
                 {!collapsed ? (
-                  <span className="truncate">{t('newChat')}</span>
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-start">
+                      {t('newChat')}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="text-xl leading-none text-white/80"
+                    >
+                      +
+                    </span>
+                  </>
                 ) : null}
               </button>
 
@@ -378,11 +393,11 @@ export function Sidebar({
                 aria-label={t('sidebar.searchPlaceholder')}
                 title={collapsed ? t('sidebar.searchPlaceholder') : undefined}
                 className={cn(
-                  'flex h-10 items-center rounded-lg text-sm font-bold text-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
-                  collapsed ? 'w-10 justify-center' : 'w-full gap-3 px-2'
+                  'flex min-h-11 items-center rounded-xl border border-white/20 bg-white/[0.07] text-sm font-medium text-[#e0f2f6] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#83cfdb]/60 hover:bg-white/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:translate-y-0',
+                  collapsed ? 'w-12 justify-center' : 'w-full gap-3 px-3'
                 )}
               >
-                <Search className="h-[1.15rem] w-[1.15rem] shrink-0" />
+                <Search className="h-[1.15rem] w-[1.15rem] shrink-0 text-[#a8e3e8]" />
                 {!collapsed ? (
                   <span className="truncate">
                     {t('sidebar.searchPlaceholder')}
@@ -393,7 +408,10 @@ export function Sidebar({
           </SidebarHeader>
 
           <SidebarContent
-            className={cn('space-y-3 px-2', collapsed && 'hidden')}
+            className={cn(
+              'soha-sidebar-scroll space-y-3 px-2.5 py-4',
+              collapsed && 'hidden'
+            )}
           >
             {chatsQuery.isLoading ? (
               <div className="space-y-3 px-1" aria-hidden="true">
@@ -414,7 +432,7 @@ export function Sidebar({
                 )}
               >
                 {!collapsed ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm leading-6 text-[#c4e0e7]">
                     {t('sidebar.loadError')}
                   </p>
                 ) : null}
@@ -437,7 +455,7 @@ export function Sidebar({
             ) : !hasChats ? (
               <div className={cn('px-2 py-3', collapsed && 'px-1 text-center')}>
                 {!collapsed ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm leading-6 text-[#c4e0e7]">
                     {t('sidebar.emptyHistory')}
                   </p>
                 ) : null}
@@ -446,11 +464,15 @@ export function Sidebar({
               chatGroups.map((group) => {
                 if (!group.ids.length) return null;
                 return (
-                  <section key={group.title} className="space-y-1">
+                  <section key={group.title} className="space-y-1.5 pb-2">
                     {!collapsed ? (
-                      <p className="px-2 pb-1 pt-3 text-xs font-medium text-muted-foreground">
+                      <h2 className="flex items-center gap-2 px-3 pb-1 pt-3 text-xs font-bold text-[#a9d9e3]">
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-[#62cddd]"
+                        />
                         {group.title}
-                      </p>
+                      </h2>
                     ) : null}
                     {group.ids.map((id) => {
                       const chat = chatsById.get(id);
@@ -467,24 +489,33 @@ export function Sidebar({
                         <motion.div layout key={chat.id} className="group">
                           <div
                             className={cn(
-                              'flex items-center gap-2 rounded-lg px-2 py-2 text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-elevated))]',
+                              'flex min-h-12 items-center gap-1 rounded-xl border border-transparent pe-1 ps-2.5 text-[#d7eaf0] transition-all duration-200 focus-within:border-[#7ad5df]/50 focus-within:bg-white/[0.1] hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.09] hover:shadow-[0_9px_18px_-13px_rgba(0,15,27,0.9)] motion-reduce:transform-none',
                               isActive &&
-                                'bg-[hsl(var(--surface-elevated))] font-medium text-foreground'
+                                '!border-[#56c5d5]/40 !bg-[#16728e] font-semibold !text-white shadow-[inset_3px_0_0_#7adbe6] rtl:shadow-[inset_-3px_0_0_#7adbe6]'
                             )}
                           >
                             <Link
                               href={href}
                               className={cn(
-                                'flex min-w-0 flex-1 items-center gap-2',
+                                'flex min-h-12 min-w-0 flex-1 items-center gap-2.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
                                 collapsed && 'justify-center'
                               )}
                               onClick={onNavigate}
                               title={collapsed ? chat.title : undefined}
                             >
                               {!collapsed ? (
-                                <span className="truncate text-sm">
-                                  {chat.title}
-                                </span>
+                                <>
+                                  <MessageSquareText
+                                    aria-hidden="true"
+                                    className={cn(
+                                      'h-4 w-4 shrink-0 text-[#88c5d2]',
+                                      isActive && 'text-[#bcf0f2]'
+                                    )}
+                                  />
+                                  <span className="truncate text-[13px] leading-6">
+                                    {chat.title}
+                                  </span>
+                                </>
                               ) : (
                                 <MessageCircle className="h-4 w-4 shrink-0" />
                               )}
@@ -500,10 +531,10 @@ export function Sidebar({
                                   variant="ghost"
                                   size="icon"
                                   className={cn(
-                                    'h-7 w-7 transition-opacity duration-150 active:scale-[0.98]',
+                                    'h-10 w-10 shrink-0 rounded-lg text-[#d8edf2] transition-opacity duration-150 hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:scale-[0.98]',
                                     collapsed
                                       ? 'opacity-100'
-                                      : 'opacity-0 group-hover:opacity-100',
+                                      : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                     isActive && 'opacity-100'
                                   )}
                                   aria-label={t('sidebar.chatOptions')}
@@ -542,20 +573,23 @@ export function Sidebar({
           </SidebarContent>
 
           <SidebarFooter
-            className={cn('mt-auto', collapsed && 'flex justify-center')}
+            className={cn(
+              'mt-auto !border-t border-white/15 bg-[#043e59]/80 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+              collapsed && 'flex justify-center'
+            )}
           >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   className={cn(
-                    'group h-11 w-full justify-start gap-2 overflow-hidden border border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))] shadow-sm transition-all duration-200 hover:border-[hsl(var(--menu-border))] hover:bg-[hsl(var(--surface-elevated))] hover:shadow-card focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] focus-visible:ring-offset-2 active:scale-[0.99]',
-                    collapsed && 'h-10 w-10 justify-center p-0'
+                    'group min-h-12 w-full justify-start gap-2 overflow-hidden rounded-xl border border-white/15 bg-white/[0.07] px-2 text-white transition-all duration-200 hover:border-white/30 hover:bg-white/[0.13] hover:text-white focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:scale-[0.99]',
+                    collapsed && 'h-12 w-12 justify-center p-0'
                   )}
                   aria-label={t('sidebar.profile')}
                   title={collapsed ? t('sidebar.profile') : undefined}
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[hsl(var(--menu-border))] bg-[hsl(var(--menu))] text-[hsl(var(--menu-foreground))] shadow-sm transition-transform duration-200 group-hover:scale-105">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#70c9d5]/30 bg-[#14758f] text-white transition-transform duration-200 group-hover:scale-105">
                     <UserCircle2 className="h-5 w-5" />
                   </span>
                   {!collapsed ? (
@@ -563,13 +597,13 @@ export function Sidebar({
                       <span className="truncate text-sm font-medium">
                         {profileName}
                       </span>
-                      <span className="max-w-44 truncate text-xs text-muted-foreground">
+                      <span className="max-w-44 truncate text-xs text-[#b6dbe4]">
                         {profileSubtitle}
                       </span>
                     </div>
                   ) : null}
                   {!collapsed ? (
-                    <EllipsisVertical className="ms-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:rotate-90 group-hover:text-foreground" />
+                    <EllipsisVertical className="ms-auto h-4 w-4 text-[#b6dbe4] transition-transform duration-200 group-hover:rotate-90 group-hover:text-white" />
                   ) : null}
                 </Button>
               </DropdownMenuTrigger>

@@ -479,7 +479,7 @@ export function MessageList({
         <Button
           type="button"
           size="icon"
-          className="absolute bottom-4 right-[max(0.75rem,env(safe-area-inset-right))] z-10 h-9 w-9 rounded-full shadow-lg sm:bottom-5 sm:left-1/2 sm:right-auto sm:h-10 sm:w-10 sm:-translate-x-1/2"
+          className="absolute bottom-4 right-[max(0.75rem,env(safe-area-inset-right))] z-10 h-11 w-11 rounded-full shadow-lg sm:bottom-5 sm:left-1/2 sm:right-auto sm:-translate-x-1/2"
           onClick={scrollToBottom}
           aria-label={t('message.scrollToBottom')}
           title={t('message.scrollToBottom')}
