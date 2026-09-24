@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { closeActiveChatSockets } from '@/lib/services/chat-service';
 import { isEmployeeEmail, isStudentEmail } from '@/lib/config/email-domains';
 import { apiFetch, ApiError } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
@@ -41,7 +42,7 @@ function cleanBoolean(value: boolean | null | undefined): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined;
 }
 
-const loginSchema = z
+export const loginSchema = z
   .object({
     user: z
       .object({
@@ -58,7 +59,9 @@ const loginSchema = z
         mustChangePassword: nullableBoolean,
         must_change_password: nullableBoolean,
         isLocked: nullableBoolean,
-        is_locked: nullableBoolean
+        is_locked: nullableBoolean,
+        phoneSetupRequired: nullableBoolean,
+        phone_setup_required: nullableBoolean
       })
       .passthrough()
       .optional(),
@@ -67,7 +70,9 @@ const loginSchema = z
     mustChangePassword: nullableBoolean,
     must_change_password: nullableBoolean,
     isLocked: nullableBoolean,
-    is_locked: nullableBoolean
+    is_locked: nullableBoolean,
+    phoneSetupRequired: nullableBoolean,
+    phone_setup_required: nullableBoolean
   })
   .passthrough()
   .transform((value) => {
@@ -87,6 +92,11 @@ const loginSchema = z
       cleanBoolean(value.is_locked) ??
       cleanBoolean(user.isLocked) ??
       cleanBoolean(user.is_locked);
+    const phoneSetupRequired =
+      cleanBoolean(value.phoneSetupRequired) ??
+      cleanBoolean(value.phone_setup_required) ??
+      cleanBoolean(user.phoneSetupRequired) ??
+      cleanBoolean(user.phone_setup_required);
 
     return {
       user: {
@@ -97,11 +107,13 @@ const loginSchema = z
         role: normalizeRole(user.role),
         isProfileCompleted,
         mustChangePassword,
-        isLocked
+        isLocked,
+        phoneSetupRequired
       },
       isProfileCompleted,
       mustChangePassword,
-      isLocked
+      isLocked,
+      phoneSetupRequired
     };
   });
 
@@ -227,18 +239,24 @@ export class ServiceError extends Error {
   status: number;
   code: string;
   retryAfter: number | null;
+  fields?: Record<string, string[]>;
+  details?: string[];
 
   constructor(
     message: string,
     status: number,
     code = 'SERVICE_ERROR',
-    retryAfter: number | null = null
+    retryAfter: number | null = null,
+    fields?: Record<string, string[]>,
+    details?: string[]
   ) {
     super(message);
     this.name = 'ServiceError';
     this.status = status;
     this.code = code;
     this.retryAfter = retryAfter;
+    this.fields = fields;
+    this.details = details;
   }
 }
 
@@ -325,7 +343,7 @@ function toRegisterCompletePayload(input: RegisterInputDTO) {
   );
 }
 
-function toServiceError(error: unknown): ServiceError {
+export function toServiceError(error: unknown): ServiceError {
   if (error instanceof ServiceError) return error;
   if (error instanceof ApiError) {
     const message =
@@ -343,7 +361,9 @@ function toServiceError(error: unknown): ServiceError {
       message,
       error.status,
       error.code ?? payloadCode ?? 'API_ERROR',
-      error.retryAfter
+      error.retryAfter,
+      error.fields,
+      error.details
     );
   }
   return new ServiceError('خطای غیرمنتظره رخ داد.', 500, 'UNEXPECTED');
@@ -455,6 +475,8 @@ export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {
     });
   } catch (error) {
     throw toServiceError(error);
+  } finally {
+    closeActiveChatSockets();
   }
 }
 
@@ -576,6 +598,7 @@ export async function completePasswordReset(
       }
     );
 
+    closeActiveChatSockets();
     return messageSchema.parse(result);
   } catch (error) {
     throw toServiceError(error);

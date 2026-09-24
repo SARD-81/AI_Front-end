@@ -118,7 +118,8 @@
     "emptyState": {
       "logoAlt": "Shahid Beheshti University logo",
       "title": "Welcome to Shahid Beheshti University AI Assistant",
-      "description": "Your educational assistant for the Faculty of Computer Science and Engineering. Ask about courses, schedules, and student services.",
+      "description": "Soha, the assistant of Shahid Beheshti University",
+      "facultyDescription": "Ask about courses, schedules, and university services.",
       "suggestedPrompts": [
         "What should I do to register and prepare for my first semester?",
         "Where can I find course registration, add/drop and exam dates?",
@@ -211,7 +212,7 @@
     "hero": {
       "logoAlt": "University logo",
       "title": "Shahid Beheshti University AI Assistant",
-      "description": "Secure access to the educational assistant for the Faculty of Computer Science and Engineering.",
+      "description": "Soha, the assistant of Shahid Beheshti University",
       "tagline": "Secure, role-aware access for students, professors, and university staff."
     },
     "card": {
@@ -223,6 +224,57 @@
       "switchToLogin": "Already have an account? Sign in",
       "resetTitle": "Reset password",
       "resetDescription": "Enter your university email, verify the code, and create a new password."
+    },
+    "phone": {
+      "logoAlt": "Shahid Beheshti University logo",
+      "university": "Soha, the assistant of Shahid Beheshti University",
+      "language": "Language",
+      "identifyTitle": "Continue with mobile number",
+      "identifyBody": "Enter your number. A stored number asks for a password. A new number continues into account creation.",
+      "phoneLabel": "Mobile number",
+      "continue": "Continue",
+      "loading": "Please wait…",
+      "legacyAction": "I already had an email account",
+      "legacyBody": "This path is only for an existing email account that has no phone yet. A university email and password do not create a new Soha account.",
+      "passwordLabel": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "signIn": "Sign in",
+      "forgot": "Forgot this number's password",
+      "back": "Back",
+      "smsRequested": "The SMS request was accepted. Delivery to the handset is not guaranteed.",
+      "registerWarningTitle": "This number will not join an old account",
+      "registerWarningBody": "If you already had an email account with no phone, continuing here creates a second account. Use the email path instead.",
+      "sendCode": "Request code",
+      "codeLabel": "SMS code",
+      "verify": "Verify code",
+      "resend": "Request another code",
+      "resendWait": "Request again in {seconds}s",
+      "registerTitle": "Create your Soha account",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "role": "Role",
+      "staffCategory": "Staff category",
+      "emailOptional": "Email (optional, unverified)",
+      "emailHint": "An optional email is not verified and cannot be used for password recovery.",
+      "confirmPassword": "Repeat password",
+      "createAccount": "Create account and sign in",
+      "savePassword": "Save new password",
+      "resetDone": "Password changed. Sign in again. The previous session was closed.",
+      "passwordMismatch": "The passwords do not match.",
+      "genericError": "The request failed.",
+      "setupBody": "This account does not have a verified phone yet. There is no self-service way to attach a number to an old account. Until support or the planned migration attaches it, keep using email login.",
+      "continueToApp": "Continue to Soha",
+      "roles": {
+        "student": "Student",
+        "professor": "Professor",
+        "staff": "Staff"
+      },
+      "categories": {
+        "faculty_administration": "Faculty administration",
+        "vice_presidency": "Vice presidency",
+        "other": "Other"
+      }
     },
     "login": {
       "success": "Signed in successfully.",

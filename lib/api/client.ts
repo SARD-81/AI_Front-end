@@ -10,7 +10,9 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code?: string,
     public readonly payload?: unknown,
-    public readonly retryAfter: number | null = null
+    public readonly retryAfter: number | null = null,
+    public readonly fields?: Record<string, string[]>,
+    public readonly details?: string[]
   ) {
     super(message);
     this.name = 'ApiError';
@@ -134,12 +136,25 @@ async function parseResponse<T>(response: Response): Promise<T> {
     const errorMessage = isRateLimitCode(errorCode)
       ? formatRateLimitMessage(getClientLocale(), errorCode, retryAfter)
       : payloadMessage || 'API request failed';
+    const record =
+      data && typeof data === 'object' && !Array.isArray(data)
+        ? (data as Record<string, unknown>)
+        : undefined;
+    const details = Array.isArray(record?.details)
+      ? record.details.filter((item): item is string => typeof item === 'string')
+      : undefined;
+    const fields =
+      record?.fields && typeof record.fields === 'object' && !Array.isArray(record.fields)
+        ? (record.fields as Record<string, string[]>)
+        : undefined;
     const error = new ApiError(
       errorMessage,
       response.status,
       errorCode,
       data,
-      retryAfter
+      retryAfter,
+      fields,
+      details
     );
 
     if (response.status === 401) {

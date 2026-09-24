@@ -1,7 +1,7 @@
 'use client';
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
-import { FacultyIdentity } from '@/components/branding/FacultyIdentity';
+import { PhoneAuthExperience } from '@/components/auth/PhoneAuthExperience';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
@@ -61,7 +61,13 @@ function safeNextUrl(next: string | null, locale: string): string {
   return trimmed;
 }
 
-export function AuthClient({ locale }: { locale: string }) {
+export function AuthClient({
+  locale,
+  phoneAuthEnabled = false
+}: {
+  locale: string;
+  phoneAuthEnabled?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -216,6 +222,10 @@ export function AuthClient({ locale }: { locale: string }) {
     }
   };
 
+  if (phoneAuthEnabled) {
+    return <PhoneAuthExperience locale={locale} />;
+  }
+
   return (
     <main className="relative min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#060a13] text-white">
       <div className="bg-slate-950/38 pointer-events-none absolute inset-0" />
@@ -248,10 +258,6 @@ export function AuthClient({ locale }: { locale: string }) {
                   >
                     {t('hero.title')}
                   </motion.h1>
-                  <FacultyIdentity
-                    inverse
-                    className="justify-start sm:justify-center"
-                  />
                   <motion.p
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}

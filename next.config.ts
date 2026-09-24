@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type {NextConfig} from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -6,6 +7,9 @@ const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  // A lockfile outside this repo was making Next treat the user home as the
+  // workspace root and proxy dev requests back to itself.
+  outputFileTracingRoot: path.resolve(process.cwd()),
   async headers() {
     return [
       {
