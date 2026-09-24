@@ -5,19 +5,12 @@ import { FacultyIdentity } from '@/components/branding/FacultyIdentity';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
+import { ArrowUpLeft, Check, ShieldCheck, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { PasswordResetWizard } from '@/components/auth/PasswordResetWizard';
 import { SignupWizard } from '@/components/auth/SignupWizard';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { isAbortError, loginUser } from '@/lib/services/auth-service';
 import type { LoginResultDTO } from '@/lib/types/auth';
 
@@ -216,203 +209,249 @@ export function AuthClient({ locale }: { locale: string }) {
     }
   };
 
+  const isNewUser = authMode === 'signup';
+
   return (
-    <main className="relative min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#060a13] text-white">
-      <div className="bg-slate-950/38 pointer-events-none absolute inset-0" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(59,130,246,0.30),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(148,163,184,0.18),transparent_32%),linear-gradient(115deg,rgba(2,6,23,0.86)_0%,rgba(15,23,42,0.54)_48%,rgba(2,6,23,0.84)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/10 to-transparent" />
-      <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-28 bottom-12 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl" />
+    <main
+      id="main-content"
+      className="auth-page relative min-h-[100dvh] overflow-x-hidden bg-[#f2f8fa] text-[#073c55]"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,#d8f2f5_0,transparent_32%),radial-gradient(circle_at_90%_92%,#dbeef4_0,transparent_36%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(#b5d7df_1px,transparent_1px),linear-gradient(90deg,#b5d7df_1px,transparent_1px)] [background-size:64px_64px] [mask-image:linear-gradient(to_bottom,transparent,black_45%,transparent)]"
+      />
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-7xl items-start px-3 py-3 sm:px-4 sm:py-6 md:px-8 lg:items-center lg:py-10">
-        <div className="grid w-full min-w-0 items-center gap-3 sm:gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 xl:gap-12">
-          <section className="relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.08] p-4 shadow-2xl shadow-slate-950/40 backdrop-blur-xl sm:rounded-[2rem] sm:p-6 md:p-8 lg:min-h-[640px]">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_32%,rgba(59,130,246,0.14)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-            <div className="pointer-events-none absolute -bottom-28 -right-20 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1376px] flex-col px-4 pb-8 pt-4 sm:px-8 sm:pt-6 lg:px-12 lg:pb-10">
+        <header className="flex items-center justify-between gap-4 border-b border-[#c7dfe5] pb-4 sm:pb-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <UniversityLogo
+              alt={t('hero.logoAlt')}
+              className="h-12 w-12 sm:h-14 sm:w-14"
+            />
+            <div className="min-w-0 border-s border-[#b8d7df] ps-3">
+              <p className="font-display-fa text-xl font-bold leading-7 text-[#075373] sm:text-2xl">
+                {t('hero.productName')}
+              </p>
+              <p className="text-[11px] leading-5 text-[#537387] sm:text-xs">
+                {t('hero.university')}
+              </p>
+            </div>
+          </div>
+          <div
+            role="group"
+            aria-label={t('languageSwitch.language')}
+            dir="ltr"
+            className="flex shrink-0 rounded-xl border border-[#c1dce3] bg-white/80 p-1 shadow-sm"
+          >
+            {(['en', 'fa'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => selectLocale(option)}
+                aria-pressed={locale === option}
+                aria-label={t('languageSwitch.ariaLabel', {
+                  locale: t(`languageSwitch.${option}`)
+                })}
+                className={`min-h-9 min-w-10 rounded-lg px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0786a4] ${locale === option ? 'bg-[#075373] text-white' : 'text-[#537387] hover:bg-[#e4f4f6]'}`}
+              >
+                {t(`languageSwitch.${option}`)}
+              </button>
+            ))}
+          </div>
+        </header>
 
-            <div className="relative z-10 flex h-full flex-col justify-between gap-4 sm:gap-8 lg:gap-12">
-              <div className="flex flex-1 items-center gap-4 sm:flex-col sm:justify-center sm:space-y-6 sm:text-center lg:space-y-8">
-                <UniversityLogo
-                  alt={t('hero.logoAlt')}
-                  inverse
-                  className="h-16 w-16 sm:mx-auto sm:h-28 sm:w-28 md:h-40 md:w-40"
-                />
+        <div className="grid flex-1 items-center gap-7 pt-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:gap-12 lg:pt-8">
+          <section
+            aria-label={t('card.accessTitle')}
+            className="order-1 mx-auto w-full max-w-[570px] overflow-hidden rounded-[28px] border border-[#0c6684] bg-[linear-gradient(155deg,#085878_0%,#064460_55%,#073a53_100%)] text-white shadow-[0_26px_80px_-26px_rgba(4,66,94,0.52)] lg:order-1 lg:mx-0"
+          >
+            <div className="border-b border-white/15 bg-white/[0.05] px-5 pb-5 pt-6 sm:px-9 sm:pb-6 sm:pt-8">
+              <div className="mb-5 flex items-center gap-2 text-xs font-medium tracking-wide text-[#bdebf0]">
+                <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+                {t('card.accessTitle')}
+              </div>
+              <h1 className="text-2xl font-extrabold leading-[1.6] sm:text-3xl">
+                {authMode === 'login'
+                  ? t('card.loginTitle')
+                  : authMode === 'signup'
+                    ? t('card.signupTitle')
+                    : t('card.resetTitle')}
+              </h1>
+              <p className="mt-1 max-w-md text-sm leading-7 text-[#c7e2e9]">
+                {authMode === 'login'
+                  ? t('card.loginDescription')
+                  : authMode === 'signup'
+                    ? t('card.signupDescription')
+                    : t('card.resetDescription')}
+              </p>
+            </div>
 
-                <div className="min-w-0 flex-1 space-y-1.5 text-start sm:mx-auto sm:max-w-2xl sm:space-y-5 sm:text-center">
-                  <motion.h1
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="font-display-fa text-xl font-black leading-8 tracking-tight text-white drop-shadow-lg sm:text-3xl sm:leading-[1.8] md:text-4xl xl:text-5xl"
+            <div className="px-5 pb-6 pt-5 sm:px-9 sm:pb-9 sm:pt-6">
+              <div
+                role="group"
+                aria-label={t('card.choosePath')}
+                className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/15 bg-[#053950] p-1.5"
+              >
+                {(['signup', 'login'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => updateMode(mode)}
+                    disabled={busy || postSignupAuthLoading}
+                    aria-pressed={authMode === mode}
+                    className={`min-h-12 rounded-xl px-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89e2eb] disabled:cursor-not-allowed disabled:opacity-50 ${authMode === mode ? 'bg-white text-[#075373] shadow-[0_3px_12px_rgba(0,20,34,0.2)]' : 'text-[#c1dbe4] hover:bg-white/10 hover:text-white'}`}
                   >
-                    {t('hero.title')}
-                  </motion.h1>
-                  <FacultyIdentity
-                    inverse
-                    className="justify-start sm:justify-center"
-                  />
-                  <motion.p
+                    {mode === 'signup'
+                      ? t('card.signupTab')
+                      : t('card.loginTab')}
+                  </button>
+                ))}
+              </div>
+
+              {authMode !== 'reset' ? (
+                <div className="mb-6 flex gap-3 rounded-2xl border border-[#81d1dc]/35 bg-[#0d7089]/45 p-4">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#b3f2f0]/15 text-[#b3f2f0]">
+                    {isNewUser ? (
+                      <Check aria-hidden="true" className="h-4 w-4" />
+                    ) : (
+                      <Sparkles aria-hidden="true" className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div className="min-w-0 text-start">
+                    <p className="text-sm font-bold leading-6 text-white">
+                      {isNewUser
+                        ? t('card.signupHintTitle')
+                        : t('card.firstTimeTitle')}
+                    </p>
+                    <p className="mt-1 text-xs leading-6 text-[#d8edf1]">
+                      {isNewUser
+                        ? t('card.signupHint')
+                        : t('card.firstTimeHint')}
+                    </p>
+                    {!isNewUser ? (
+                      <button
+                        type="button"
+                        onClick={() => updateMode('signup')}
+                        disabled={busy || postSignupAuthLoading}
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#b3f2f0] underline decoration-[#b3f2f0]/45 underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89e2eb] disabled:opacity-50"
+                      >
+                        {t('card.startSignup')}{' '}
+                        <ArrowUpLeft
+                          aria-hidden="true"
+                          className="h-4 w-4 ltr:rotate-90 rtl:-rotate-90"
+                        />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              <AnimatePresence mode="wait" initial={false}>
+                {authMode === 'login' ? (
+                  <motion.div
+                    key="login"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: 'easeOut', delay: 0.06 }}
-                    className="text-slate-200/82 hidden max-w-xl text-sm leading-7 sm:block md:text-base md:leading-8"
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
                   >
-                    {t('hero.description')}
-                  </motion.p>
-                </div>
-              </div>
-
-              <div className="border-white/12 mx-auto hidden max-w-xl rounded-3xl border bg-slate-950/30 px-5 py-4 text-center text-sm leading-7 text-sky-50/90 shadow-lg shadow-black/20 backdrop-blur-md sm:block">
-                {t('hero.tagline')}
-              </div>
+                    <LoginForm
+                      busy={busy || postSignupAuthLoading}
+                      setBusy={setBusy}
+                      abortRef={controllersRef.login}
+                      initialIdentifier={loginInitialIdentifier}
+                      onForgotPassword={() => updateMode('reset')}
+                      onSuccess={handleLoginSuccess}
+                    />
+                  </motion.div>
+                ) : authMode === 'signup' ? (
+                  <motion.div
+                    key="signup"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <SignupWizard
+                      busy={busy || postSignupAuthLoading}
+                      setBusy={setBusy}
+                      resetToken={signupResetToken}
+                      controllerRefs={{
+                        sendOtp: controllersRef.sendOtp,
+                        verifyOtp: controllersRef.verifyOtp,
+                        register: controllersRef.register
+                      }}
+                      onRegistered={handleRegistered}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="reset"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <PasswordResetWizard
+                      busy={busy || postSignupAuthLoading}
+                      setBusy={setBusy}
+                      controllerRefs={{
+                        requestOtp: controllersRef.resetRequestOtp,
+                        verifyOtp: controllersRef.resetVerifyOtp,
+                        complete: controllersRef.resetComplete
+                      }}
+                      onBackToLogin={() => updateMode('login')}
+                      onCompleted={handlePasswordResetCompleted}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </section>
 
-          <section className="flex min-w-0 items-center justify-center lg:justify-start">
-            <Card className="border-white/16 bg-slate-950/58 relative w-full min-w-0 max-w-xl overflow-hidden rounded-[1.5rem] text-white shadow-2xl shadow-slate-950/55 backdrop-blur-2xl sm:rounded-[2rem]">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.18),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.10),transparent_34%)]" />
-              <div className="pointer-events-none absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
-              <div className="relative z-10 min-w-0">
-                <CardHeader className="space-y-3 p-4 pb-2 sm:space-y-4 sm:p-6 sm:pb-3 md:p-8 md:pb-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div
-                      role="group"
-                      aria-label={t('languageSwitch.language')}
-                      dir="ltr"
-                      className="inline-flex overflow-hidden rounded-md bg-white/[0.06] ring-1 ring-white/15"
-                    >
-                      {(['en', 'fa'] as const).map((option) => {
-                        const active = locale === option;
-                        return (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => selectLocale(option)}
-                            aria-pressed={active}
-                            aria-label={t('languageSwitch.ariaLabel', {
-                              locale: t(`languageSwitch.${option}`)
-                            })}
-                            title={t('languageSwitch.ariaLabel', {
-                              locale: t(`languageSwitch.${option}`)
-                            })}
-                            className={
-                              active
-                                ? 'flex h-9 w-11 items-center justify-center bg-[#3b4bf6] text-[13px] font-bold tracking-wide text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70'
-                                : 'flex h-9 w-11 items-center justify-center bg-transparent text-[13px] font-bold tracking-wide text-slate-200/80 transition-colors hover:bg-white/[0.1] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70'
-                            }
-                          >
-                            {t(`languageSwitch.${option}`)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-right sm:space-y-3">
-                    <CardTitle className="text-xl font-black leading-relaxed text-white sm:text-2xl md:text-3xl">
-                      {authMode === 'login'
-                        ? t('card.loginTitle')
-                        : authMode === 'reset'
-                          ? t('card.resetTitle')
-                          : t('card.signupTitle')}
-                    </CardTitle>
-                    <CardDescription className="text-xs leading-6 text-slate-300/85 sm:text-sm sm:leading-7">
-                      {authMode === 'login'
-                        ? t('card.loginDescription')
-                        : authMode === 'reset'
-                          ? t('card.resetDescription')
-                          : t('card.signupDescription')}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="min-w-0 p-4 pt-2 sm:p-6 sm:pt-2 md:p-8 md:pt-3">
-                  <div className="bg-slate-950/32 min-w-0 rounded-2xl border border-white/10 p-3 shadow-inner shadow-black/25 backdrop-blur-md sm:rounded-3xl sm:p-4 md:p-5">
-                    <AnimatePresence mode="wait" initial={false}>
-                      {authMode === 'login' ? (
-                        <motion.div
-                          key="login"
-                          initial={{ opacity: 0, y: 8, height: 0 }}
-                          animate={{ opacity: 1, y: 0, height: 'auto' }}
-                          exit={{ opacity: 0, y: -8, height: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="min-w-0 overflow-hidden"
-                        >
-                          <LoginForm
-                            busy={busy || postSignupAuthLoading}
-                            setBusy={setBusy}
-                            abortRef={controllersRef.login}
-                            initialIdentifier={loginInitialIdentifier}
-                            onForgotPassword={() => updateMode('reset')}
-                            onSuccess={handleLoginSuccess}
-                          />
-                        </motion.div>
-                      ) : authMode === 'signup' ? (
-                        <motion.div
-                          key="signup"
-                          initial={{ opacity: 0, y: 8, height: 0 }}
-                          animate={{ opacity: 1, y: 0, height: 'auto' }}
-                          exit={{ opacity: 0, y: -8, height: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="min-w-0 overflow-hidden"
-                        >
-                          <SignupWizard
-                            busy={busy || postSignupAuthLoading}
-                            setBusy={setBusy}
-                            resetToken={signupResetToken}
-                            controllerRefs={{
-                              sendOtp: controllersRef.sendOtp,
-                              verifyOtp: controllersRef.verifyOtp,
-                              register: controllersRef.register
-                            }}
-                            onRegistered={handleRegistered}
-                          />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="reset"
-                          initial={{ opacity: 0, y: 8, height: 0 }}
-                          animate={{ opacity: 1, y: 0, height: 'auto' }}
-                          exit={{ opacity: 0, y: -8, height: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className="min-w-0 overflow-hidden"
-                        >
-                          <PasswordResetWizard
-                            busy={busy || postSignupAuthLoading}
-                            setBusy={setBusy}
-                            controllerRefs={{
-                              requestOtp: controllersRef.resetRequestOtp,
-                              verifyOtp: controllersRef.resetVerifyOtp,
-                              complete: controllersRef.resetComplete
-                            }}
-                            onBackToLogin={() => updateMode('login')}
-                            onCompleted={handlePasswordResetCompleted}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <Separator className="my-4 bg-white/10 sm:my-6" />
-
-                  <button
-                    type="button"
-                    className="inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-white/[0.11] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() =>
-                      updateMode(authMode === 'login' ? 'signup' : 'login')
-                    }
-                    disabled={busy || postSignupAuthLoading}
-                  >
-                    {authMode === 'login'
-                      ? t('card.switchToSignup')
-                      : t('card.switchToLogin')}
-                  </button>
-                </CardContent>
+          <section className="relative order-2 hidden min-w-0 flex-col justify-center py-8 lg:flex lg:ps-6">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute end-0 top-1/2 h-[420px] w-[420px] -translate-y-1/2 rounded-full border border-[#a6d8df]/65 bg-[#e1f5f7]/60 shadow-[0_0_0_45px_rgba(225,245,247,0.26),0_0_0_95px_rgba(225,245,247,0.18)]"
+            />
+            <div className="relative max-w-[590px]">
+              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#b4dee4] bg-white/75 px-4 py-2 text-xs font-semibold text-[#075373] shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-[#0c9caf]" />
+                {t('hero.eyebrow')}
               </div>
-            </Card>
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="font-display-fa text-balance text-4xl font-bold leading-[1.6] text-[#063f59] xl:text-5xl xl:leading-[1.55]"
+              >
+                {t('hero.title')}
+              </motion.h2>
+              <p className="mt-6 max-w-lg text-base leading-9 text-[#496b7e]">
+                {t('hero.description')}
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <span className="rounded-full border border-[#c5e0e4] bg-white/80 px-4 py-2 text-sm font-medium text-[#205d73]">
+                  {t('hero.pillOne')}
+                </span>
+                <span className="rounded-full border border-[#c5e0e4] bg-white/80 px-4 py-2 text-sm font-medium text-[#205d73]">
+                  {t('hero.pillTwo')}
+                </span>
+              </div>
+              <div className="mt-16 flex items-center gap-3 border-t border-[#c4dce2] pt-6">
+                <div className="h-10 w-1 rounded-full bg-[#0a8baa]" />
+                <FacultyIdentity className="justify-start text-[#537387]" />
+              </div>
+            </div>
           </section>
         </div>
+        <footer className="pt-6 text-center text-xs leading-6 text-[#648294] lg:text-start">
+          {t('hero.footer')}
+        </footer>
       </div>
     </main>
   );
