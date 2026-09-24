@@ -18,6 +18,15 @@ body {
   font-feature-settings: 'ss01';
 }
 
+/* Keep the entry experience aligned with the university teal palette without
+   changing the established colors of the authenticated application. */
+.auth-page {
+  --primary: 191 87% 31%;
+  --primary-foreground: 0 0% 100%;
+  --field-focus: 190 84% 39%;
+  --ring: 190 84% 39%;
+}
+
 /* Text fields take their direction from what the user actually typed instead of
    a hard-coded LTR/RTL, so typing Persian in an "English" field (or the other
    way round) is never fought by the field itself. */
@@ -60,7 +69,6 @@ textarea:-webkit-autofill:focus {
   border: 1px solid hsl(var(--border));
   border-radius: 0.375rem;
 }
-
 
 .prose-chat {
   color: hsl(var(--foreground));

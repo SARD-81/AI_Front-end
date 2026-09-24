@@ -210,19 +210,34 @@
   "auth": {
     "hero": {
       "logoAlt": "University logo",
-      "title": "Shahid Beheshti University AI Assistant",
-      "description": "Secure access to the educational assistant for the Faculty of Computer Science and Engineering.",
-      "tagline": "Secure, role-aware access for students, professors, and university staff."
+      "title": "Meet Soha, your university AI assistant",
+      "description": "A clearer way to ask questions, explore university information and find answers with your own Soha account.",
+      "tagline": "Secure, role-aware access for students, professors, and university staff.",
+      "productName": "Soha",
+      "university": "Shahid Beheshti University assistant",
+      "eyebrow": "Your space at Soha",
+      "pillOne": "For the university community",
+      "pillTwo": "Answers with university sources",
+      "footer": "Shahid Beheshti University · Faculty of Computer Science and Engineering"
     },
     "card": {
       "loginTitle": "Sign in",
       "signupTitle": "Create account",
-      "loginDescription": "Enter your university email and password to sign in.",
-      "signupDescription": "To create an account, first verify your university email.",
+      "loginDescription": "Use your university email and the password you created for Soha.",
+      "signupDescription": "Your first visit? Create a Soha account here.",
       "switchToSignup": "Don’t have an account? Sign up",
       "switchToLogin": "Already have an account? Sign in",
       "resetTitle": "Reset password",
-      "resetDescription": "Enter your university email, verify the code, and create a new password."
+      "resetDescription": "Enter your university email, verify the code, and create a new password.",
+      "accessTitle": "Your Soha account",
+      "choosePath": "Choose how to access Soha",
+      "loginTab": "Sign in",
+      "signupTab": "Create account",
+      "firstTimeTitle": "New to Soha?",
+      "firstTimeHint": "Register with your university email and create a password for Soha. Your university system password does not sign you in here.",
+      "startSignup": "Create a Soha account",
+      "signupHintTitle": "Create your Soha account in two steps",
+      "signupHint": "Verify your university email, then enter your details and set your Soha password."
     },
     "login": {
       "success": "Signed in successfully.",
@@ -260,11 +275,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",
