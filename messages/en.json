@@ -227,10 +227,12 @@
     },
     "phone": {
       "logoAlt": "Shahid Beheshti University logo",
+      "brandName": "Soha",
+      "identityLine": "Intelligent assistant of Shahid Beheshti University",
       "university": "Soha, the assistant of Shahid Beheshti University",
       "language": "Language",
       "identifyTitle": "Continue with your mobile number",
-      "identifyBody": "Enter the number. If it already belongs to an account, we ask for that password. If it does not, you can create a new account.",
+      "identifyBody": "Enter the number. A known account asks for its password; a new number starts a new account.",
       "registerProgress": "New account steps",
       "railTitle": "Three ways in",
       "railExisting": "A saved number signs in with that account’s password.",

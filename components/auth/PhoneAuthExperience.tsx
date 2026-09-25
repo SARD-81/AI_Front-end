@@ -536,17 +536,14 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   return (
     <main id="main-content" className={surfaceStyles.surface}>
       <div className={surfaceStyles.canvas}>
-        <header className={surfaceStyles.topbar}>
-          <div className={surfaceStyles.brand}>
-            <span className={surfaceStyles.markPlate}>
-              <UniversityLogo alt={t('logoAlt')} onLight className="h-11 w-11" />
-            </span>
-            <div>
-              <p className={`${surfaceStyles.wordmark} font-display-fa`}>سها</p>
-              <p className={surfaceStyles.university}>{t('university')}</p>
-            </div>
+        <section className={surfaceStyles.identity}>
+          <div className={surfaceStyles.fieldArt} aria-hidden="true">
+            <span className={surfaceStyles.glow} />
+            <span className={surfaceStyles.veil} />
+            <CampusField className={surfaceStyles.arches} />
           </div>
-          <div role="group" aria-label={t('language')} dir="ltr" className={surfaceStyles.languages}>
+          <div role="group" aria-label={t('language')} className={surfaceStyles.languages}>
+            <div dir="ltr" className={surfaceStyles.languageRow}>
             {(['en', 'fa'] as const).map((option) => (
               <button
                 key={option}
@@ -558,10 +555,20 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 {option.toUpperCase()}
               </button>
             ))}
+            </div>
           </div>
-        </header>
+          <div className={surfaceStyles.identityCopy}>
+            <div className={surfaceStyles.brandRow}>
+              <span className={surfaceStyles.markPlate}>
+                <UniversityLogo alt={t('logoAlt')} onLight className="h-11 w-11 lg:h-14 lg:w-14" />
+              </span>
+              <p className={`${surfaceStyles.wordmark} font-display-fa`}>{t('brandName')}</p>
+            </div>
+            <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
+          </div>
+        </section>
 
-        <div className={surfaceStyles.stage}>
+        <div className={surfaceStyles.sheet}>
           <section className={surfaceStyles.panel} aria-labelledby="auth-step-title">
             {step === 'password' || step === 'register-otp' || step === 'register-code' || step === 'activation' || step === 'reset-otp' || step === 'legacy' || step === 'legacy-reset' || step === 'imported-password' ? (
               <button
@@ -577,7 +584,6 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 {t('back')}
               </button>
             ) : null}
-            <p className={surfaceStyles.kicker}>{t('university')}</p>
             <h1 id="auth-step-title" className={surfaceStyles.title} tabIndex={-1}>
               {heading}
             </h1>
@@ -651,6 +657,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
               </div>
             ) : null}
 
+            <div key={step} className={surfaceStyles.motion}>
             {step === 'identify' ? (
               <div className={surfaceStyles.form}>
                 <button type="button" className={surfaceStyles.primary} disabled={busy || !phoneOk} onClick={onIdentify}>
@@ -934,24 +941,28 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 </button>
               </div>
             ) : null}
+            </div>
           </section>
-
-          <aside className={surfaceStyles.rail}>
-            <span className={`${surfaceStyles.markPlate} ${surfaceStyles.railMark}`}>
-              <UniversityLogo alt={t('logoAlt')} onLight className="h-16 w-16" />
-            </span>
-            <p className={`${surfaceStyles.railName} font-display-fa`}>سها</p>
-            <p className={surfaceStyles.university}>{t('university')}</p>
-            <p className={surfaceStyles.label}>{t('railTitle')}</p>
-            <ul className={surfaceStyles.paths}>
-              <li><strong>{t('passwordTitle')}</strong><span> {t('railExisting')}</span></li>
-              <li><strong>{t('registerOtpTitle')}</strong><span> {t('railNew')}</span></li>
-              <li><strong>{t('legacyAction')}</strong><span> {t('railLegacy')}</span></li>
-            </ul>
-          </aside>
         </div>
       </div>
     </main>
+  );
+}
+
+function CampusField({className}: {className?: string}) {
+  return (
+    <svg className={className} viewBox="0 0 640 420" fill="none" aria-hidden="true">
+      <path d="M20 300h600" stroke="rgba(244,251,251,0.28)" strokeWidth="1.4" />
+      <path d="M48 360V168c0-78 62-132 140-132" stroke="rgba(244,251,251,0.72)" strokeWidth="2" />
+      <path d="M188 36c78 0 140 54 140 132v192" stroke="rgba(244,251,251,0.72)" strokeWidth="2" />
+      <path d="M328 360V150c0-64 50-112 116-112" stroke="rgba(94,224,214,0.95)" strokeWidth="2" />
+      <path d="M444 38c66 0 120 48 120 112v210" stroke="rgba(94,224,214,0.95)" strokeWidth="2" />
+      <path d="M96 360V214c0-52 40-90 92-90s92 38 92 90v146" stroke="rgba(244,251,251,0.4)" strokeWidth="1.6" />
+      <path d="M250 360V230c0-42 34-74 78-74" stroke="rgba(228,181,106,0.95)" strokeWidth="2.2" />
+      <path d="M24 248h210M400 248h210" stroke="rgba(244,251,251,0.22)" strokeWidth="1.2" />
+      <rect x="58" y="188" width="86" height="54" rx="3" stroke="rgba(244,251,251,0.35)" strokeWidth="1.4" />
+      <rect x="430" y="150" width="110" height="70" rx="3" stroke="rgba(46,196,198,0.55)" strokeWidth="1.4" />
+    </svg>
   );
 }
 
