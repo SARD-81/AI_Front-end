@@ -254,7 +254,7 @@ describe('phone auth OTP countdown', () => {
     await openRegistration();
 
     expect(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'})).toBeTruthy();
-    expect(screen.getByText(/حساب دوم می‌سازد/)).toBeTruthy();
+    expect(screen.getByText('ثبت‌نام با شماره حساب جدید می‌سازد و حساب ایمیلی قبلی را وصل نمی‌کند.')).toBeTruthy();
     expect(screen.queryByLabelText('کد پیامک')).toBeNull();
 
     await act(async () => {
@@ -312,9 +312,9 @@ describe('phone auth OTP countdown', () => {
   it('shows the legacy email path before the first registration code', async () => {
     renderAuth();
     expect(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'})).toBeTruthy();
-    expect(screen.getByText(/حساب ایمیلی قبلی را به این شماره وصل نمی‌کند/)).toBeTruthy();
+    expect(screen.queryByText(/حساب ایمیلی قبلی را به این شماره وصل نمی‌کند/)).toBeNull();
     fireEvent.click(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'}));
-    expect(await screen.findByText(/حساب جدید ساخته نمی‌شود/)).toBeTruthy();
+    expect(await screen.findByText('برای ورود به حساب ایمیلی قبلی، ایمیل و رمز همان حساب را وارد کنید.')).toBeTruthy();
     expect(screen.queryByRole('button', {name: 'حساب ندارید؟ ثبت‌نام'})).toBeNull();
   });
 
@@ -366,7 +366,7 @@ describe('phone auth OTP countdown', () => {
     });
     fireEvent.change(await screen.findByLabelText('نام'), {target: {value: 'علی'}});
     fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'رضایی'}});
-    fireEvent.change(screen.getByLabelText('ایمیل (اختیاری و تأییدنشده)'), {target: {value: 'old@sbu.ac.ir'}});
+    fireEvent.change(screen.getByLabelText('ایمیل (اختیاری)'), {target: {value: 'old@sbu.ac.ir'}});
     fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'short'}});
     fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'short'}});
     await act(async () => {
@@ -386,7 +386,7 @@ describe('phone auth OTP countdown', () => {
     });
     expect(screen.getByText(/ثبت‌نام تازه آن حساب را به این شماره وصل نمی‌کند/)).toBeTruthy();
     expect(screen.getByRole('button', {name: 'ورود به حساب ایمیلی'})).toBeTruthy();
-    expect((screen.getByLabelText('ایمیل (اختیاری و تأییدنشده)') as HTMLInputElement).value).toBe('old@sbu.ac.ir');
+    expect((screen.getByLabelText('ایمیل (اختیاری)') as HTMLInputElement).value).toBe('old@sbu.ac.ir');
   });
 
   it('sends staff category only for staff and restarts a blocked registration without claiming expiry', async () => {

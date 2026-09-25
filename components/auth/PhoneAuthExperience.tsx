@@ -664,8 +664,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                   {busy ? t('loading') : t('continue')}
                 </button>
                 <div className={surfaceStyles.decision}>
-                  <p>{t('legacyLead')}</p>
-                  <button type="button" className={`${surfaceStyles.secondary} mt-3`} onClick={() => go('legacy')}>
+                  <button type="button" className={surfaceStyles.secondary} onClick={() => go('legacy')}>
                     {t('legacyAction')}
                   </button>
                 </div>
@@ -819,7 +818,6 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                   className={inputClass(Boolean(fieldError.password))}
                   invalid={Boolean(fieldError.password)}
                 />
-                <p className={surfaceStyles.hint}>{t('passwordGuide')}</p>
                 {fieldError.password?.length ? (
                   <ul role="alert" className={`${surfaceStyles.banner} ${surfaceStyles.errors}`}>
                     {fieldError.password.map((line) => (

@@ -24,6 +24,9 @@ export function ChatEmptyState({
             {t('emptyState.title')}
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
+            {t('emptyState.coverageLine')}
+          </p>
+          <p className="text-sm leading-6 text-muted-foreground">
             {t('emptyState.facultyDescription')}
           </p>
         </div>

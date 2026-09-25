@@ -541,7 +541,13 @@
   .identity {
     min-height: 100dvh;
     padding-block: 2.75rem;
-    padding-inline: 2.75rem 6.5rem;
+    padding-inline: 2.75rem;
+  }
+
+  .languages {
+    inset-inline-end: auto;
+    inset-inline-start: 1.25rem;
+    z-index: 3;
   }
 
   .identityCopy {
