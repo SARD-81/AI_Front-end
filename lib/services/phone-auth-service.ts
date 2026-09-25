@@ -1,15 +1,18 @@
-import {apiFetch} from '@/lib/api/client';
-import {API_ENDPOINTS} from '@/lib/config/api-endpoints';
-import {closeActiveChatSockets} from '@/lib/services/chat-service';
+import { apiFetch } from '@/lib/api/client';
+import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
+import { closeActiveChatSockets } from '@/lib/services/chat-service';
 import {
   loginSchema,
   ServiceError,
   toServiceError
 } from '@/lib/services/auth-service';
-import type {LoginResultDTO} from '@/lib/types/auth';
+import type { LoginResultDTO } from '@/lib/types/auth';
 
 export type PhoneNext = 'password' | 'register';
-export type StaffCategory = 'faculty_administration' | 'vice_presidency' | 'other';
+export type StaffCategory =
+  | 'faculty_administration'
+  | 'vice_presidency'
+  | 'other';
 export type PhoneRole = 'student' | 'professor' | 'staff';
 
 type AcceptedSms = {
@@ -18,10 +21,16 @@ type AcceptedSms = {
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
-async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+async function post<T>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<T> {
   try {
     return await apiFetch<T>(path, {
       method: 'POST',
@@ -34,15 +43,21 @@ async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promi
 }
 
 export async function identifyPhone(phoneNumber: string, signal?: AbortSignal) {
-  const data = await post<{next?: PhoneNext}>(
-    API_ENDPOINTS.auth.phone.identify,
-    {phone_number: phoneNumber},
-    signal
-  );
-  if (data.next !== 'password' && data.next !== 'register') {
-    throw new ServiceError('پاسخ شناسایی شماره نامعتبر است.', 502, 'AUTH_CONTRACT_INVALID');
+  const data = await post<{
+    next?: PhoneNext;
+    verification_required?: boolean;
+  }>(API_ENDPOINTS.auth.phone.identify, { phone_number: phoneNumber }, signal);
+  if (
+    (data.next !== 'password' && data.next !== 'register') ||
+    typeof data.verification_required !== 'boolean'
+  ) {
+    throw new ServiceError(
+      'پاسخ شناسایی شماره نامعتبر است.',
+      502,
+      'AUTH_CONTRACT_INVALID'
+    );
   }
-  return data.next;
+  return { next: data.next, verificationRequired: data.verification_required };
 }
 
 export async function loginWithPhone(
@@ -50,13 +65,13 @@ export async function loginWithPhone(
   password: string,
   signal?: AbortSignal
 ): Promise<
-  | {kind: 'session'; result: LoginResultDTO}
-  | {kind: 'activation'; activationToken: string; expiresIn?: number}
+  | { kind: 'session'; result: LoginResultDTO }
+  | { kind: 'activation'; activationToken: string; expiresIn?: number }
 > {
   const data = asRecord(
     await post<unknown>(
       API_ENDPOINTS.auth.phone.login,
-      {phone_number: phoneNumber, password},
+      { phone_number: phoneNumber, password },
       signal
     )
   );
@@ -64,21 +79,29 @@ export async function loginWithPhone(
     const activationToken =
       typeof data.activation_token === 'string' ? data.activation_token : '';
     if (!activationToken) {
-      throw new ServiceError('پاسخ فعال‌سازی شماره نامعتبر است.', 502, 'AUTH_CONTRACT_INVALID');
+      throw new ServiceError(
+        'پاسخ فعال‌سازی شماره نامعتبر است.',
+        502,
+        'AUTH_CONTRACT_INVALID'
+      );
     }
     return {
       kind: 'activation',
       activationToken,
-      expiresIn: typeof data.expires_in === 'number' ? data.expires_in : undefined
+      expiresIn:
+        typeof data.expires_in === 'number' ? data.expires_in : undefined
     };
   }
-  return {kind: 'session', result: loginSchema.parse(data)};
+  return { kind: 'session', result: loginSchema.parse(data) };
 }
 
-export async function resendActivationOtp(activationToken: string, signal?: AbortSignal) {
+export async function resendActivationOtp(
+  activationToken: string,
+  signal?: AbortSignal
+) {
   return post<AcceptedSms>(
     API_ENDPOINTS.auth.phone.activationResend,
-    {activation_token: activationToken},
+    { activation_token: activationToken },
     signal
   );
 }
@@ -90,16 +113,19 @@ export async function verifyActivationOtp(
 ) {
   const data = await post<unknown>(
     API_ENDPOINTS.auth.phone.activationVerify,
-    {activation_token: activationToken, code},
+    { activation_token: activationToken, code },
     signal
   );
   return loginSchema.parse(data);
 }
 
-export async function requestRegistrationOtp(phoneNumber: string, signal?: AbortSignal) {
+export async function requestRegistrationOtp(
+  phoneNumber: string,
+  signal?: AbortSignal
+) {
   return post<AcceptedSms>(
     API_ENDPOINTS.auth.phone.registrationRequestOtp,
-    {phone_number: phoneNumber},
+    { phone_number: phoneNumber },
     signal
   );
 }
@@ -112,14 +138,18 @@ export async function verifyRegistrationOtp(
   const data = asRecord(
     await post<unknown>(
       API_ENDPOINTS.auth.phone.registrationVerifyOtp,
-      {phone_number: phoneNumber, code},
+      { phone_number: phoneNumber, code },
       signal
     )
   );
   const registrationToken =
     typeof data.registration_token === 'string' ? data.registration_token : '';
   if (!registrationToken) {
-    throw new ServiceError('پاسخ ثبت‌نام نامعتبر است.', 502, 'AUTH_CONTRACT_INVALID');
+    throw new ServiceError(
+      'پاسخ ثبت‌نام نامعتبر است.',
+      502,
+      'AUTH_CONTRACT_INVALID'
+    );
   }
   return {
     registrationToken,
@@ -129,7 +159,8 @@ export async function verifyRegistrationOtp(
 
 export async function registerWithPhone(
   input: {
-    registrationToken: string;
+    registrationToken?: string;
+    phoneNumber?: string;
     firstName: string;
     lastName: string;
     password: string;
@@ -140,25 +171,34 @@ export async function registerWithPhone(
   signal?: AbortSignal
 ) {
   const body: Record<string, unknown> = {
-    registration_token: input.registrationToken,
     first_name: input.firstName,
     last_name: input.lastName,
     password: input.password,
     role: input.role
   };
+  if (input.registrationToken)
+    body.registration_token = input.registrationToken;
+  else if (input.phoneNumber) body.phone_number = input.phoneNumber;
   if (input.role === 'staff' && input.staffCategory) {
     body.staff_category = input.staffCategory;
   }
   if (input.email?.trim()) body.email = input.email.trim();
 
-  const data = await post<unknown>(API_ENDPOINTS.auth.phone.register, body, signal);
+  const data = await post<unknown>(
+    API_ENDPOINTS.auth.phone.register,
+    body,
+    signal
+  );
   return loginSchema.parse(data);
 }
 
-export async function requestPhonePasswordReset(phoneNumber: string, signal?: AbortSignal) {
+export async function requestPhonePasswordReset(
+  phoneNumber: string,
+  signal?: AbortSignal
+) {
   return post<AcceptedSms>(
     API_ENDPOINTS.auth.phone.resetRequestOtp,
-    {phone_number: phoneNumber},
+    { phone_number: phoneNumber },
     signal
   );
 }
@@ -171,13 +211,18 @@ export async function verifyPhonePasswordReset(
   const data = asRecord(
     await post<unknown>(
       API_ENDPOINTS.auth.phone.resetVerifyOtp,
-      {phone_number: phoneNumber, code},
+      { phone_number: phoneNumber, code },
       signal
     )
   );
-  const resetToken = typeof data.reset_token === 'string' ? data.reset_token : '';
+  const resetToken =
+    typeof data.reset_token === 'string' ? data.reset_token : '';
   if (!resetToken) {
-    throw new ServiceError('پاسخ بازیابی نامعتبر است.', 502, 'AUTH_CONTRACT_INVALID');
+    throw new ServiceError(
+      'پاسخ بازیابی نامعتبر است.',
+      502,
+      'AUTH_CONTRACT_INVALID'
+    );
   }
   return {
     resetToken,
@@ -190,9 +235,9 @@ export async function completePhonePasswordReset(
   newPassword: string,
   signal?: AbortSignal
 ) {
-  const data = await post<{status?: string}>(
+  const data = await post<{ status?: string }>(
     API_ENDPOINTS.auth.phone.resetComplete,
-    {reset_token: resetToken, new_password: newPassword},
+    { reset_token: resetToken, new_password: newPassword },
     signal
   );
   closeActiveChatSockets();

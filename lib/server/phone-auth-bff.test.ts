@@ -1,5 +1,5 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {ApiError} from '@/lib/server/backend-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/server/backend-types';
 
 const backendFetchResultMock = vi.hoisted(() => vi.fn());
 const setAuthCookiesMock = vi.hoisted(() => vi.fn());
@@ -33,7 +33,11 @@ import {
 function post(path: string, body: unknown, headers?: HeadersInit) {
   return new Request(`http://localhost${path}`, {
     method: 'POST',
-    headers: {'content-type': 'application/json', origin: 'http://localhost', ...headers},
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost',
+      ...headers
+    },
     body: JSON.stringify(body)
   });
 }
@@ -65,60 +69,124 @@ describe('phone auth BFF contract', () => {
   it('stays disabled unless PHONE_AUTH_ENABLED=true', async () => {
     vi.stubEnv('PHONE_AUTH_ENABLED', 'false');
     const response = await handlePhoneIdentify(
-      post('/api/app/auth/phone/identify', {phone_number: '09123456789'})
+      post('/api/app/auth/phone/identify', { phone_number: '09123456789' })
     );
     expect(response.status).toBe(404);
-    expect(await response.json()).toMatchObject({code: 'phone_auth_disabled'});
+    expect(await response.json()).toMatchObject({
+      code: 'phone_auth_disabled'
+    });
     expect(backendFetchResultMock).not.toHaveBeenCalled();
   });
 
   it('rejects a cross-site origin before calling the backend', async () => {
     const response = await handlePhoneIdentify(
-      post('/api/app/auth/phone/identify', {phone_number: '09123456789'}, {
-        origin: 'https://evil.example'
-      })
+      post(
+        '/api/app/auth/phone/identify',
+        { phone_number: '09123456789' },
+        {
+          origin: 'https://evil.example'
+        }
+      )
     );
     expect(response.status).toBe(403);
     expect(backendFetchResultMock).not.toHaveBeenCalled();
   });
 
-  it('identify returns only next and forwards the raw phone', async () => {
+  it('rejects identify when verification_required is missing', async () => {
     backendFetchResultMock.mockResolvedValue({
       status: 200,
-      data: {next: 'register'}
+      data: { next: 'register' }
     });
     const response = await handlePhoneIdentify(
-      post('/api/app/auth/phone/identify', {phone_number: '۰۹۱۲۳۴۵۶۷۸۹'})
+      post('/api/app/auth/phone/identify', { phone_number: '09123456789' })
+    );
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      code: 'AUTH_CONTRACT_INVALID'
+    });
+  });
+
+  it('registers a pilot account with the phone number and without a registration token', async () => {
+    backendFetchResultMock.mockResolvedValue({
+      status: 201,
+      data: sessionPayload
+    });
+    const response = await handlePhoneRegister(
+      post('/api/app/auth/phone/register', {
+        phone_number: '09123456789',
+        first_name: 'علی',
+        last_name: 'رضایی',
+        password: 'N3w-Pass-456',
+        role: 'student',
+        email: ''
+      })
+    );
+    expect(response.status).toBe(201);
+    expect(
+      JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))
+    ).toEqual({
+      phone_number: '09123456789',
+      first_name: 'علی',
+      last_name: 'رضایی',
+      password: 'N3w-Pass-456',
+      role: 'student'
+    });
+    expect(setAuthCookiesMock).toHaveBeenCalled();
+  });
+
+  it('identify returns next and verification_required and forwards the raw phone', async () => {
+    backendFetchResultMock.mockResolvedValue({
+      status: 200,
+      data: { next: 'register', verification_required: false }
+    });
+    const response = await handlePhoneIdentify(
+      post('/api/app/auth/phone/identify', { phone_number: '۰۹۱۲۳۴۵۶۷۸۹' })
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({next: 'register'});
-    expect(JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))).toEqual({
+    expect(await response.json()).toEqual({
+      next: 'register',
+      verification_required: false
+    });
+    expect(
+      JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))
+    ).toEqual({
       phone_number: '۰۹۱۲۳۴۵۶۷۸۹'
     });
   });
 
   it('rejects an internal space without calling the backend', async () => {
     const response = await handlePhoneIdentify(
-      post('/api/app/auth/phone/identify', {phone_number: '0912 3456789'})
+      post('/api/app/auth/phone/identify', { phone_number: '0912 3456789' })
     );
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({code: 'invalid_phone_number'});
+    expect(await response.json()).toMatchObject({
+      code: 'invalid_phone_number'
+    });
     expect(backendFetchResultMock).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['password' as const],
-    ['register' as const]
-  ])('identify accepts next=%s', async (next) => {
-    backendFetchResultMock.mockResolvedValue({status: 200, data: {next}});
-    const response = await handlePhoneIdentify(
-      post('/api/app/auth/phone/identify', {phone_number: '+989123456789'})
-    );
-    expect(await response.json()).toEqual({next});
-  });
+  it.each([['password' as const], ['register' as const]])(
+    'identify accepts next=%s',
+    async (next) => {
+      backendFetchResultMock.mockResolvedValue({
+        status: 200,
+        data: { next, verification_required: false }
+      });
+      const response = await handlePhoneIdentify(
+        post('/api/app/auth/phone/identify', { phone_number: '+989123456789' })
+      );
+      expect(await response.json()).toEqual({
+        next,
+        verification_required: false
+      });
+    }
+  );
 
   it('login 200 stores the session and keeps null identity fields', async () => {
-    backendFetchResultMock.mockResolvedValue({status: 200, data: sessionPayload});
+    backendFetchResultMock.mockResolvedValue({
+      status: 200,
+      data: sessionPayload
+    });
     const response = await handlePhoneLogin(
       post('/api/app/auth/phone/login', {
         phone_number: '09123456789',
@@ -134,7 +202,9 @@ describe('phone auth BFF contract', () => {
     expect(body.isProfileCompleted).toBe(true);
     expect(body.phoneSetupRequired).toBe(false);
     expect(body).not.toHaveProperty('access');
-    expect(JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))).toEqual({
+    expect(
+      JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))
+    ).toEqual({
       phone_number: '09123456789',
       password: 'secret'
     });
@@ -170,12 +240,23 @@ describe('phone auth BFF contract', () => {
 
   it.each<[number, string, string, number | undefined]>([
     [401, 'invalid_credentials', 'ایمیل یا رمز عبور نادرست است.', undefined],
-    [403, 'password_change_required', 'برای این حساب باید ابتدا رمز عبور تنظیم شود.', undefined],
+    [
+      403,
+      'password_change_required',
+      'برای این حساب باید ابتدا رمز عبور تنظیم شود.',
+      undefined
+    ],
     [429, 'login_rate_limited', 'محدود', 600],
     [503, 'sms_unavailable', 'ارسال پیامک در حال حاضر ممکن نیست.', undefined]
   ])('login preserves %s %s', async (status, code, detail, retryAfter) => {
     backendFetchResultMock.mockRejectedValue(
-      new ApiError(detail, status, code, {code, detail, retry_after: retryAfter}, retryAfter ?? null)
+      new ApiError(
+        detail,
+        status,
+        code,
+        { code, detail, retry_after: retryAfter },
+        retryAfter ?? null
+      )
     );
     const response = await handlePhoneLogin(
       post('/api/app/auth/phone/login', {
@@ -200,7 +281,8 @@ describe('phone auth BFF contract', () => {
         'password_change_required',
         {
           code: 'password_change_required',
-          detail: 'برای این حساب باید ابتدا رمز عبور تنظیم شود. از مسیر set-initial-password استفاده کنید.'
+          detail:
+            'برای این حساب باید ابتدا رمز عبور تنظیم شود. از مسیر set-initial-password استفاده کنید.'
         }
       )
     );
@@ -211,13 +293,18 @@ describe('phone auth BFF contract', () => {
       })
     );
     expect(response.status).toBe(403);
-    expect(await response.json()).toMatchObject({code: 'password_change_required'});
+    expect(await response.json()).toMatchObject({
+      code: 'password_change_required'
+    });
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
     expect(clearAuthCookiesMock).not.toHaveBeenCalled();
   });
 
   it('activation verify 200 creates a session and 503 does not', async () => {
-    backendFetchResultMock.mockResolvedValueOnce({status: 200, data: sessionPayload});
+    backendFetchResultMock.mockResolvedValueOnce({
+      status: 200,
+      data: sessionPayload
+    });
     const ok = await handleActivationVerify(
       post('/api/app/auth/phone/activation/verify-otp', {
         activation_token: 'act-token',
@@ -264,20 +351,25 @@ describe('phone auth BFF contract', () => {
   it('activation resend returns 202 and the server retry_after', async () => {
     backendFetchResultMock.mockResolvedValue({
       status: 202,
-      data: {status: 'accepted', retry_after: 60}
+      data: { status: 'accepted', retry_after: 60 }
     });
     const response = await handleActivationResend(
-      post('/api/app/auth/phone/activation/resend-otp', {activation_token: 'act-token'})
+      post('/api/app/auth/phone/activation/resend-otp', {
+        activation_token: 'act-token'
+      })
     );
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({status: 'accepted', retry_after: 60});
+    expect(await response.json()).toEqual({
+      status: 'accepted',
+      retry_after: 60
+    });
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 
   it('registration verify keeps the registration token out of the session', async () => {
     backendFetchResultMock.mockResolvedValue({
       status: 200,
-      data: {registration_token: 'reg-token', expires_in: 600}
+      data: { registration_token: 'reg-token', expires_in: 600 }
     });
     const response = await handleRegistrationVerifyOtp(
       post('/api/app/auth/phone/registration/verify-otp', {
@@ -294,7 +386,10 @@ describe('phone auth BFF contract', () => {
   });
 
   it('register sends only contract fields and sets a session on 201', async () => {
-    backendFetchResultMock.mockResolvedValue({status: 201, data: sessionPayload});
+    backendFetchResultMock.mockResolvedValue({
+      status: 201,
+      data: sessionPayload
+    });
     const response = await handlePhoneRegister(
       post('/api/app/auth/phone/register', {
         registration_token: 'reg-token',
@@ -307,12 +402,13 @@ describe('phone auth BFF contract', () => {
         student_id: '401',
         personnel_id: '12',
         is_staff: true,
-        is_superuser: true,
-        phone_number: '09123456789'
+        is_superuser: true
       })
     );
     expect(response.status).toBe(201);
-    expect(JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))).toEqual({
+    expect(
+      JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))
+    ).toEqual({
       registration_token: 'reg-token',
       first_name: 'علی',
       last_name: 'رضایی',
@@ -324,7 +420,10 @@ describe('phone auth BFF contract', () => {
   });
 
   it('register omits staff_category for students and rejects it when required data is bad', async () => {
-    backendFetchResultMock.mockResolvedValue({status: 201, data: sessionPayload});
+    backendFetchResultMock.mockResolvedValue({
+      status: 201,
+      data: sessionPayload
+    });
     await handlePhoneRegister(
       post('/api/app/auth/phone/register', {
         registration_token: 'reg-token',
@@ -335,9 +434,9 @@ describe('phone auth BFF contract', () => {
         staff_category: 'other'
       })
     );
-    expect(JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))).not.toHaveProperty(
-      'staff_category'
-    );
+    expect(
+      JSON.parse(String(backendFetchResultMock.mock.calls[0][1].body))
+    ).not.toHaveProperty('staff_category');
 
     const rejected = await handlePhoneRegister(
       post('/api/app/auth/phone/register', {
@@ -374,10 +473,16 @@ describe('phone auth BFF contract', () => {
     });
 
     backendFetchResultMock.mockRejectedValueOnce(
-      new ApiError('بازیابی با این شماره ممکن نیست.', 400, 'phone_recovery_unavailable')
+      new ApiError(
+        'بازیابی با این شماره ممکن نیست.',
+        400,
+        'phone_recovery_unavailable'
+      )
     );
     const unavailable = await handlePhoneResetRequest(
-      post('/api/app/auth/phone/password-reset/request-otp', {phone_number: '09120000000'})
+      post('/api/app/auth/phone/password-reset/request-otp', {
+        phone_number: '09120000000'
+      })
     );
     expect((await unavailable.json()).code).toBe('phone_recovery_unavailable');
 
@@ -385,7 +490,9 @@ describe('phone auth BFF contract', () => {
       new ApiError('این شماره هنوز تایید نشده است.', 400, 'phone_not_verified')
     );
     const unverified = await handlePhoneResetRequest(
-      post('/api/app/auth/phone/password-reset/request-otp', {phone_number: '09120000001'})
+      post('/api/app/auth/phone/password-reset/request-otp', {
+        phone_number: '09120000001'
+      })
     );
     expect((await unverified.json()).code).toBe('phone_not_verified');
   });
@@ -393,7 +500,7 @@ describe('phone auth BFF contract', () => {
   it('phone reset complete clears any session and does not issue one', async () => {
     backendFetchResultMock.mockResolvedValue({
       status: 200,
-      data: {status: 'password_changed'}
+      data: { status: 'password_changed' }
     });
     const response = await handlePhoneResetComplete(
       post('/api/app/auth/phone/password-reset/complete', {
@@ -402,7 +509,7 @@ describe('phone auth BFF contract', () => {
       })
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({status: 'password_changed'});
+    expect(await response.json()).toEqual({ status: 'password_changed' });
     expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
@@ -410,17 +517,19 @@ describe('phone auth BFF contract', () => {
   it('registration request and reset verify do not create a session', async () => {
     backendFetchResultMock.mockResolvedValueOnce({
       status: 202,
-      data: {status: 'accepted', retry_after: 3600}
+      data: { status: 'accepted', retry_after: 3600 }
     });
     const requested = await handleRegistrationRequestOtp(
-      post('/api/app/auth/phone/registration/request-otp', {phone_number: '09123456789'})
+      post('/api/app/auth/phone/registration/request-otp', {
+        phone_number: '09123456789'
+      })
     );
     expect(requested.status).toBe(202);
     expect((await requested.json()).retry_after).toBe(3600);
 
     backendFetchResultMock.mockResolvedValueOnce({
       status: 200,
-      data: {reset_token: 'reset-token', expires_in: 600}
+      data: { reset_token: 'reset-token', expires_in: 600 }
     });
     const verified = await handlePhoneResetVerify(
       post('/api/app/auth/phone/password-reset/verify-otp', {
@@ -428,17 +537,27 @@ describe('phone auth BFF contract', () => {
         code: '22222'
       })
     );
-    expect(await verified.json()).toEqual({reset_token: 'reset-token', expires_in: 600});
+    expect(await verified.json()).toEqual({
+      reset_token: 'reset-token',
+      expires_in: 600
+    });
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 
   it('forwards DRF array codes and field errors', async () => {
     backendFetchResultMock.mockRejectedValue(
-      new ApiError('رمز جدید و تکرار آن یکسان نیستند.', 400, 'invalid_setup_request', {
-        code: ['invalid_setup_request'],
-        detail: ['ایمیل یا رمز موقت نادرست است، یا این حساب نیازی به تنظیم رمز ندارد.'],
-        new_password_confirm: ['رمز جدید و تکرار آن یکسان نیستند.']
-      })
+      new ApiError(
+        'رمز جدید و تکرار آن یکسان نیستند.',
+        400,
+        'invalid_setup_request',
+        {
+          code: ['invalid_setup_request'],
+          detail: [
+            'ایمیل یا رمز موقت نادرست است، یا این حساب نیازی به تنظیم رمز ندارد.'
+          ],
+          new_password_confirm: ['رمز جدید و تکرار آن یکسان نیستند.']
+        }
+      )
     );
     const response = await handlePhoneLogin(
       post('/api/app/auth/phone/login', {
@@ -448,14 +567,19 @@ describe('phone auth BFF contract', () => {
     );
     expect(await response.json()).toMatchObject({
       code: 'invalid_setup_request',
-      details: ['ایمیل یا رمز موقت نادرست است، یا این حساب نیازی به تنظیم رمز ندارد.'],
-      fields: {new_password_confirm: ['رمز جدید و تکرار آن یکسان نیستند.']}
+      details: [
+        'ایمیل یا رمز موقت نادرست است، یا این حساب نیازی به تنظیم رمز ندارد.'
+      ],
+      fields: { new_password_confirm: ['رمز جدید و تکرار آن یکسان نیستند.'] }
     });
   });
 
   it('changes the signed-in password and clears the session on 200', async () => {
-    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
-    backendFetchResultMock.mockResolvedValue({status: 200, data: {status: 'password_changed'}});
+    getAuthCookiesMock.mockResolvedValue({ access: 'access-token' });
+    backendFetchResultMock.mockResolvedValue({
+      status: 200,
+      data: { status: 'password_changed' }
+    });
     const response = await handlePasswordChange(
       post('/api/app/auth/password/change', {
         current_password: 'old-secret',
@@ -463,25 +587,44 @@ describe('phone auth BFF contract', () => {
       })
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({status: 'password_changed'});
+    expect(await response.json()).toEqual({ status: 'password_changed' });
     expect(clearAuthCookiesMock).toHaveBeenCalledOnce();
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
     expect(backendFetchResultMock).toHaveBeenCalledWith(
       '/password/change/',
       expect.objectContaining({
         accessToken: 'access-token',
-        body: JSON.stringify({current_password: 'old-secret', new_password: 'new-secret'})
+        body: JSON.stringify({
+          current_password: 'old-secret',
+          new_password: 'new-secret'
+        })
       })
     );
   });
 
   it('keeps contract password errors on the form without clearing the session', async () => {
-    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
+    getAuthCookiesMock.mockResolvedValue({ access: 'access-token' });
     const cases = [
-      {status: 400, code: 'invalid_current_password', detail: 'رمز فعلی نادرست است.'},
-      {status: 400, code: 'invalid_password', detail: ['حداقل طول رعایت نشده.', 'رمز رایج است.']},
-      {status: 400, code: 'password_unchanged', detail: 'رمز جدید باید متفاوت باشد.'},
-      {status: 403, code: 'account_unavailable', detail: 'حساب در دسترس نیست.'}
+      {
+        status: 400,
+        code: 'invalid_current_password',
+        detail: 'رمز فعلی نادرست است.'
+      },
+      {
+        status: 400,
+        code: 'invalid_password',
+        detail: ['حداقل طول رعایت نشده.', 'رمز رایج است.']
+      },
+      {
+        status: 400,
+        code: 'password_unchanged',
+        detail: 'رمز جدید باید متفاوت باشد.'
+      },
+      {
+        status: 403,
+        code: 'account_unavailable',
+        detail: 'حساب در دسترس نیست.'
+      }
     ];
     for (const item of cases) {
       backendFetchResultMock.mockRejectedValueOnce(
@@ -489,14 +632,17 @@ describe('phone auth BFF contract', () => {
           Array.isArray(item.detail) ? item.detail[0] : item.detail,
           item.status,
           item.code,
-          {code: item.code, detail: item.detail}
+          { code: item.code, detail: item.detail }
         )
       );
       const response = await handlePasswordChange(
-        post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+        post('/api/app/auth/password/change', {
+          current_password: 'old',
+          new_password: 'new'
+        })
       );
       expect(response.status).toBe(item.status);
-      expect(await response.json()).toMatchObject({code: item.code});
+      expect(await response.json()).toMatchObject({ code: item.code });
     }
     expect(clearAuthCookiesMock).not.toHaveBeenCalled();
   });
@@ -504,28 +650,46 @@ describe('phone auth BFF contract', () => {
   it('asks for a new sign-in when the access cookie is missing', async () => {
     getAuthCookiesMock.mockResolvedValue({});
     const response = await handlePasswordChange(
-      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+      post('/api/app/auth/password/change', {
+        current_password: 'old',
+        new_password: 'new'
+      })
     );
     expect(response.status).toBe(401);
     expect(backendFetchResultMock).not.toHaveBeenCalled();
   });
 
   it('forwards rate limits with and without retry_after', async () => {
-    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
+    getAuthCookiesMock.mockResolvedValue({ access: 'access-token' });
     backendFetchResultMock.mockRejectedValueOnce(
-      new ApiError('محدود', 429, 'rate_limited', {code: 'rate_limited', retry_after: 15}, 15)
+      new ApiError(
+        'محدود',
+        429,
+        'rate_limited',
+        { code: 'rate_limited', retry_after: 15 },
+        15
+      )
     );
     const limited = await handlePasswordChange(
-      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+      post('/api/app/auth/password/change', {
+        current_password: 'old',
+        new_password: 'new'
+      })
     );
     expect(limited.status).toBe(429);
-    expect(await limited.json()).toMatchObject({code: 'rate_limited', retry_after: 15});
+    expect(await limited.json()).toMatchObject({
+      code: 'rate_limited',
+      retry_after: 15
+    });
 
     backendFetchResultMock.mockRejectedValueOnce(
-      new ApiError('محدود', 429, 'rate_limited', {code: 'rate_limited'})
+      new ApiError('محدود', 429, 'rate_limited', { code: 'rate_limited' })
     );
     const plain = await handlePasswordChange(
-      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+      post('/api/app/auth/password/change', {
+        current_password: 'old',
+        new_password: 'new'
+      })
     );
     expect(plain.status).toBe(429);
     expect((await plain.json()).retry_after ?? null).toBeNull();
@@ -535,17 +699,24 @@ describe('phone auth BFF contract', () => {
   it('logs a cross-site password change without calling the backend', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const response = await handlePasswordChange(
-      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'}, {
-        origin: 'https://evil.example'
-      })
+      post(
+        '/api/app/auth/password/change',
+        { current_password: 'old', new_password: 'new' },
+        {
+          origin: 'https://evil.example'
+        }
+      )
     );
     expect(response.status).toBe(403);
     const body = await response.json();
-    expect(body).toMatchObject({code: 'cross_site_request'});
+    expect(body).toMatchObject({ code: 'cross_site_request' });
     expect(body).not.toHaveProperty('reason');
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('origin-mismatch'),
-      expect.objectContaining({origin: 'https://evil.example', received: 'http://localhost'})
+      expect.objectContaining({
+        origin: 'https://evil.example',
+        received: 'http://localhost'
+      })
     );
     expect(backendFetchResultMock).not.toHaveBeenCalled();
     warn.mockRestore();
@@ -554,9 +725,13 @@ describe('phone auth BFF contract', () => {
   it('names the rejecting condition in development without accepting the origin', async () => {
     vi.stubEnv('NODE_ENV', 'development');
     const response = await handlePasswordChange(
-      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'}, {
-        origin: 'https://evil.example'
-      })
+      post(
+        '/api/app/auth/password/change',
+        { current_password: 'old', new_password: 'new' },
+        {
+          origin: 'https://evil.example'
+        }
+      )
     );
     expect(response.status).toBe(403);
     expect(await response.json()).toMatchObject({

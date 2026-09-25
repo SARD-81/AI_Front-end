@@ -1,19 +1,27 @@
 import 'server-only';
-import {NextResponse} from 'next/server';
-import {isAcceptedPhoneInput} from '@/lib/auth/phone-number';
-import {isPhoneAuthEnabled} from '@/lib/config/phone-auth';
-import {clearAuthCookies, getAuthCookies, setAuthCookies} from '@/lib/server/auth-cookies';
+import { NextResponse } from 'next/server';
+import { isAcceptedPhoneInput } from '@/lib/auth/phone-number';
+import { isPhoneAuthEnabled } from '@/lib/config/phone-auth';
+import {
+  clearAuthCookies,
+  getAuthCookies,
+  setAuthCookies
+} from '@/lib/server/auth-cookies';
 import {
   normalizeBackendAuthContract,
   type BackendAuthContract
 } from '@/lib/server/auth-contract';
-import {backendFetchResult} from '@/lib/server/backend-fetch';
-import {crossSiteRejection} from '@/lib/server/request-origin';
-import {readJsonBody} from '@/lib/server/limited-body';
-import {routeErrorResponse} from '@/lib/server/route-error';
-import {ApiError} from '@/lib/server/backend-types';
+import { backendFetchResult } from '@/lib/server/backend-fetch';
+import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
+import { routeErrorResponse } from '@/lib/server/route-error';
+import { ApiError } from '@/lib/server/backend-types';
 
-const STAFF_CATEGORIES = ['faculty_administration', 'vice_presidency', 'other'] as const;
+const STAFF_CATEGORIES = [
+  'faculty_administration',
+  'vice_presidency',
+  'other'
+] as const;
 type StaffCategory = (typeof STAFF_CATEGORIES)[number];
 type PublicRole = 'student' | 'professor' | 'staff';
 
@@ -26,7 +34,7 @@ function disabledResponse() {
       message: 'ورود با شماره موبایل در این محیط فعال نیست.',
       code: 'phone_auth_disabled'
     },
-    {status: 404}
+    { status: 404 }
   );
 }
 
@@ -45,8 +53,8 @@ async function readJson(request: Request): Promise<JsonRecord> {
 
 function invalidPhone() {
   return NextResponse.json(
-    {message: 'شماره موبایل نامعتبر است.', code: 'invalid_phone_number'},
-    {status: 400}
+    { message: 'شماره موبایل نامعتبر است.', code: 'invalid_phone_number' },
+    { status: 400 }
   );
 }
 
@@ -61,23 +69,26 @@ function textField(value: unknown) {
 }
 
 async function establishSession(data: BackendAuthContract, status = 200) {
-  const {access, refresh, result} = normalizeBackendAuthContract(data);
+  const { access, refresh, result } = normalizeBackendAuthContract(data);
 
   if (result.isLocked === true || result.user?.isLocked === true) {
     await clearAuthCookies();
     return NextResponse.json(
-      {message: 'Account is locked.', code: 'ACCOUNT_LOCKED'},
-      {status: 423}
+      { message: 'Account is locked.', code: 'ACCOUNT_LOCKED' },
+      { status: 423 }
     );
   }
 
-  if (result.mustChangePassword === true || result.user?.mustChangePassword === true) {
+  if (
+    result.mustChangePassword === true ||
+    result.user?.mustChangePassword === true
+  ) {
     await clearAuthCookies();
   } else {
-    await setAuthCookies({access, refresh});
+    await setAuthCookies({ access, refresh });
   }
 
-  return NextResponse.json(result, {status});
+  return NextResponse.json(result, { status });
 }
 
 function acceptedBody(data: JsonRecord) {
@@ -85,12 +96,14 @@ function acceptedBody(data: JsonRecord) {
   return NextResponse.json(
     {
       status: typeof data.status === 'string' ? data.status : 'accepted',
-      ...(typeof retryAfter === 'number' ? {retry_after: retryAfter} : {})
+      ...(typeof retryAfter === 'number' ? { retry_after: retryAfter } : {})
     },
     {
       status: 202,
       headers:
-        typeof retryAfter === 'number' ? {'Retry-After': String(retryAfter)} : undefined
+        typeof retryAfter === 'number'
+          ? { 'Retry-After': String(retryAfter) }
+          : undefined
     }
   );
 }
@@ -104,20 +117,33 @@ export async function handlePhoneIdentify(request: Request) {
     const phone = phoneFrom(body);
     if (phone instanceof NextResponse) return phone;
 
-    const result = await backendFetchResult<{next?: string}>('/phone/identify/', {
+    const result = await backendFetchResult<{
+      next?: string;
+      verification_required?: boolean;
+    }>('/phone/identify/', {
       base: 'auth',
       method: 'POST',
-      body: JSON.stringify({phone_number: phone})
+      body: JSON.stringify({ phone_number: phone })
     });
 
-    if (result.data?.next !== 'password' && result.data?.next !== 'register') {
+    const verified = result.data?.verification_required;
+    if (
+      (result.data?.next !== 'password' && result.data?.next !== 'register') ||
+      typeof verified !== 'boolean'
+    ) {
       return NextResponse.json(
-        {message: 'پاسخ شناسایی شماره نامعتبر است.', code: 'AUTH_CONTRACT_INVALID'},
-        {status: 502}
+        {
+          message: 'پاسخ شناسایی شماره نامعتبر است.',
+          code: 'AUTH_CONTRACT_INVALID'
+        },
+        { status: 502 }
       );
     }
 
-    return NextResponse.json({next: result.data.next});
+    return NextResponse.json({
+      next: result.data.next,
+      verification_required: verified
+    });
   } catch (error) {
     return routeErrorResponse(error);
   }
@@ -134,8 +160,8 @@ export async function handlePhoneLogin(request: Request) {
     const password = textField(body.password);
     if (!password) {
       return NextResponse.json(
-        {message: 'رمز عبور الزامی است.', code: 'invalid_login_request'},
-        {status: 400}
+        { message: 'رمز عبور الزامی است.', code: 'invalid_login_request' },
+        { status: 400 }
       );
     }
 
@@ -144,7 +170,7 @@ export async function handlePhoneLogin(request: Request) {
       {
         base: 'auth',
         method: 'POST',
-        body: JSON.stringify({phone_number: phone, password})
+        body: JSON.stringify({ phone_number: phone, password })
       }
     );
 
@@ -152,8 +178,11 @@ export async function handlePhoneLogin(request: Request) {
       const token = textField(result.data.activation_token);
       if (!token || result.data.status !== 'phone_verification_required') {
         return NextResponse.json(
-          {message: 'پاسخ فعال‌سازی شماره نامعتبر است.', code: 'AUTH_CONTRACT_INVALID'},
-          {status: 502}
+          {
+            message: 'پاسخ فعال‌سازی شماره نامعتبر است.',
+            code: 'AUTH_CONTRACT_INVALID'
+          },
+          { status: 502 }
         );
       }
       return NextResponse.json(
@@ -163,7 +192,7 @@ export async function handlePhoneLogin(request: Request) {
           activation_token: token,
           expires_in: result.data.expires_in
         },
-        {status: 202}
+        { status: 202 }
       );
     }
 
@@ -182,16 +211,22 @@ export async function handleActivationResend(request: Request) {
     const activationToken = textField(body.activation_token);
     if (!activationToken) {
       return NextResponse.json(
-        {message: 'درخواست تایید شماره نامعتبر است.', code: 'invalid_activation'},
-        {status: 400}
+        {
+          message: 'درخواست تایید شماره نامعتبر است.',
+          code: 'invalid_activation'
+        },
+        { status: 400 }
       );
     }
 
-    const result = await backendFetchResult<JsonRecord>('/phone/activation/resend-otp/', {
-      base: 'auth',
-      method: 'POST',
-      body: JSON.stringify({activation_token: activationToken})
-    });
+    const result = await backendFetchResult<JsonRecord>(
+      '/phone/activation/resend-otp/',
+      {
+        base: 'auth',
+        method: 'POST',
+        body: JSON.stringify({ activation_token: activationToken })
+      }
+    );
     return acceptedBody(result.data);
   } catch (error) {
     return routeErrorResponse(error);
@@ -208,8 +243,11 @@ export async function handleActivationVerify(request: Request) {
     const code = textField(body.code);
     if (!activationToken || !code) {
       return NextResponse.json(
-        {message: 'درخواست تایید شماره نامعتبر است.', code: 'invalid_activation'},
-        {status: 400}
+        {
+          message: 'درخواست تایید شماره نامعتبر است.',
+          code: 'invalid_activation'
+        },
+        { status: 400 }
       );
     }
 
@@ -218,7 +256,7 @@ export async function handleActivationVerify(request: Request) {
       {
         base: 'auth',
         method: 'POST',
-        body: JSON.stringify({activation_token: activationToken, code})
+        body: JSON.stringify({ activation_token: activationToken, code })
       }
     );
     return establishSession(result.data);
@@ -241,7 +279,7 @@ export async function handleRegistrationRequestOtp(request: Request) {
       {
         base: 'auth',
         method: 'POST',
-        body: JSON.stringify({phone_number: phone})
+        body: JSON.stringify({ phone_number: phone })
       }
     );
     return acceptedBody(result.data);
@@ -261,21 +299,24 @@ export async function handleRegistrationVerifyOtp(request: Request) {
     const code = textField(body.code);
     if (!code) {
       return NextResponse.json(
-        {message: 'کد تایید نامعتبر است.', code: 'invalid_otp'},
-        {status: 400}
+        { message: 'کد تایید نامعتبر است.', code: 'invalid_otp' },
+        { status: 400 }
       );
     }
 
-    const result = await backendFetchResult<JsonRecord>('/phone/registration/verify-otp/', {
-      base: 'auth',
-      method: 'POST',
-      body: JSON.stringify({phone_number: phone, code})
-    });
+    const result = await backendFetchResult<JsonRecord>(
+      '/phone/registration/verify-otp/',
+      {
+        base: 'auth',
+        method: 'POST',
+        body: JSON.stringify({ phone_number: phone, code })
+      }
+    );
     const registrationToken = textField(result.data.registration_token);
     if (!registrationToken) {
       return NextResponse.json(
-        {message: 'پاسخ ثبت‌نام نامعتبر است.', code: 'AUTH_CONTRACT_INVALID'},
-        {status: 502}
+        { message: 'پاسخ ثبت‌نام نامعتبر است.', code: 'AUTH_CONTRACT_INVALID' },
+        { status: 502 }
       );
     }
 
@@ -299,33 +340,54 @@ export async function handlePhoneRegister(request: Request) {
     const lastName = textField(body.last_name).trim();
     const password = textField(body.password);
     const role = textField(body.role);
-    if (!registrationToken || !firstName || !lastName || !password) {
+    const hasPhone = Boolean(textField(body.phone_number));
+    if (
+      Boolean(registrationToken) === hasPhone ||
+      !firstName ||
+      !lastName ||
+      !password
+    ) {
       return NextResponse.json(
-        {message: 'درخواست ثبت‌نام نامعتبر است.', code: 'invalid_registration'},
-        {status: 400}
+        {
+          message: 'درخواست ثبت‌نام نامعتبر است.',
+          code: 'invalid_registration'
+        },
+        { status: 400 }
       );
     }
     if (role !== 'student' && role !== 'professor' && role !== 'staff') {
       return NextResponse.json(
-        {message: 'درخواست ثبت‌نام نامعتبر است.', code: 'invalid_registration'},
-        {status: 400}
+        {
+          message: 'درخواست ثبت‌نام نامعتبر است.',
+          code: 'invalid_registration'
+        },
+        { status: 400 }
       );
     }
 
     const payload: JsonRecord = {
-      registration_token: registrationToken,
       first_name: firstName,
       last_name: lastName,
       password,
       role: role as PublicRole
     };
+    if (registrationToken) {
+      payload.registration_token = registrationToken;
+    } else {
+      const phone = phoneFrom(body);
+      if (phone instanceof NextResponse) return phone;
+      payload.phone_number = phone;
+    }
 
     if (role === 'staff') {
       const category = textField(body.staff_category);
       if (!STAFF_CATEGORIES.includes(category as StaffCategory)) {
         return NextResponse.json(
-          {message: 'درخواست ثبت‌نام نامعتبر است.', code: 'invalid_registration'},
-          {status: 400}
+          {
+            message: 'درخواست ثبت‌نام نامعتبر است.',
+            code: 'invalid_registration'
+          },
+          { status: 400 }
         );
       }
       payload.staff_category = category;
@@ -335,16 +397,19 @@ export async function handlePhoneRegister(request: Request) {
       payload.email = body.email.trim();
     }
 
-    const result = await backendFetchResult<BackendAuthContract>('/phone/register/', {
-      base: 'auth',
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    const result = await backendFetchResult<BackendAuthContract>(
+      '/phone/register/',
+      {
+        base: 'auth',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
 
     if (result.status !== 201) {
       return NextResponse.json(
-        {message: 'پاسخ ثبت‌نام نامعتبر است.', code: 'AUTH_CONTRACT_INVALID'},
-        {status: 502}
+        { message: 'پاسخ ثبت‌نام نامعتبر است.', code: 'AUTH_CONTRACT_INVALID' },
+        { status: 502 }
       );
     }
 
@@ -368,7 +433,7 @@ export async function handlePhoneResetRequest(request: Request) {
       {
         base: 'auth',
         method: 'POST',
-        body: JSON.stringify({phone_number: phone})
+        body: JSON.stringify({ phone_number: phone })
       }
     );
     return acceptedBody(result.data);
@@ -388,8 +453,8 @@ export async function handlePhoneResetVerify(request: Request) {
     const code = textField(body.code);
     if (!code) {
       return NextResponse.json(
-        {message: 'کد تایید نامعتبر است.', code: 'invalid_otp'},
-        {status: 400}
+        { message: 'کد تایید نامعتبر است.', code: 'invalid_otp' },
+        { status: 400 }
       );
     }
 
@@ -398,14 +463,14 @@ export async function handlePhoneResetVerify(request: Request) {
       {
         base: 'auth',
         method: 'POST',
-        body: JSON.stringify({phone_number: phone, code})
+        body: JSON.stringify({ phone_number: phone, code })
       }
     );
     const resetToken = textField(result.data.reset_token);
     if (!resetToken) {
       return NextResponse.json(
-        {message: 'پاسخ بازیابی نامعتبر است.', code: 'AUTH_CONTRACT_INVALID'},
-        {status: 502}
+        { message: 'پاسخ بازیابی نامعتبر است.', code: 'AUTH_CONTRACT_INVALID' },
+        { status: 502 }
       );
     }
 
@@ -428,20 +493,32 @@ export async function handlePhoneResetComplete(request: Request) {
     const newPassword = textField(body.new_password);
     if (!resetToken || !newPassword) {
       return NextResponse.json(
-        {message: 'درخواست بازیابی نامعتبر است.', code: 'invalid_reset_token'},
-        {status: 400}
+        {
+          message: 'درخواست بازیابی نامعتبر است.',
+          code: 'invalid_reset_token'
+        },
+        { status: 400 }
       );
     }
 
-    const result = await backendFetchResult<JsonRecord>('/phone/password-reset/complete/', {
-      base: 'auth',
-      method: 'POST',
-      body: JSON.stringify({reset_token: resetToken, new_password: newPassword})
-    });
+    const result = await backendFetchResult<JsonRecord>(
+      '/phone/password-reset/complete/',
+      {
+        base: 'auth',
+        method: 'POST',
+        body: JSON.stringify({
+          reset_token: resetToken,
+          new_password: newPassword
+        })
+      }
+    );
 
     await clearAuthCookies();
     return NextResponse.json({
-      status: result.data.status === 'password_changed' ? 'password_changed' : result.data.status
+      status:
+        result.data.status === 'password_changed'
+          ? 'password_changed'
+          : result.data.status
     });
   } catch (error) {
     return routeErrorResponse(error);
@@ -458,16 +535,16 @@ export async function handlePasswordChange(request: Request) {
     const newPassword = textField(body.new_password);
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
-        {message: 'اطلاعات تغییر رمز کامل نیست.', code: 'invalid_password'},
-        {status: 400}
+        { message: 'اطلاعات تغییر رمز کامل نیست.', code: 'invalid_password' },
+        { status: 400 }
       );
     }
 
-    const {access} = await getAuthCookies();
+    const { access } = await getAuthCookies();
     if (!access) {
       return NextResponse.json(
-        {message: 'نیاز به ورود مجدد دارید.', code: 'SESSION_EXPIRED'},
-        {status: 401}
+        { message: 'نیاز به ورود مجدد دارید.', code: 'SESSION_EXPIRED' },
+        { status: 401 }
       );
     }
 
@@ -482,7 +559,9 @@ export async function handlePasswordChange(request: Request) {
     });
 
     await clearAuthCookies();
-    return NextResponse.json({status: result.data.status ?? 'password_changed'});
+    return NextResponse.json({
+      status: result.data.status ?? 'password_changed'
+    });
   } catch (error) {
     return routeErrorResponse(error);
   }
