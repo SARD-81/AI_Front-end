@@ -28,7 +28,7 @@ Cookie lifetime is the JWT `exp` claim minus 30 seconds. If the token has no rea
 
 ## Countdown and recovery
 
-Each OTP lane (activation, registration, recovery) stores its own request id and start time. A later `202` or `429` with the same `retry_after` starts that lane again. The other lanes are left alone. The button stays disabled until that lane's clock reaches zero. `retry_after` comes from the response; the UI does not invent 60 seconds.
+Each OTP send lane (activation, registration, recovery) stores its own request id and start time. A later `202` or send `429` with the same `retry_after` starts that lane again and leaves the other lanes alone. A `429` from registration verify times only the verify button; it does not extend the resend hold. A later verify `429` with the same `retry_after` starts that verify clock again. The button stays disabled until its own clock reaches zero. `retry_after` comes from the response; the UI does not invent 60 seconds. The accepted-SMS notice is cleared when the verify error is shown.
 
 `phone_already_registered` returns the same number to the password form. An expired registration token can be dropped in memory and the OTP step started again without reloading the page. `invalid_reset_token` and `password_reset_unavailable` return to the recovery code step, where another code can be requested within the server limit. Activation verify `503` `sms_unavailable` clears the activation token and returns to the password form. Temporary tokens stay in component memory only.
 
@@ -40,9 +40,9 @@ The branch base is `main` (`ee949ac`). `origin/design/chat-teal-mobile-v1` is no
 
 ## Screenshots
 
-The PNGs in `docs/phone-auth-screenshots/` were taken with headless Chrome `page.screenshot` after `setViewport` at device scale 1 and after the target heading was on the page. The viewport height was then set to the document height so the header and form fit in one frame. Each file was opened after saving. The header, form, and copy appear once, and the last action (including «بازگشت») is inside the frame.
+The PNGs in `docs/phone-auth-screenshots/` were taken with headless Chrome at device scale 1 after the target heading was on the page. The viewport height was the document height so the header, the form, and the last button fit in one frame. Each file was opened after saving. The header and form appear once.
 
-They were captured against a local mock of the contract on `127.0.0.1:8099`, not a deployed backend and not a physical device. There was no horizontal overflow.
+Registration shots `register-intent-*`, `register-code-*`, and `register-profile-*` replace the older `phone-register-*` frames, which showed the previous combined card. They were captured against a local mock on `127.0.0.1:8107` that answered identify, request-otp, and verify-otp. That mock is not a deployed backend and not a physical device. The other frames were captured against a local mock on `127.0.0.1:8099`, also not a deployed backend. There was no horizontal overflow.
 
 | File | PNG pixels |
 | --- | --- |
@@ -56,10 +56,12 @@ They were captured against a local mock of the contract on `127.0.0.1:8099`, not
 | `phone-activation-375.png` | 375×900 |
 | `phone-activation-412.png` | 412×900 |
 | `phone-activation-1280.png` | 1280×900 |
-| `phone-register-320.png` | 320×900 |
-| `phone-register-375.png` | 375×900 |
-| `phone-register-412.png` | 412×900 |
-| `phone-register-1280.png` | 1280×900 |
+| `register-intent-375.png` | 375×1100 |
+| `register-intent-1280.png` | 1280×1100 |
+| `register-code-375.png` | 375×1100 |
+| `register-code-1280.png` | 1280×1100 |
+| `register-profile-375.png` | 375×1328 |
+| `register-profile-1280.png` | 1280×1340 |
 | `phone-reset-320.png` | 320×900 |
 | `phone-reset-375.png` | 375×900 |
 | `phone-reset-412.png` | 412×900 |
@@ -69,4 +71,4 @@ They were captured against a local mock of the contract on `127.0.0.1:8099`, not
 | `phone-error-412.png` | 412×900 |
 | `phone-error-1280.png` | 1280×900 |
 
-Desktop registration is included as `phone-register-1280.png`. `phone-login-375.png` and `phone-login-1280.png` are the light document theme. `phone-login-375-dark.png` and `phone-login-1280-dark.png` use `html.dark`. In both themes the university mark stays colored and the login controls stay on the light surface.
+Desktop registration before the code, on the code step, and on the profile form is `register-intent-1280.png`, `register-code-1280.png`, and `register-profile-1280.png`. The 375 pair is the mobile width. `phone-login-375.png` and `phone-login-1280.png` are the light document theme. `phone-login-375-dark.png` and `phone-login-1280-dark.png` use `html.dark`. In both themes the university mark stays colored and the login controls stay on the light surface.

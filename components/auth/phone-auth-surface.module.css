@@ -26,3 +26,22 @@
   background: #ffffff;
   color-scheme: light;
 }
+
+.legacyBack {
+  margin-top: 0.75rem;
+  min-height: 2.75rem;
+  width: 100%;
+  color: #ffffff !important;
+  background: transparent;
+}
+
+.legacyBack:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff !important;
+}
+
+.legacyBack:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  color: #ffffff !important;
+}

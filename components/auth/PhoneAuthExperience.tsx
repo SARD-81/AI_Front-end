@@ -167,6 +167,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const [emailTaken, setEmailTaken] = useState(false);
   const [lanes, setLanes] = useState(emptyOtpLanes);
   const [submitHold, setSubmitHold] = useState<OtpHold | null>(null);
+  const [verifyHold, setVerifyHold] = useState<OtpHold | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const activationToken = useRef('');
   const registrationToken = useRef('');
@@ -175,24 +176,27 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const abortRef = useRef<AbortController | null>(null);
   const legacyAbort = useRef<AbortController | null>(null);
   const flight = useRef(false);
+  const verifyHoldRef = useRef<OtpHold | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
   useEffect(() => {
     const pending =
       (Object.keys(lanes) as OtpLane[]).some((lane) => otpSecondsLeft(lanes[lane], Date.now()) > 0) ||
-      otpSecondsLeft(submitHold, Date.now()) > 0;
+      otpSecondsLeft(submitHold, Date.now()) > 0 ||
+      otpSecondsLeft(verifyHold, Date.now()) > 0;
     if (!pending) return;
     const timer = window.setInterval(() => {
       const next = Date.now();
       setNow(next);
       const still =
         (Object.keys(lanes) as OtpLane[]).some((lane) => otpSecondsLeft(lanes[lane], next) > 0) ||
-        otpSecondsLeft(submitHold, next) > 0;
+        otpSecondsLeft(submitHold, next) > 0 ||
+        otpSecondsLeft(verifyHold, next) > 0;
       if (!still) window.clearInterval(timer);
     }, 250);
     return () => window.clearInterval(timer);
-  }, [lanes, submitHold]);
+  }, [lanes, submitHold, verifyHold]);
 
   const displayPhone = phoneDisplayValue(phoneRaw);
   const phoneOk = isAcceptedPhoneInput(phoneRaw);
@@ -200,6 +204,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const activationLeft = otpSecondsLeft(lanes.activation, now);
   const recoveryLeft = otpSecondsLeft(lanes.recovery, now);
   const submitLeft = otpSecondsLeft(submitHold, now);
+  const verifyLeft = otpSecondsLeft(verifyHold, now);
   const copy = stepCopy(step === 'phone-setup' ? 'phone-setup' : step);
   const phase = registrationPhase(step);
 
@@ -213,6 +218,16 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
     const at = Date.now();
     setNow(at);
     setSubmitHold((current) => nextHold(current, seconds, at));
+  };
+
+  const armVerify = (seconds?: number | null) => {
+    const at = Date.now();
+    setNow(at);
+    setVerifyHold((current) => {
+      const next = nextHold(current, seconds, at);
+      verifyHoldRef.current = next;
+      return next;
+    });
   };
 
   const run = async (
@@ -350,8 +365,9 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
       }
     }, (caught) => caught instanceof ServiceError && caught.code === 'invalid_phone_number');
 
-  const onRegisterVerify = () =>
-    run('registration', async (signal) => {
+  const onRegisterVerify = () => {
+    if (otpSecondsLeft(verifyHoldRef.current, Date.now()) > 0) return;
+    return run(null, async (signal) => {
       try {
         const verified = await verifyRegistrationOtp(phoneRaw, code, signal);
         registrationToken.current = verified.registrationToken;
@@ -368,12 +384,19 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
         throw caught;
       }
     }, (caught) => {
+      setNotice(null);
+      if (caught instanceof ServiceError && caught.status === 429) {
+        armVerify(caught.retryAfter);
+        setError(errorText(caught, t('genericError')));
+        return true;
+      }
       if (caught instanceof ServiceError && caught.code === 'invalid_otp') {
         setFieldError({code: caught.message});
         return true;
       }
       return false;
     });
+  };
 
   const restartRegistration = () => {
     registrationToken.current = '';
@@ -684,8 +707,8 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 invalid={Boolean(fieldError.code)}
                 error={fieldError.code}
               />
-              <Button type="button" className={primaryButtonClass} disabled={busy || code.trim().length === 0} onClick={onRegisterVerify}>
-                {busy ? t('loading') : t('verify')}
+              <Button type="button" className={primaryButtonClass} disabled={busy || verifyLeft > 0 || code.trim().length === 0} onClick={onRegisterVerify}>
+                {busy ? t('loading') : verifyLeft > 0 ? t('verifyWait', {seconds: verifyLeft}) : t('verify')}
               </Button>
               <Button type="button" variant="outline" className={secondaryButtonClass} disabled={busy || registrationLeft > 0} onClick={onRegisterOtp}>
                 {registrationLeft > 0 ? t('resendWait', {seconds: registrationLeft}) : t('resend')}
@@ -857,7 +880,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 onForgotPassword={() => setStep('legacy-reset')}
                 onSuccess={enterApp}
               />
-              <Button type="button" variant="ghost" className={`${quietButtonClass} mt-3 w-full`} onClick={() => setStep('identify')}>
+              <Button type="button" variant="ghost" className={surfaceStyles.legacyBack} onClick={() => setStep('identify')}>
                 {t('back')}
               </Button>
             </div>

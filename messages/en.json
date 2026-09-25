@@ -280,6 +280,7 @@
       "verify": "Verify code",
       "resend": "Request another code",
       "resendWait": "Request again in {seconds}s",
+      "verifyWait": "Verify again in {seconds}s",
       "registerTitle": "Create your Soha account",
       "firstName": "First name",
       "lastName": "Last name",

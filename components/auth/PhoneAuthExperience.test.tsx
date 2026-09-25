@@ -474,6 +474,78 @@ describe('phone auth OTP countdown', () => {
     expect((screen.getByRole('button', {name: 'ساخت حساب و ورود'}) as HTMLButtonElement).disabled).toBe(false);
   });
 
+  it('holds verification after a 429 without freezing resend or sending another verify', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 5});
+    verifyRegistrationOtp.mockRejectedValue(
+      new ServiceError('تعداد درخواست‌ها بیش از حد مجاز است.', 429, 'rate_limited', 120)
+    );
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+
+    const held = screen.getByRole('button', {name: 'تأیید دوباره تا 120 ثانیه'}) as HTMLButtonElement;
+    const resend = screen.getByRole('button', {name: 'درخواست دوبارهٔ کد'}) as HTMLButtonElement;
+    expect(held.disabled).toBe(true);
+    expect(resend.disabled).toBe(false);
+    expect(screen.queryByText('درخواست ارسال پیامک ثبت شد. رسیدن پیامک قطعی نیست.')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toContain('بیش از حد مجاز');
+
+    await act(async () => {
+      fireEvent.click(held);
+    });
+    expect(verifyRegistrationOtp).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(120_000);
+    });
+    const ready = screen.getByRole('button', {name: 'تأیید کد'}) as HTMLButtonElement;
+    expect(ready.disabled).toBe(false);
+    await act(async () => {
+      fireEvent.click(ready);
+    });
+    expect(verifyRegistrationOtp).toHaveBeenCalledTimes(2);
+  });
+
+  it('restarts only the verify hold when a later 429 repeats the same retry_after', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 1});
+    verifyRegistrationOtp.mockRejectedValue(
+      new ServiceError('تعداد درخواست‌ها بیش از حد مجاز است.', 429, 'rate_limited', 120)
+    );
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByRole('button', {name: 'تأیید دوباره تا 90 ثانیه'})).toBeTruthy();
+    await act(async () => {
+      vi.advanceTimersByTime(90_000);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    expect(screen.getByRole('button', {name: 'تأیید دوباره تا 120 ثانیه'})).toBeTruthy();
+    expect(verifyRegistrationOtp).toHaveBeenCalledTimes(2);
+  });
+
   it('ignores a second registration request while the first is in flight', async () => {
     let release: (value: {status: string; retry_after: number}) => void = () => undefined;
     requestRegistrationOtp.mockReturnValue(

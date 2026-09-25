@@ -282,6 +282,7 @@
       "verify": "تأیید کد",
       "resend": "درخواست دوبارهٔ کد",
       "resendWait": "درخواست دوباره تا {seconds} ثانیه",
+      "verifyWait": "تأیید دوباره تا {seconds} ثانیه",
       "registerTitle": "ساخت حساب سها",
       "firstName": "نام",
       "lastName": "نام خانوادگی",
