@@ -43,6 +43,7 @@ export type SendMessagePayload = {
   content: string;
   thinkLevel: ThinkingLevel;
   clientMessageId?: string;
+  webSearch?: boolean;
 };
 
 export type FeedbackReasonCategory = 'inaccurate' | 'irrelevant' | 'tone' | 'incomplete' | 'other';

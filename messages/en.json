@@ -205,7 +205,7 @@
       "label": "Web search",
       "on": "On",
       "off": "Off",
-      "hint": "Turning on web search can make the answer take longer. This control is not connected yet and does not affect the reply."
+      "hint": "When enabled, web search is requested with your message and the reply may take longer."
     },
     "attachment": {
       "label": "Attach file",

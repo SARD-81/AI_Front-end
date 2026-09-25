@@ -16,6 +16,8 @@ function renderComposer(props: Partial<React.ComponentProps<typeof Composer>> = 
         onSubmit={vi.fn()}
         thinkLevel="low"
         onThinkLevelChange={vi.fn()}
+        webSearchOn={false}
+        onWebSearchChange={vi.fn()}
         {...props}
       />
     </NextIntlClientProvider>
@@ -76,12 +78,12 @@ describe('composer focus and web search hint', () => {
     expect(onSubmit).toHaveBeenCalledOnce();
     view.rerender(
       <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
-        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} disabled />
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} webSearchOn={false} onWebSearchChange={vi.fn()} disabled />
       </NextIntlClientProvider>
     );
     view.rerender(
       <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
-        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} />
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} webSearchOn={false} onWebSearchChange={vi.fn()} />
       </NextIntlClientProvider>
     );
     expect(document.activeElement).toBe(screen.getByRole('textbox'));
@@ -102,6 +104,8 @@ describe('composer focus and web search hint', () => {
           onStop={vi.fn()}
           thinkLevel="low"
           onThinkLevelChange={vi.fn()}
+          webSearchOn={false}
+          onWebSearchChange={vi.fn()}
           disabled={disabled}
           isSending={disabled}
         />
@@ -140,7 +144,7 @@ describe('composer focus and web search hint', () => {
     fireEvent.click(screen.getByRole('button', {name: 'ارسال'}));
     view.rerender(
       <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
-        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} onStop={vi.fn()} thinkLevel="low" onThinkLevelChange={vi.fn()} disabled isSending />
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} onStop={vi.fn()} thinkLevel="low" onThinkLevelChange={vi.fn()} webSearchOn={false} onWebSearchChange={vi.fn()} disabled isSending />
       </NextIntlClientProvider>
     );
     const pendingBox = screen.getByRole('textbox');
@@ -148,18 +152,18 @@ describe('composer focus and web search hint', () => {
     outside.focus();
     view.rerender(
       <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
-        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} />
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} webSearchOn={false} onWebSearchChange={vi.fn()} />
       </NextIntlClientProvider>
     );
     expect(document.activeElement).toBe(outside);
   });
 
-  it('shows the web-search hint to assistive technology without a payload field', () => {
+  it('shows the web-search hint to assistive technology', () => {
     desktop();
     renderComposer();
     const toggle = screen.getByRole('button', {name: /جستجوی وب/});
     expect(toggle.getAttribute('aria-describedby')).toBe('web-search-hint');
-    expect(document.getElementById('web-search-hint')?.textContent).toContain('به پاسخ وصل نیست');
+    expect(document.getElementById('web-search-hint')?.textContent).toContain('همراه پیام ارسال می‌شود');
     expect(toggle.className).not.toContain('sr-only');
   });
 });

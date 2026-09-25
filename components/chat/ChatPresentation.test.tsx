@@ -84,7 +84,9 @@ const composerProps = {
   onChange: vi.fn(),
   onSubmit: vi.fn(),
   thinkLevel: 'low' as const,
-  onThinkLevelChange: vi.fn()
+  onThinkLevelChange: vi.fn(),
+  webSearchOn: false,
+  onWebSearchChange: vi.fn()
 };
 const listProps = {
   onCopyMessage: vi.fn(),
