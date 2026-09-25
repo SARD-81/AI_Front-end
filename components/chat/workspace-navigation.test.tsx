@@ -81,7 +81,7 @@ afterEach(() => {
 });
 
 describe('chat workspace navigation', () => {
-  it('keeps conversation actions out of the services column and denies management sections', () => {
+  it('shows the requested service order and marks future sections as coming soon', () => {
     renderWorkspace(
       <ServicesRail
         locale="fa"
@@ -94,17 +94,26 @@ describe('chat workspace navigation', () => {
 
     expect(screen.queryByRole('button', { name: 'گفت‌وگوی جدید' })).toBeNull();
     expect(screen.queryByRole('link', { name: /admin/i })).toBeNull();
+    expect(screen.queryByText('مدیریت کاربران')).toBeNull();
+    expect(screen.queryByText('مدیریت پایگاه‌های داده')).toBeNull();
 
-    const memory = screen.getByRole('button', { name: 'مدیریت حافظه — به‌زودی' });
-    expect(memory.getAttribute('aria-disabled')).toBe('true');
-    expect(memory.getAttribute('title')).toBe('به‌زودی');
-    fireEvent.click(memory);
+    const services = screen.getByRole('navigation', { name: 'خدمات' });
+    const serviceButtons = Array.from(services.querySelectorAll('button'));
+    expect(serviceButtons.map((button) => button.textContent?.trim())).toEqual([
+      'داشبوردبه‌زودی',
+      'گفتگو',
+      'مدیریت اسنادبه‌زودی',
+      'مدیریت حافظهبه‌زودی'
+    ]);
+
+    for (const label of ['داشبورد', 'مدیریت اسناد', 'مدیریت حافظه']) {
+      const button = screen.getByRole('button', { name: `${label} — به‌زودی` });
+      expect(button.getAttribute('aria-disabled')).toBe('true');
+      expect(button.getAttribute('title')).toBe('به‌زودی');
+      fireEvent.click(button);
+    }
+
     expect(screen.queryByText('دسترسی محدود')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'مدیریت اسناد' }));
-    expect(
-      screen.getByText('حساب کاربری شما دسترسی به مدیریت اسناد را ندارد.')
-    ).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
   });
