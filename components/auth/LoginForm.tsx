@@ -55,6 +55,7 @@ type LoginFormProps = {
   abortRef: React.MutableRefObject<AbortController | null>;
   initialIdentifier?: string;
   onForgotPassword: () => void;
+  appearance?: 'night' | 'paper';
 };
 
 function mustChangePassword(result: LoginResultDTO): boolean {
@@ -74,7 +75,8 @@ export function LoginForm({
   setBusy,
   abortRef,
   initialIdentifier,
-  onForgotPassword
+  onForgotPassword,
+  appearance = 'night'
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -89,6 +91,11 @@ export function LoginForm({
   const t = useTranslations('auth');
   const appT = useTranslations('app');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
+  const paper = appearance === 'paper';
+  const labelTone = paper ? 'text-[#245066]' : 'text-slate-200/90';
+  const linkTone = paper
+    ? 'w-full min-h-11 text-center text-sm font-semibold text-[#075373] transition hover:bg-[#e7f4f7] disabled:cursor-not-allowed disabled:text-[#5c7380] disabled:opacity-100'
+    : 'w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50';
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(createLoginSchema(schemaT)),
@@ -271,11 +278,11 @@ export function LoginForm({
     return (
       <Form {...setPasswordForm}>
         <form onSubmit={onSubmitNewPassword} className="space-y-5" noValidate>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-            <p className="text-sm font-bold text-sky-100">
+          <div className={paper ? 'rounded-2xl border border-[#d7e6eb] bg-[#f3f8f8] px-4 py-3' : 'rounded-2xl border border-white/10 bg-white/5 px-4 py-3'}>
+            <p className={paper ? 'text-sm font-bold text-[#06384c]' : 'text-sm font-bold text-sky-100'}>
               {t('setPassword.title')}
             </p>
-            <p className="mt-1 text-sm leading-6 text-slate-300">
+            <p className={paper ? 'mt-1 text-sm leading-6 text-[#245066]' : 'mt-1 text-sm leading-6 text-slate-300'}>
               {t('setPassword.description')}
             </p>
           </div>
@@ -285,7 +292,7 @@ export function LoginForm({
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-200/90">
+                <FormLabel className={labelTone}>
                   {t('setPassword.newPasswordLabel')}
                 </FormLabel>
                 <div className="relative">
@@ -325,7 +332,7 @@ export function LoginForm({
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-200/90">
+                <FormLabel className={labelTone}>
                   {t('setPassword.confirmPasswordLabel')}
                 </FormLabel>
                 <div className="relative">
@@ -363,6 +370,7 @@ export function LoginForm({
           <ValidationChecklist
             title={t('passwordRules.title')}
             rules={newPasswordChecklistRules}
+            tone={appearance}
           />
 
           {formError ? (
@@ -384,7 +392,7 @@ export function LoginForm({
 
           <button
             type="button"
-            className="w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className={linkTone}
             onClick={() => {
               setPendingPasswordChange(null);
               setFormError(null);
@@ -406,7 +414,7 @@ export function LoginForm({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-slate-200/90">{t('login.emailLabel')}</FormLabel>
+              <FormLabel className={labelTone}>{t('login.emailLabel')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -429,7 +437,7 @@ export function LoginForm({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-slate-200/90">{t('login.passwordLabel')}</FormLabel>
+              <FormLabel className={labelTone}>{t('login.passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -480,7 +488,7 @@ export function LoginForm({
 
         <button
           type="button"
-          className="w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className={linkTone}
           onClick={onForgotPassword}
           disabled={busy || form.formState.isSubmitting}
         >

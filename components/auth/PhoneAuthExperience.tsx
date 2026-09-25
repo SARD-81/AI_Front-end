@@ -4,7 +4,6 @@ import {UniversityLogo} from '@/components/branding/UniversityLogo';
 import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
 import {LoginForm} from '@/components/auth/LoginForm';
 import {PasswordResetWizard} from '@/components/auth/PasswordResetWizard';
-import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {isAcceptedPhoneInput, phoneDisplayValue} from '@/lib/auth/phone-number';
 import {
@@ -57,13 +56,6 @@ type FieldErrors = {
 
 const ROLES: PhoneRole[] = ['student', 'professor', 'staff'];
 const CATEGORIES: StaffCategory[] = ['faculty_administration', 'vice_presidency', 'other'];
-
-const primaryButtonClass =
-  'min-h-11 w-full bg-[#075373] text-base font-semibold text-white hover:bg-[#05384c] focus-visible:ring-[#0a6e8a] disabled:bg-[#d7e6eb] disabled:text-[#0b3a4d] disabled:opacity-100';
-const secondaryButtonClass =
-  'min-h-11 w-full border-[#075373] bg-white text-base font-semibold text-[#075373] hover:bg-[#e7f4f7] focus-visible:ring-[#0a6e8a] disabled:border-[#b7c9d1] disabled:bg-[#eef3f5] disabled:text-[#1d4d63] disabled:opacity-100';
-const quietButtonClass =
-  'min-h-11 text-[#075373] hover:bg-[#e7f4f7] focus-visible:ring-[#0a6e8a] disabled:text-[#5c7380] disabled:opacity-100';
 
 function replaceLocaleInPath(pathname: string, nextLocale: string) {
   const segments = pathname.split('/');
@@ -135,8 +127,8 @@ function stepCopy(step: Step) {
 }
 
 function registrationPhase(step: Step): 1 | 2 | 3 | null {
-  if (step === 'identify') return 1;
-  if (step === 'register-otp' || step === 'register-code') return 2;
+  if (step === 'register-otp') return 1;
+  if (step === 'register-code') return 2;
   if (step === 'register-profile') return 3;
   return null;
 }
@@ -512,6 +504,13 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
       }
     });
 
+  const go = (next: Step) => {
+    setError(null);
+    setNotice(null);
+    setFieldError({});
+    setStep(next);
+  };
+
   const selectLocale = (nextLocale: 'fa' | 'en') => {
     if (nextLocale === locale) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -520,9 +519,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
     router.replace(query ? `${nextPath}?${query}` : nextPath);
   };
 
-  const fieldClass =
-    'h-12 w-full min-w-0 rounded-xl border-[#9ec3ce] bg-white text-base text-[#073044] shadow-none placeholder:text-[#4d6a76] focus-visible:border-[#075373] focus-visible:ring-[#075373] disabled:border-[#b7d4dc] disabled:bg-[#f7fbfb] disabled:text-[#073044] disabled:opacity-100';
-  const invalidFieldClass = 'border-[#9b2c2c] focus-visible:border-[#9b2c2c] focus-visible:ring-[#9b2c2c]';
+
   const showPhone =
     step === 'identify' ||
     step === 'password' ||
@@ -533,28 +530,30 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const heading = step === 'phone-setup' ? t('university') : t(copy.title);
   const guidance = step === 'phone-setup' ? t('setupBody') : t(copy.body);
   const phoneLocked = busy || step !== 'identify';
+  const inputClass = (invalid?: boolean, extra?: string) =>
+    [surfaceStyles.input, invalid ? surfaceStyles.invalid : '', extra ?? ''].filter(Boolean).join(' ');
 
   return (
-    <main className={`${surfaceStyles.surface} min-h-[100dvh] overflow-x-hidden text-[#073044]`}>
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between gap-4 py-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className={`${surfaceStyles.markPlate} grid h-14 w-14 shrink-0 place-items-center rounded-2xl shadow-sm`}>
+    <main id="main-content" className={surfaceStyles.surface}>
+      <div className={surfaceStyles.canvas}>
+        <header className={surfaceStyles.topbar}>
+          <div className={surfaceStyles.brand}>
+            <span className={surfaceStyles.markPlate}>
               <UniversityLogo alt={t('logoAlt')} onLight className="h-11 w-11" />
             </span>
-            <div className="min-w-0">
-              <p className="text-2xl font-bold leading-none text-[#075373]">سها</p>
-              <p className="mt-1 text-sm leading-5 text-[#245066]">{t('university')}</p>
+            <div>
+              <p className={`${surfaceStyles.wordmark} font-display-fa`}>سها</p>
+              <p className={surfaceStyles.university}>{t('university')}</p>
             </div>
           </div>
-          <div role="group" aria-label={t('language')} dir="ltr" className="flex shrink-0 rounded-xl bg-white p-1 shadow-sm">
+          <div role="group" aria-label={t('language')} dir="ltr" className={surfaceStyles.languages}>
             {(['en', 'fa'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 aria-pressed={locale === option}
                 onClick={() => selectLocale(option)}
-                className={`min-h-11 min-w-11 rounded-lg text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#075373] ${locale === option ? 'bg-[#075373] text-white' : 'text-[#245066] hover:bg-[#e7f4f7]'}`}
+                className={locale === option ? surfaceStyles.languageOn : surfaceStyles.language}
               >
                 {option.toUpperCase()}
               </button>
@@ -562,378 +561,395 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
           </div>
         </header>
 
-        {phase ? (
-          <ol className="mt-4 grid grid-cols-3 gap-2" aria-label={heading}>
-            {[
-              [1, t('stepNumber')],
-              [2, t('stepCode')],
-              [3, t('stepAccount')]
-            ].map(([index, label]) => {
-              const current = index === phase;
-              const done = Number(index) < phase;
-              return (
-                <li
-                  key={label}
-                  aria-current={current ? 'step' : undefined}
-                  className={`min-h-11 rounded-xl px-3 py-2 text-sm font-semibold leading-5 ${current ? 'bg-[#075373] text-white' : done ? 'bg-[#d7e6eb] text-[#075373]' : 'bg-white text-[#245066]'}`}
-                >
-                  <span className="me-2 inline-grid h-6 w-6 place-items-center rounded-full bg-white/20 text-xs">{index}</span>
-                  {label}
-                </li>
-              );
-            })}
-          </ol>
-        ) : null}
-
-        <section className="mt-4 grid gap-6 border-s-4 border-[#075373] bg-white px-4 py-5 shadow-sm sm:px-8 sm:py-8 lg:mt-6">
-          <div className="max-w-xl">
-            <p className="text-sm font-semibold text-[#0a6e8a]">{t('university')}</p>
-            <h1 className="mt-2 text-3xl font-bold leading-10 text-[#06384c]">{heading}</h1>
-            <p className="mt-3 text-base leading-8 text-[#245066]">{guidance}</p>
-          </div>
-
-          {error ? (
-            <p role="alert" className="whitespace-pre-line rounded-xl bg-[#fdecec] px-3 py-3 text-sm leading-6 text-[#6f1d1d]">
-              {error}
-            </p>
-          ) : null}
-          {notice ? (
-            <p className="rounded-xl bg-[#e7f6f8] px-3 py-3 text-sm leading-6 text-[#075373]">{notice}</p>
-          ) : null}
-
-          {showPhone ? (
-            <label className="block max-w-xl text-sm font-semibold">
-              {t('phoneLabel')}
-              <Input
-                value={phoneRaw}
-                onChange={(event) => {
-                  setPhoneRaw(event.target.value);
-                  setFieldError((current) => ({...current, phone: undefined}));
+        <div className={surfaceStyles.stage}>
+          <section className={surfaceStyles.panel} aria-labelledby="auth-step-title">
+            {step === 'password' || step === 'register-otp' || step === 'register-code' || step === 'activation' || step === 'reset-otp' || step === 'legacy' || step === 'legacy-reset' || step === 'imported-password' ? (
+              <button
+                type="button"
+                className={surfaceStyles.back}
+                onClick={() => {
+                  if (step === 'legacy-reset') go('legacy');
+                  else if (step === 'register-code') go('register-otp');
+                  else if (step === 'activation' || step === 'reset-otp') go('password');
+                  else go('identify');
                 }}
-                inputMode="tel"
-                autoComplete="tel"
-                dir="ltr"
-                disabled={phoneLocked}
-                aria-invalid={fieldError.phone ? true : undefined}
-                className={`${fieldClass} mt-2 ${fieldError.phone ? invalidFieldClass : ''}`}
-                placeholder="09123456789"
-              />
-              {displayPhone !== phoneRaw ? (
-                <span className="mt-1 block text-xs text-[#245066]" dir="ltr">
-                  {displayPhone}
-                </span>
-              ) : null}
-            </label>
-          ) : null}
-          {showPhone && fieldError.phone ? (
-            <span role="alert" className="-mt-4 block max-w-xl text-sm leading-6 text-[#9b2c2c]">{fieldError.phone}</span>
-          ) : null}
-
-          {step === 'identify' ? (
-            <div className="grid max-w-xl gap-3">
-              <Button type="button" className={primaryButtonClass} disabled={busy || !phoneOk} onClick={onIdentify}>
-                {busy ? t('loading') : t('continue')}
-              </Button>
-              <div className="rounded-2xl bg-[#f3f8f8] p-4">
-                <p className="text-sm leading-7 text-[#245066]">{t('legacyLead')}</p>
-                <Button type="button" variant="outline" className={`${secondaryButtonClass} mt-3`} onClick={() => setStep('legacy')}>
-                  {t('legacyAction')}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 'password' ? (
-            <form
-              className="grid max-w-xl gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onLogin();
-              }}
-            >
-              <label className="text-sm font-semibold">
-                {t('passwordLabel')}
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="current-password"
-                  className={`${fieldClass} mt-2`}
-                />
-              </label>
-              <button type="button" className={`${quietButtonClass} text-start text-sm font-semibold`} onClick={() => setShowPassword((value) => !value)}>
-                {showPassword ? t('hidePassword') : t('showPassword')}
+              >
+                {t('back')}
               </button>
-              <Button type="submit" className={primaryButtonClass} disabled={busy || !password}>
-                {busy ? t('loading') : t('signIn')}
-              </Button>
-              <Button type="button" variant="outline" className={secondaryButtonClass} onClick={onResetRequest} disabled={busy || recoveryLeft > 0}>
-                {recoveryLeft > 0 ? t('resendWait', {seconds: recoveryLeft}) : t('forgot')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('identify')}>
-                {t('back')}
-              </Button>
-            </form>
-          ) : null}
+            ) : null}
+            <p className={surfaceStyles.kicker}>{t('university')}</p>
+            <h1 id="auth-step-title" className={surfaceStyles.title} tabIndex={-1}>
+              {heading}
+            </h1>
+            <p className={surfaceStyles.lead}>{guidance}</p>
 
-          {step === 'register-otp' ? (
-            <div className="grid max-w-xl gap-3">
-              <div className="rounded-2xl bg-[#f3f8f8] p-4">
-                <p className="text-sm font-bold leading-7 text-[#06384c]">{t('registerWarningTitle')}</p>
-                <p className="mt-1 text-sm leading-7 text-[#245066]">{t('registerWarningBody')}</p>
-                <Button type="button" variant="outline" className={`${secondaryButtonClass} mt-3`} onClick={() => setStep('legacy')}>
-                  {t('legacyAction')}
-                </Button>
+            {phase ? (
+              <ol className={surfaceStyles.progress} aria-label={t('registerProgress')}>
+                {[
+                  [1, t('stepNumber')],
+                  [2, t('stepCode')],
+                  [3, t('stepAccount')]
+                ].map(([index, label]) => {
+                  const current = index === phase;
+                  const done = Number(index) < phase;
+                  return (
+                    <li
+                      key={label}
+                      aria-current={current ? 'step' : undefined}
+                      className={current ? surfaceStyles.stepOn : done ? surfaceStyles.stepDone : surfaceStyles.step}
+                    >
+                      <span className={surfaceStyles.stepIndex}>{index}</span>
+                      {label}
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : null}
+
+            {error ? (
+              <p role="alert" className={`${surfaceStyles.banner} whitespace-pre-line`}>
+                <span className={surfaceStyles.mark} aria-hidden="true">!</span>
+                <span>{error}</span>
+              </p>
+            ) : null}
+            {notice ? (
+              <p className={surfaceStyles.notice} role="status">
+                <span className={surfaceStyles.mark} aria-hidden="true">i</span>
+                <span>{notice}</span>
+              </p>
+            ) : null}
+
+            {showPhone ? (
+              <div className={surfaceStyles.form}>
+                <div className={surfaceStyles.field}>
+                  <label className={surfaceStyles.label} htmlFor="phone-number">{t('phoneLabel')}</label>
+                  <Input
+                    id="phone-number"
+                    value={phoneRaw}
+                    onChange={(event) => {
+                      setPhoneRaw(event.target.value);
+                      setFieldError((current) => ({...current, phone: undefined}));
+                    }}
+                    inputMode="tel"
+                    autoComplete="tel"
+                    dir="ltr"
+                    disabled={phoneLocked}
+                    aria-invalid={fieldError.phone ? true : undefined}
+                    aria-describedby={fieldError.phone ? 'phone-error' : undefined}
+                    className={inputClass(Boolean(fieldError.phone))}
+                    placeholder="09123456789"
+                  />
+                  {displayPhone !== phoneRaw ? (
+                    <span className={surfaceStyles.hint} dir="ltr">{displayPhone}</span>
+                  ) : null}
+                  {fieldError.phone ? (
+                    <span id="phone-error" role="alert" className={surfaceStyles.fieldError}>
+                      <span aria-hidden="true">!</span> {fieldError.phone}
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <Button type="button" className={primaryButtonClass} disabled={busy || registrationLeft > 0} onClick={onRegisterOtp}>
-                {registrationLeft > 0 ? t('resendWait', {seconds: registrationLeft}) : t('sendCode')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('identify')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
+            ) : null}
 
-          {step === 'register-code' ? (
-            <div className="grid max-w-xl gap-3">
-              <CodeField
-                value={code}
-                onChange={(value) => {
-                  setCode(value);
-                  setFieldError((current) => ({...current, code: undefined}));
-                }}
-                label={t('codeLabel')}
-                className={fieldClass}
-                invalid={Boolean(fieldError.code)}
-                error={fieldError.code}
-              />
-              <Button type="button" className={primaryButtonClass} disabled={busy || verifyLeft > 0 || code.trim().length === 0} onClick={onRegisterVerify}>
-                {busy ? t('loading') : verifyLeft > 0 ? t('verifyWait', {seconds: verifyLeft}) : t('verify')}
-              </Button>
-              <Button type="button" variant="outline" className={secondaryButtonClass} disabled={busy || registrationLeft > 0} onClick={onRegisterOtp}>
-                {registrationLeft > 0 ? t('resendWait', {seconds: registrationLeft}) : t('resend')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('register-otp')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
+            {step === 'identify' ? (
+              <div className={surfaceStyles.form}>
+                <button type="button" className={surfaceStyles.primary} disabled={busy || !phoneOk} onClick={onIdentify}>
+                  {busy ? t('loading') : t('continue')}
+                </button>
+                <div className={surfaceStyles.decision}>
+                  <p>{t('legacyLead')}</p>
+                  <button type="button" className={`${surfaceStyles.secondary} mt-3`} onClick={() => go('legacy')}>
+                    {t('legacyAction')}
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
-          {step === 'activation' ? (
-            <div className="grid max-w-xl gap-3">
-              <CodeField value={code} onChange={setCode} label={t('codeLabel')} className={fieldClass} />
-              <Button type="button" className={primaryButtonClass} disabled={busy || code.trim().length === 0} onClick={onActivationVerify}>
-                {busy ? t('loading') : t('verify')}
-              </Button>
-              <Button type="button" variant="outline" className={secondaryButtonClass} disabled={busy || activationLeft > 0} onClick={onResendActivation}>
-                {activationLeft > 0 ? t('resendWait', {seconds: activationLeft}) : t('resend')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('password')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
+            {step === 'password' ? (
+              <form className={surfaceStyles.form} onSubmit={(event) => { event.preventDefault(); onLogin(); }}>
+                <PasswordField
+                  label={t('passwordLabel')}
+                  value={password}
+                  onChange={setPassword}
+                  shown={showPassword}
+                  onToggle={() => setShowPassword((value) => !value)}
+                  showLabel={t('showPassword')}
+                  hideLabel={t('hidePassword')}
+                  autoComplete="current-password"
+                  className={inputClass()}
+                />
+                <button type="submit" className={surfaceStyles.primary} disabled={busy || !password}>
+                  {busy ? t('loading') : t('signIn')}
+                </button>
+                <button type="button" className={surfaceStyles.secondary} onClick={onResetRequest} disabled={busy || recoveryLeft > 0}>
+                  {recoveryLeft > 0 ? t('resendWait', {seconds: recoveryLeft}) : t('forgot')}
+                </button>
+              </form>
+            ) : null}
 
-          {step === 'reset-otp' ? (
-            <div className="grid max-w-xl gap-3">
-              <CodeField value={code} onChange={setCode} label={t('codeLabel')} className={fieldClass} />
-              <Button type="button" className={primaryButtonClass} disabled={busy || code.trim().length === 0} onClick={onResetVerify}>
-                {busy ? t('loading') : t('verify')}
-              </Button>
-              <Button type="button" variant="outline" className={secondaryButtonClass} disabled={busy || recoveryLeft > 0} onClick={onResetRequest}>
-                {recoveryLeft > 0 ? t('resendWait', {seconds: recoveryLeft}) : t('resend')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('password')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
+            {step === 'register-otp' ? (
+              <div className={surfaceStyles.form}>
+                <div className={surfaceStyles.decision}>
+                  <strong>{t('registerWarningTitle')}</strong>
+                  <p>{t('registerWarningBody')}</p>
+                  <button type="button" className={`${surfaceStyles.secondary} mt-3`} onClick={() => go('legacy')}>
+                    {t('legacyAction')}
+                  </button>
+                </div>
+                <button type="button" className={surfaceStyles.primary} disabled={busy || registrationLeft > 0} onClick={onRegisterOtp}>
+                  {registrationLeft > 0 ? t('resendWait', {seconds: registrationLeft}) : t('sendCode')}
+                </button>
+              </div>
+            ) : null}
 
-          {step === 'register-profile' ? (
-            <form
-              className="grid max-w-xl gap-4 pb-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onRegister();
-              }}
-            >
-              <TextField label={t('firstName')} value={firstName} onChange={setFirstName} className={fieldClass} autoComplete="given-name" />
-              <TextField label={t('lastName')} value={lastName} onChange={setLastName} className={fieldClass} autoComplete="family-name" />
-              <label className="text-sm font-semibold">
-                {t('role')}
-                <select value={role} onChange={(event) => setRole(event.target.value as PhoneRole)} className={`${fieldClass} mt-2 px-3`}>
-                  {ROLES.map((item) => (
-                    <option key={item} value={item}>{t(`roles.${item}`)}</option>
-                  ))}
-                </select>
-              </label>
-              {role === 'staff' ? (
-                <label className="text-sm font-semibold">
-                  {t('staffCategory')}
-                  <select value={staffCategory} onChange={(event) => setStaffCategory(event.target.value as StaffCategory)} className={`${fieldClass} mt-2 px-3`}>
-                    {CATEGORIES.map((item) => (
-                      <option key={item} value={item}>{t(`categories.${item}`)}</option>
+            {step === 'register-code' ? (
+              <div className={surfaceStyles.form}>
+                <CodeField
+                  value={code}
+                  onChange={(value) => {
+                    setCode(value);
+                    setFieldError((current) => ({...current, code: undefined}));
+                  }}
+                  label={t('codeLabel')}
+                  className={inputClass(Boolean(fieldError.code), surfaceStyles.code)}
+                  invalid={Boolean(fieldError.code)}
+                  error={fieldError.code}
+                />
+                <button type="button" className={surfaceStyles.primary} disabled={busy || verifyLeft > 0 || code.trim().length === 0} onClick={onRegisterVerify}>
+                  {busy ? t('loading') : verifyLeft > 0 ? t('verifyWait', {seconds: verifyLeft}) : t('verify')}
+                </button>
+                <button type="button" className={surfaceStyles.secondary} disabled={busy || registrationLeft > 0} onClick={onRegisterOtp}>
+                  {registrationLeft > 0 ? t('resendWait', {seconds: registrationLeft}) : t('resend')}
+                </button>
+              </div>
+            ) : null}
+
+            {step === 'activation' ? (
+              <div className={surfaceStyles.form}>
+                <CodeField value={code} onChange={setCode} label={t('codeLabel')} className={inputClass(false, surfaceStyles.code)} />
+                <button type="button" className={surfaceStyles.primary} disabled={busy || code.trim().length === 0} onClick={onActivationVerify}>
+                  {busy ? t('loading') : t('verify')}
+                </button>
+                <button type="button" className={surfaceStyles.secondary} disabled={busy || activationLeft > 0} onClick={onResendActivation}>
+                  {activationLeft > 0 ? t('resendWait', {seconds: activationLeft}) : t('resend')}
+                </button>
+              </div>
+            ) : null}
+
+            {step === 'reset-otp' ? (
+              <div className={surfaceStyles.form}>
+                <CodeField value={code} onChange={setCode} label={t('codeLabel')} className={inputClass(false, surfaceStyles.code)} />
+                <button type="button" className={surfaceStyles.primary} disabled={busy || code.trim().length === 0} onClick={onResetVerify}>
+                  {busy ? t('loading') : t('verify')}
+                </button>
+                <button type="button" className={surfaceStyles.secondary} disabled={busy || recoveryLeft > 0} onClick={onResetRequest}>
+                  {recoveryLeft > 0 ? t('resendWait', {seconds: recoveryLeft}) : t('resend')}
+                </button>
+              </div>
+            ) : null}
+
+            {step === 'register-profile' ? (
+              <form className={surfaceStyles.form} onSubmit={(event) => { event.preventDefault(); onRegister(); }}>
+                <div className={surfaceStyles.names}>
+                  <TextField label={t('firstName')} value={firstName} onChange={setFirstName} className={inputClass()} autoComplete="given-name" />
+                  <TextField label={t('lastName')} value={lastName} onChange={setLastName} className={inputClass()} autoComplete="family-name" />
+                </div>
+                <label className={surfaceStyles.field}>
+                  <span className={surfaceStyles.label}>{t('role')}</span>
+                  <select value={role} onChange={(event) => setRole(event.target.value as PhoneRole)} className={surfaceStyles.select}>
+                    {ROLES.map((item) => (
+                      <option key={item} value={item}>{t(`roles.${item}`)}</option>
                     ))}
                   </select>
                 </label>
-              ) : null}
-              <TextField
-                label={t('emailOptional')}
-                value={email}
-                onChange={(value) => {
-                  setEmail(value);
-                  setEmailTaken(false);
-                  setFieldError((current) => ({...current, email: undefined}));
-                }}
-                className={`${fieldClass} ${fieldError.email ? invalidFieldClass : ''}`}
-                autoComplete="email"
-                dir="ltr"
-                invalid={Boolean(fieldError.email)}
-                error={fieldError.email}
-              />
-              {emailTaken ? (
-                <div className="rounded-2xl bg-[#f3f8f8] p-4">
-                  <p className="text-sm leading-7 text-[#245066]">{t('emailTakenHint')}</p>
-                  <Button type="button" variant="outline" className={`${secondaryButtonClass} mt-3`} onClick={() => setStep('legacy')}>
-                    {t('emailAccountPath')}
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm leading-7 text-[#245066]">{t('emailHint')}</p>
-              )}
-              <TextField
-                label={t('passwordLabel')}
-                value={newPassword}
-                onChange={(value) => {
-                  setNewPassword(value);
-                  setFieldError((current) => ({...current, password: undefined}));
-                }}
-                className={`${fieldClass} ${fieldError.password ? invalidFieldClass : ''}`}
-                type={showNewPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                invalid={Boolean(fieldError.password)}
-              />
-              <button type="button" className={`${quietButtonClass} justify-start text-sm font-semibold`} onClick={() => setShowNewPassword((value) => !value)}>
-                {showNewPassword ? t('hidePassword') : t('showPassword')}
-              </button>
-              <p className="text-sm leading-7 text-[#245066]">{t('passwordGuide')}</p>
-              {fieldError.password?.length ? (
-                <ul role="alert" className="grid gap-1 rounded-xl bg-[#fdecec] px-3 py-3 text-sm leading-6 text-[#6f1d1d]">
-                  {fieldError.password.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              ) : null}
-              <TextField label={t('confirmPassword')} value={confirmPassword} onChange={setConfirmPassword} className={fieldClass} type={showNewPassword ? 'text' : 'password'} autoComplete="new-password" />
-              <Button type="submit" className={primaryButtonClass} disabled={busy || submitLeft > 0 || !firstName.trim() || !lastName.trim() || !newPassword}>
-                {busy ? t('loading') : submitLeft > 0 ? t('resendWait', {seconds: submitLeft}) : t('createAccount')}
-              </Button>
-              {registrationBlocked ? (
-                <div className="rounded-2xl bg-[#f3f8f8] p-4">
-                  <p className="text-sm leading-7 text-[#245066]">{t('registrationInvalidHint')}</p>
-                  <Button type="button" variant="outline" className={`${secondaryButtonClass} mt-3`} onClick={restartRegistration}>
-                    {t('requestFreshCode')}
-                  </Button>
-                </div>
-              ) : (
-                <Button type="button" variant="outline" className={secondaryButtonClass} onClick={restartRegistration}>
-                  {t('restartRegistration')}
-                </Button>
-              )}
-            </form>
-          ) : null}
+                {role === 'staff' ? (
+                  <label className={surfaceStyles.field}>
+                    <span className={surfaceStyles.label}>{t('staffCategory')}</span>
+                    <select value={staffCategory} onChange={(event) => setStaffCategory(event.target.value as StaffCategory)} className={surfaceStyles.select}>
+                      {CATEGORIES.map((item) => (
+                        <option key={item} value={item}>{t(`categories.${item}`)}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <TextField
+                  label={t('emailOptional')}
+                  value={email}
+                  onChange={(value) => {
+                    setEmail(value);
+                    setEmailTaken(false);
+                    setFieldError((current) => ({...current, email: undefined}));
+                  }}
+                  className={inputClass(Boolean(fieldError.email))}
+                  autoComplete="email"
+                  dir="ltr"
+                  invalid={Boolean(fieldError.email)}
+                  error={fieldError.email}
+                  optional
+                />
+                {emailTaken ? (
+                  <div className={surfaceStyles.decision}>
+                    <p>{t('emailTakenHint')}</p>
+                    <button type="button" className={`${surfaceStyles.secondary} mt-3`} onClick={() => go('legacy')}>
+                      {t('emailAccountPath')}
+                    </button>
+                  </div>
+                ) : (
+                  <p className={surfaceStyles.hint}>{t('emailHint')}</p>
+                )}
+                <PasswordField
+                  label={t('passwordLabel')}
+                  value={newPassword}
+                  onChange={(value) => {
+                    setNewPassword(value);
+                    setFieldError((current) => ({...current, password: undefined}));
+                  }}
+                  shown={showNewPassword}
+                  onToggle={() => setShowNewPassword((value) => !value)}
+                  showLabel={t('showPassword')}
+                  hideLabel={t('hidePassword')}
+                  autoComplete="new-password"
+                  className={inputClass(Boolean(fieldError.password))}
+                  invalid={Boolean(fieldError.password)}
+                />
+                <p className={surfaceStyles.hint}>{t('passwordGuide')}</p>
+                {fieldError.password?.length ? (
+                  <ul role="alert" className={`${surfaceStyles.banner} ${surfaceStyles.errors}`}>
+                    {fieldError.password.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <TextField
+                  label={t('confirmPassword')}
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  className={inputClass()}
+                  type={showNewPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                />
+                <button type="submit" className={surfaceStyles.primary} disabled={busy || submitLeft > 0 || !firstName.trim() || !lastName.trim() || !newPassword}>
+                  {busy ? t('loading') : submitLeft > 0 ? t('resendWait', {seconds: submitLeft}) : t('createAccount')}
+                </button>
+                {registrationBlocked ? (
+                  <div className={surfaceStyles.decision}>
+                    <p>{t('registrationInvalidHint')}</p>
+                    <button type="button" className={`${surfaceStyles.secondary} mt-3`} onClick={restartRegistration}>
+                      {t('requestFreshCode')}
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className={surfaceStyles.secondary} onClick={restartRegistration}>
+                    {t('restartRegistration')}
+                  </button>
+                )}
+              </form>
+            ) : null}
 
-          {step === 'reset-password' ? (
-            <form
-              className="grid max-w-xl gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onResetComplete();
-              }}
-            >
-              <TextField label={t('passwordLabel')} value={newPassword} onChange={setNewPassword} className={fieldClass} type="password" autoComplete="new-password" />
-              <TextField label={t('confirmPassword')} value={confirmPassword} onChange={setConfirmPassword} className={fieldClass} type="password" autoComplete="new-password" />
-              <Button type="submit" className={primaryButtonClass} disabled={busy || !newPassword}>
-                {busy ? t('loading') : t('savePassword')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className={secondaryButtonClass}
-                onClick={() => {
-                  resetToken.current = '';
-                  setNotice(t('freshCodeHint'));
-                  setStep('reset-otp');
-                }}
-              >
-                {t('resend')}
-              </Button>
-            </form>
-          ) : null}
+            {step === 'reset-password' ? (
+              <form className={surfaceStyles.form} onSubmit={(event) => { event.preventDefault(); onResetComplete(); }}>
+                <PasswordField
+                  label={t('passwordLabel')}
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  shown={showNewPassword}
+                  onToggle={() => setShowNewPassword((value) => !value)}
+                  showLabel={t('showPassword')}
+                  hideLabel={t('hidePassword')}
+                  autoComplete="new-password"
+                  className={inputClass()}
+                />
+                <TextField label={t('confirmPassword')} value={confirmPassword} onChange={setConfirmPassword} className={inputClass()} type={showNewPassword ? 'text' : 'password'} autoComplete="new-password" />
+                <button type="submit" className={surfaceStyles.primary} disabled={busy || !newPassword}>
+                  {busy ? t('loading') : t('savePassword')}
+                </button>
+                <button
+                  type="button"
+                  className={surfaceStyles.secondary}
+                  onClick={() => {
+                    resetToken.current = '';
+                    setNotice(t('freshCodeHint'));
+                    setStep('reset-otp');
+                  }}
+                >
+                  {t('resend')}
+                </button>
+              </form>
+            ) : null}
 
-          {step === 'legacy' ? (
-            <div className="max-w-xl rounded-2xl bg-[#06384c] p-4 text-slate-100 sm:p-5">
-              <LoginForm
-                busy={busy}
-                setBusy={setBusy}
-                abortRef={legacyAbort}
-                onForgotPassword={() => setStep('legacy-reset')}
-                onSuccess={enterApp}
-              />
-              <Button type="button" variant="ghost" className={surfaceStyles.legacyBack} onClick={() => setStep('identify')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
+            {step === 'legacy' ? (
+              <div className={`${surfaceStyles.form} ${surfaceStyles.legacyPaper}`}>
+                <LoginForm
+                  appearance="paper"
+                  busy={busy}
+                  setBusy={setBusy}
+                  abortRef={legacyAbort}
+                  onForgotPassword={() => setStep('legacy-reset')}
+                  onSuccess={enterApp}
+                />
+              </div>
+            ) : null}
 
-          {step === 'legacy-reset' ? (
-            <div className="max-w-xl rounded-2xl bg-[#06384c] p-4 text-slate-100 sm:p-5">
-              <PasswordResetWizard
-                busy={busy}
-                setBusy={setBusy}
-                controllerRefs={{
-                  requestOtp: abortRef,
-                  verifyOtp: abortRef,
-                  complete: abortRef
-                }}
-                onBackToLogin={() => setStep('legacy')}
-                onCompleted={() => {
-                  setNotice(t('resetDone'));
-                  setStep('legacy');
-                }}
-              />
-            </div>
-          ) : null}
+            {step === 'legacy-reset' ? (
+              <div className={`${surfaceStyles.form} ${surfaceStyles.legacyPaper}`}>
+                <PasswordResetWizard
+                  appearance="paper"
+                  busy={busy}
+                  setBusy={setBusy}
+                  controllerRefs={{
+                    requestOtp: abortRef,
+                    verifyOtp: abortRef,
+                    complete: abortRef
+                  }}
+                  onBackToLogin={() => go('legacy')}
+                  onCompleted={() => {
+                    setNotice(t('resetDone'));
+                    setStep('legacy');
+                  }}
+                />
+              </div>
+            ) : null}
 
-          {step === 'phone-setup' ? (
-            <div className="grid max-w-xl gap-3">
-              <Button
-                type="button"
-                className={primaryButtonClass}
-                onClick={() => {
-                  const result = pendingResult.current;
-                  if (!result) return;
-                  continueToDestination(result);
-                }}
-              >
-                {t('continueToApp')}
-              </Button>
-            </div>
-          ) : null}
+            {step === 'phone-setup' ? (
+              <div className={surfaceStyles.form}>
+                <button
+                  type="button"
+                  className={surfaceStyles.primary}
+                  onClick={() => {
+                    const result = pendingResult.current;
+                    if (!result) return;
+                    continueToDestination(result);
+                  }}
+                >
+                  {t('continueToApp')}
+                </button>
+              </div>
+            ) : null}
 
-          {step === 'imported-password' ? (
-            <div className="grid max-w-xl gap-3">
-              <p className="rounded-2xl bg-[#f3f8f8] p-4 text-sm leading-7 text-[#0b3a4d]">{t('importedSupport')}</p>
-              <Button type="button" className={primaryButtonClass} onClick={() => setStep('legacy')}>
-                {t('importedHaveCredentials')}
-              </Button>
-              <Button type="button" variant="ghost" className={quietButtonClass} onClick={() => setStep('identify')}>
-                {t('back')}
-              </Button>
-            </div>
-          ) : null}
-        </section>
-        <p className="mt-6 hidden max-w-xl text-sm leading-7 text-[#245066] lg:block">{t('desktopBrand')}</p>
+            {step === 'imported-password' ? (
+              <div className={surfaceStyles.form}>
+                <p className={surfaceStyles.asideNote}>{t('importedSupport')}</p>
+                <button type="button" className={surfaceStyles.primary} onClick={() => go('legacy')}>
+                  {t('importedHaveCredentials')}
+                </button>
+              </div>
+            ) : null}
+          </section>
+
+          <aside className={surfaceStyles.rail}>
+            <span className={`${surfaceStyles.markPlate} ${surfaceStyles.railMark}`}>
+              <UniversityLogo alt={t('logoAlt')} onLight className="h-16 w-16" />
+            </span>
+            <p className={`${surfaceStyles.railName} font-display-fa`}>سها</p>
+            <p className={surfaceStyles.university}>{t('university')}</p>
+            <p className={surfaceStyles.label}>{t('railTitle')}</p>
+            <ul className={surfaceStyles.paths}>
+              <li><strong>{t('passwordTitle')}</strong><span> {t('railExisting')}</span></li>
+              <li><strong>{t('registerOtpTitle')}</strong><span> {t('railNew')}</span></li>
+              <li><strong>{t('legacyAction')}</strong><span> {t('railLegacy')}</span></li>
+            </ul>
+          </aside>
+        </div>
       </div>
     </main>
   );
@@ -948,7 +964,8 @@ function TextField({
   autoComplete,
   dir,
   invalid,
-  error
+  error,
+  optional
 }: {
   label: string;
   value: string;
@@ -959,22 +976,74 @@ function TextField({
   dir?: 'ltr' | 'rtl';
   invalid?: boolean;
   error?: string;
+  optional?: boolean;
 }) {
+  const fieldId = `field-${label}`;
   return (
-    <div>
-      <label className="text-sm font-semibold">
-        {label}
+    <div className={`${surfaceStyles.field} ${optional ? surfaceStyles.optional : ''}`}>
+      <label className={surfaceStyles.label} htmlFor={fieldId}>{label}</label>
+      <Input
+        id={fieldId}
+        value={value}
+        type={type}
+        dir={dir}
+        autoComplete={autoComplete}
+        aria-invalid={invalid || undefined}
+        aria-required={optional ? false : undefined}
+        aria-describedby={error ? `${fieldId}-error` : undefined}
+        onChange={(event) => onChange(event.target.value)}
+        className={className}
+      />
+      {error ? (
+        <span id={`${fieldId}-error`} role="alert" className={surfaceStyles.fieldError}>
+          <span aria-hidden="true">!</span> {error}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function PasswordField({
+  label,
+  value,
+  onChange,
+  shown,
+  onToggle,
+  showLabel,
+  hideLabel,
+  autoComplete,
+  className,
+  invalid
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  shown: boolean;
+  onToggle: () => void;
+  showLabel: string;
+  hideLabel: string;
+  autoComplete: string;
+  className: string;
+  invalid?: boolean;
+}) {
+  const fieldId = `secret-${label}`;
+  return (
+    <div className={surfaceStyles.field}>
+      <label className={surfaceStyles.label} htmlFor={fieldId}>{label}</label>
+      <span className={surfaceStyles.control}>
         <Input
+          id={fieldId}
           value={value}
-          type={type}
-          dir={dir}
+          type={shown ? 'text' : 'password'}
           autoComplete={autoComplete}
           aria-invalid={invalid || undefined}
           onChange={(event) => onChange(event.target.value)}
-          className={`${className} mt-2`}
+          className={`${className} ${surfaceStyles.padded}`}
         />
-      </label>
-      {error ? <span role="alert" className="mt-1 block text-sm font-medium leading-6 text-[#9b2c2c]">{error}</span> : null}
+        <button type="button" className={surfaceStyles.reveal} aria-pressed={shown} onClick={onToggle}>
+          {shown ? hideLabel : showLabel}
+        </button>
+      </span>
     </div>
   );
 }
@@ -995,20 +1064,24 @@ function CodeField({
   error?: string;
 }) {
   return (
-    <div>
-      <label className="text-sm font-semibold">
-        {label}
-        <Input
-          value={value}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          dir="ltr"
-          aria-invalid={invalid || undefined}
-          onChange={(event) => onChange(event.target.value)}
-          className={`${className} mt-2 ${invalid ? 'border-[#9b2c2c] focus-visible:ring-[#9b2c2c]' : ''}`}
-        />
-      </label>
-      {error ? <span role="alert" className="mt-1 block text-sm leading-6 text-[#9b2c2c]">{error}</span> : null}
+    <div className={surfaceStyles.field}>
+      <label className={surfaceStyles.label} htmlFor="sms-code">{label}</label>
+      <Input
+        id="sms-code"
+        value={value}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        dir="ltr"
+        aria-invalid={invalid || undefined}
+        aria-describedby={error ? 'sms-code-error' : undefined}
+        onChange={(event) => onChange(event.target.value)}
+        className={className}
+      />
+      {error ? (
+        <span id="sms-code-error" role="alert" className={surfaceStyles.fieldError}>
+          <span aria-hidden="true">!</span> {error}
+        </span>
+      ) : null}
     </div>
   );
 }

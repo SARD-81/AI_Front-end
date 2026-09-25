@@ -58,7 +58,7 @@ async function openRegistration() {
     target: {value: '09120000000'}
   });
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+    fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
   });
   expect(await screen.findByRole('heading', {name: 'ساخت حساب تازه'})).toBeTruthy();
 }
@@ -138,7 +138,7 @@ describe('phone auth OTP countdown', () => {
       target: {value: '09120000000'}
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
     });
     fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'Temp-Pass-123'}});
     await act(async () => {
@@ -179,7 +179,7 @@ describe('phone auth OTP countdown', () => {
       target: {value: '09120000000'}
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', {name: 'فراموشی رمز این شماره'}));
@@ -213,7 +213,7 @@ describe('phone auth OTP countdown', () => {
       target: {value: '09120000000'}
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
     });
     fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'secret'}});
     await act(async () => {
@@ -301,7 +301,7 @@ describe('phone auth OTP countdown', () => {
     renderAuth();
     fireEvent.change(screen.getByPlaceholderText('09123456789'), {target: {value: '۰۹۱۲۰۰۰۰۰۰۰'}});
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
     });
     expect(await screen.findByRole('heading', {name: 'رمز همین شماره'})).toBeTruthy();
     expect(screen.getByText('09120000000')).toBeTruthy();
@@ -544,6 +544,29 @@ describe('phone auth OTP countdown', () => {
     });
     expect(screen.getByRole('button', {name: 'تأیید دوباره تا 120 ثانیه'})).toBeTruthy();
     expect(verifyRegistrationOtp).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the start screen free of registration steps and reveals the password', async () => {
+    renderAuth();
+    expect(screen.queryByRole('list', {name: 'مراحل ساخت حساب تازه'})).toBeNull();
+    expect(screen.getByRole('button', {name: 'ادامه با شماره موبایل'})).toBeTruthy();
+    identifyPhone.mockResolvedValue('password');
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {target: {value: '09120000000'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه با شماره موبایل'}));
+    });
+    const passwordField = screen.getByLabelText('رمز عبور') as HTMLInputElement;
+    expect(passwordField.type).toBe('password');
+    fireEvent.click(screen.getByRole('button', {name: 'نمایش رمز'}));
+    expect(passwordField.type).toBe('text');
+    expect(screen.queryByRole('list', {name: 'مراحل ساخت حساب تازه'})).toBeNull();
+  });
+
+  it('shows registration progress only after a new account is chosen', async () => {
+    renderAuth();
+    await openRegistration();
+    expect(screen.getByRole('list', {name: 'مراحل ساخت حساب تازه'})).toBeTruthy();
+    expect(screen.getByRole('listitem', {current: 'step'}).textContent).toContain('شماره');
   });
 
   it('ignores a second registration request while the first is in flight', async () => {
