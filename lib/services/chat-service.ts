@@ -418,7 +418,8 @@ function attemptSendMessageOverWebSocket(
           JSON.stringify({
             message: payload.content,
             client_message_id: payload.clientMessageId,
-            think_level: payload.thinkLevel
+            think_level: payload.thinkLevel,
+            web_search: payload.webSearch ?? false
           })
         );
         state.messageSent = true;

@@ -140,6 +140,26 @@ afterEach(() => {
 });
 
 describe('chat composer submission lifecycle', () => {
+  it.each([false, true])('passes web search %s from the composer to the websocket payload', async (enabled) => {
+    vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
+    setup('existing');
+    const toggle = screen.getByRole('button', {name: fa.app.webSearch.label});
+    if (enabled) fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-pressed')).toBe(String(enabled));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {value: 'سؤال با تنظیم جستجو'}
+    });
+    fireEvent.keyDown(screen.getByRole('textbox'), {key: 'Enter'});
+
+    await waitFor(() =>
+      expect(sendMessageWithWebSocket).toHaveBeenCalledWith(
+        'existing',
+        expect.objectContaining({webSearch: enabled}),
+        expect.any(Object)
+      )
+    );
+  });
+
   it('keeps the committed question and answer without replacing them with a post-send snapshot', async () => {
     vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
     const client = setup('existing');

@@ -73,6 +73,7 @@ export function ChatShell({
   const isOnline = useOnlineStatus();
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
+  const [webSearchOn, setWebSearchOn] = useState(false);
   const [activeChatId, setActiveChatId] = useState(chatId);
   const regenerateTargetRef = useRef<{
     userId: string;
@@ -305,6 +306,7 @@ export function ChatShell({
     const payload = {
       content: nextValue,
       thinkLevel,
+      webSearch: webSearchOn,
       clientMessageId: stableClientMessageId
     };
 
@@ -606,6 +608,8 @@ export function ChatShell({
             focusTrigger={focusTrigger}
             thinkLevel={thinkLevel}
             onThinkLevelChange={handleThinkLevelChange}
+            webSearchOn={webSearchOn}
+            onWebSearchChange={setWebSearchOn}
           />
           <SohaFooter className="mt-1.5" />
         </div>

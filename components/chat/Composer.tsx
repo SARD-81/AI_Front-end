@@ -28,6 +28,8 @@ type ComposerProps = {
   focusTrigger?: number;
   thinkLevel: ThinkingLevel;
   onThinkLevelChange: (value: ThinkingLevel) => void;
+  webSearchOn: boolean;
+  onWebSearchChange: (value: boolean) => void;
 };
 
 export function Composer({
@@ -40,7 +42,9 @@ export function Composer({
   autoFocus,
   focusTrigger,
   thinkLevel,
-  onThinkLevelChange
+  onThinkLevelChange,
+  webSearchOn,
+  onWebSearchChange
 }: ComposerProps) {
   const t = useTranslations('app');
   const locale = useLocale();
@@ -52,7 +56,6 @@ export function Composer({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const restoreFocusRef = useRef(false);
-  const [webSearchOn, setWebSearchOn] = useState(false);
   const [webHint, setWebHint] = useState(false);
 
   const prefersTouchKeyboard = () =>
@@ -200,13 +203,14 @@ export function Composer({
                 type="button"
                 aria-pressed={webSearchOn}
                 aria-describedby="web-search-hint"
-                onClick={() => setWebSearchOn((current) => !current)}
+                disabled={disabled}
+                onClick={() => onWebSearchChange(!webSearchOn)}
                 onMouseEnter={() => setWebHint(true)}
                 onMouseLeave={() => setWebHint(false)}
                 onFocus={() => setWebHint(true)}
                 onBlur={() => setWebHint(false)}
                 className={cn(
-                  'inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+                  'inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60',
                   webSearchOn
                     ? 'bg-[hsl(var(--surface-elevated))] text-foreground'
                     : 'text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground'
