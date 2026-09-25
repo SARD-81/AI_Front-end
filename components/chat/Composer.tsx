@@ -50,35 +50,41 @@ export function Composer({
   const isAtCharacterLimit = characterCount >= MAX_MESSAGE_LENGTH;
   const canSend = !disabled && value.trim().length > 0;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const restoreFocusRef = useRef(false);
   const [webSearchOn, setWebSearchOn] = useState(false);
 
+  const prefersTouchKeyboard = () =>
+    window.matchMedia('(max-width: 767px)').matches ||
+    window.matchMedia('(pointer: coarse)').matches;
+
   useEffect(() => {
-    if (autoFocus) textareaRef.current?.focus();
+    if (!autoFocus || prefersTouchKeyboard()) return;
+    textareaRef.current?.focus();
   }, [autoFocus]);
 
   useEffect(() => {
-    if (focusTrigger === undefined || disabled) return;
+    if (!focusTrigger || disabled || prefersTouchKeyboard()) return;
     textareaRef.current?.focus();
   }, [focusTrigger, disabled]);
 
   useEffect(() => {
-    if (disabled) return;
-    if (!restoreFocusRef.current) return;
+    if (disabled || !restoreFocusRef.current) return;
     restoreFocusRef.current = false;
-    const mobile =
-      window.matchMedia('(max-width: 767px)').matches ||
-      window.matchMedia('(pointer: coarse)').matches;
-    if (mobile) return;
+    if (prefersTouchKeyboard()) return;
     const active = document.activeElement;
+    const stayedInComposer = Boolean(
+      active && composerRef.current?.contains(active)
+    );
     const idle =
-      !active || active === document.body || active === textareaRef.current;
+      !active || active === document.body || active === textareaRef.current || stayedInComposer;
     if (!idle) return;
     textareaRef.current?.focus();
   }, [disabled]);
 
   return (
     <motion.div
+      ref={composerRef}
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
       className="mx-auto w-full max-w-3xl rounded-2xl border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-2 py-1.5 shadow-[0_14px_36px_-22px_rgba(4,72,101,0.55)] transition-colors focus-within:border-[hsl(var(--primary)/0.6)] focus-within:ring-2 focus-within:ring-[hsl(var(--primary)/0.12)] sm:px-3"
@@ -99,7 +105,8 @@ export function Composer({
           restoreFocusRef.current = true;
         }}
         onBlur={(event) => {
-          if (event.relatedTarget && event.relatedTarget !== textareaRef.current) {
+          const next = event.relatedTarget;
+          if (next instanceof Node && composerRef.current && !composerRef.current.contains(next)) {
             restoreFocusRef.current = false;
           }
         }}
@@ -162,25 +169,30 @@ export function Composer({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button
-          type="button"
-          aria-pressed={webSearchOn}
-          aria-describedby="web-search-hint"
-          title={t('webSearch.hint')}
-          onClick={() => setWebSearchOn((current) => !current)}
-          className={cn(
-            'inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
-            webSearchOn
-              ? 'bg-[hsl(var(--surface-elevated))] text-foreground'
-              : 'text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground'
-          )}
-        >
-          <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="max-w-24 truncate">{t('webSearch.label')}</span>
-          <span className="sr-only">{webSearchOn ? t('webSearch.on') : t('webSearch.off')}</span>
-        </button>
-        <span id="web-search-hint" role="tooltip" className="sr-only">
-          {t('webSearch.hint')}
+        <span className="relative">
+          <button
+            type="button"
+            aria-pressed={webSearchOn}
+            aria-describedby="web-search-hint"
+            onClick={() => setWebSearchOn((current) => !current)}
+            className={cn(
+              'peer inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+              webSearchOn
+                ? 'bg-[hsl(var(--surface-elevated))] text-foreground'
+                : 'text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground'
+            )}
+          >
+            <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="max-w-24 truncate">{t('webSearch.label')}</span>
+            <span className="sr-only">{webSearchOn ? t('webSearch.on') : t('webSearch.off')}</span>
+          </button>
+          <span
+            id="web-search-hint"
+            role="tooltip"
+            className="invisible absolute bottom-[calc(100%+0.35rem)] start-0 z-20 w-56 rounded-lg bg-foreground px-2 py-1 text-start text-xs leading-5 text-background opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100"
+          >
+            {t('webSearch.hint')}
+          </span>
         </span>
 
         <div

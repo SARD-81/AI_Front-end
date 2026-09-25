@@ -25,6 +25,7 @@ import {
   handlePhoneResetComplete,
   handlePhoneResetRequest,
   handlePhoneResetVerify,
+  handlePasswordChange,
   handleRegistrationRequestOtp,
   handleRegistrationVerifyOtp
 } from '@/lib/server/phone-auth-bff';
@@ -450,5 +451,99 @@ describe('phone auth BFF contract', () => {
       details: ['ایمیل یا رمز موقت نادرست است، یا این حساب نیازی به تنظیم رمز ندارد.'],
       fields: {new_password_confirm: ['رمز جدید و تکرار آن یکسان نیستند.']}
     });
+  });
+
+  it('changes the signed-in password and clears the session on 200', async () => {
+    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
+    backendFetchResultMock.mockResolvedValue({status: 200, data: {status: 'password_changed'}});
+    const response = await handlePasswordChange(
+      post('/api/app/auth/password/change', {
+        current_password: 'old-secret',
+        new_password: 'new-secret'
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({status: 'password_changed'});
+    expect(clearAuthCookiesMock).toHaveBeenCalledOnce();
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(backendFetchResultMock).toHaveBeenCalledWith(
+      '/password/change/',
+      expect.objectContaining({
+        accessToken: 'access-token',
+        body: JSON.stringify({current_password: 'old-secret', new_password: 'new-secret'})
+      })
+    );
+  });
+
+  it('keeps contract password errors on the form without clearing the session', async () => {
+    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
+    const cases = [
+      {status: 400, code: 'invalid_current_password', detail: 'رمز فعلی نادرست است.'},
+      {status: 400, code: 'invalid_password', detail: ['حداقل طول رعایت نشده.', 'رمز رایج است.']},
+      {status: 400, code: 'password_unchanged', detail: 'رمز جدید باید متفاوت باشد.'},
+      {status: 403, code: 'account_unavailable', detail: 'حساب در دسترس نیست.'}
+    ];
+    for (const item of cases) {
+      backendFetchResultMock.mockRejectedValueOnce(
+        new ApiError(
+          Array.isArray(item.detail) ? item.detail[0] : item.detail,
+          item.status,
+          item.code,
+          {code: item.code, detail: item.detail}
+        )
+      );
+      const response = await handlePasswordChange(
+        post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+      );
+      expect(response.status).toBe(item.status);
+      expect(await response.json()).toMatchObject({code: item.code});
+    }
+    expect(clearAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it('asks for a new sign-in when the access cookie is missing', async () => {
+    getAuthCookiesMock.mockResolvedValue({});
+    const response = await handlePasswordChange(
+      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+    );
+    expect(response.status).toBe(401);
+    expect(backendFetchResultMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards rate limits with and without retry_after', async () => {
+    getAuthCookiesMock.mockResolvedValue({access: 'access-token'});
+    backendFetchResultMock.mockRejectedValueOnce(
+      new ApiError('محدود', 429, 'rate_limited', {code: 'rate_limited', retry_after: 15}, 15)
+    );
+    const limited = await handlePasswordChange(
+      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+    );
+    expect(limited.status).toBe(429);
+    expect(await limited.json()).toMatchObject({code: 'rate_limited', retry_after: 15});
+
+    backendFetchResultMock.mockRejectedValueOnce(
+      new ApiError('محدود', 429, 'rate_limited', {code: 'rate_limited'})
+    );
+    const plain = await handlePasswordChange(
+      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'})
+    );
+    expect(plain.status).toBe(429);
+    expect((await plain.json()).retry_after ?? null).toBeNull();
+    expect(clearAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it('logs a cross-site password change without calling the backend', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const response = await handlePasswordChange(
+      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'}, {
+        origin: 'https://evil.example'
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({code: 'cross_site_request'});
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('https://evil.example'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('http://localhost'));
+    expect(backendFetchResultMock).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

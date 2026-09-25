@@ -99,6 +99,12 @@ function nextHold(current: OtpHold | null, seconds: number | null | undefined, n
   };
 }
 
+function stepFromEntry(entry: string | null): Step {
+  if (entry === 'phone') return 'identify';
+  if (entry === 'email') return 'legacy';
+  return 'choose';
+}
+
 function stepCopy(step: Step) {
   switch (step) {
     case 'password':
@@ -141,7 +147,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<Step>('choose');
+  const [step, setStep] = useState<Step>(() => stepFromEntry(searchParams.get('entry')));
   const [phoneRaw, setPhoneRaw] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -561,6 +567,12 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   };
 
   useEffect(() => {
+    const entry = searchParams.get('entry') || new URLSearchParams(window.location.search).get('entry');
+    if (entry !== 'phone' && entry !== 'email') return;
+    setStep((current) => (current === 'choose' ? stepFromEntry(entry) : current));
+  }, [searchParams]);
+
+  useEffect(() => {
     const onPop = () => {
       const entry = new URLSearchParams(window.location.search).get('entry');
       forgetSecrets();
@@ -577,7 +589,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
 
   const selectLocale = (nextLocale: 'fa' | 'en') => {
     if (nextLocale === locale) return;
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     const nextPath = replaceLocaleInPath(pathname, nextLocale);
     const query = params.toString();
     router.replace(query ? `${nextPath}?${query}` : nextPath);
@@ -639,10 +651,19 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 type="button"
                 className={surfaceStyles.back}
                 onClick={() => {
-                  if (step === 'legacy-reset') go('legacy');
-                  else if (step === 'register-code') go('register-otp');
-                  else if (step === 'activation' || step === 'reset-otp') go('password');
-                  else go('identify');
+                  if (step === 'legacy' || step === 'imported-password') changeMethod();
+                  else if (step === 'legacy-reset') go('legacy');
+                  else if (step === 'register-code') {
+                    setCode('');
+                    go('register-otp');
+                  } else if (step === 'activation' || step === 'reset-otp') {
+                    setCode('');
+                    go('password');
+                  } else {
+                    setPassword('');
+                    setCode('');
+                    go('identify');
+                  }
                 }}
               >
                 {t('back')}

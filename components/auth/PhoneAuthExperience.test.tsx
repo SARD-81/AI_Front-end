@@ -18,11 +18,12 @@ const registerWithPhone = vi.hoisted(() => vi.fn());
 const verifyRegistrationOtp = vi.hoisted(() => vi.fn());
 const replace = vi.hoisted(() => vi.fn());
 const refresh = vi.hoisted(() => vi.fn());
+const authSearch = vi.hoisted(() => ({params: new URLSearchParams()}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({replace, refresh, push: vi.fn()}),
   usePathname: () => '/fa/auth',
-  useSearchParams: () => new URLSearchParams()
+  useSearchParams: () => authSearch.params
 }));
 
 vi.mock('next/image', () => ({
@@ -77,6 +78,8 @@ describe('phone auth OTP countdown', () => {
     replace.mockReset();
     refresh.mockReset();
     localStorage.clear();
+    authSearch.params = new URLSearchParams();
+    window.history.replaceState({}, '', '/fa/auth');
   });
 
   afterEach(() => {
@@ -589,5 +592,38 @@ describe('phone auth OTP countdown', () => {
     await act(async () => {
       release({status: 'accepted', retry_after: 9});
     });
+  });
+
+  it('opens the email or phone path from entry on a direct load', () => {
+    authSearch.params = new URLSearchParams('entry=email');
+    render(
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <PhoneAuthExperience locale="fa" />
+      </NextIntlClientProvider>
+    );
+    expect(screen.getByRole('heading', {name: 'قبلاً با ایمیل حساب داشتم'})).toBeTruthy();
+    cleanup();
+
+    authSearch.params = new URLSearchParams('entry=phone');
+    render(
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <PhoneAuthExperience locale="fa" />
+      </NextIntlClientProvider>
+    );
+    expect(screen.getByLabelText('شماره موبایل')).toBeTruthy();
+  });
+
+  it('returns the email form to the chooser and drops the typed password', () => {
+    authSearch.params = new URLSearchParams('entry=email');
+    render(
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <PhoneAuthExperience locale="fa" />
+      </NextIntlClientProvider>
+    );
+    fireEvent.change(screen.getByPlaceholderText('رمز عبور'), {target: {value: 'secret-pass'}});
+    fireEvent.click(screen.getByRole('button', {name: 'بازگشت'}));
+    expect(screen.getByRole('heading', {name: 'قبلاً در سها حساب داشته‌اید؟'})).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'بله، حساب ایمیلی قدیمی دارم'}));
+    expect((screen.getByPlaceholderText('رمز عبور') as HTMLInputElement).value).toBe('');
   });
 });

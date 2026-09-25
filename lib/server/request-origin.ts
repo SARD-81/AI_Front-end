@@ -22,6 +22,11 @@ export function crossSiteRejection(request: Request): NextResponse | null {
   }
 
   if (origin !== expected) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[cross_site_request] request origin ${origin} did not match received address ${expected}`
+      );
+    }
     return NextResponse.json(
       {message: 'درخواست از مبدأ نامعتبر است.', code: 'cross_site_request'},
       {status: 403}
