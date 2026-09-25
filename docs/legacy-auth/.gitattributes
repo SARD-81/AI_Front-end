@@ -1,0 +1,2 @@
+# Preserve original whitespace inside this historical diff for exact replay.
+restore-email-auth-from-c2e7850.patch -whitespace

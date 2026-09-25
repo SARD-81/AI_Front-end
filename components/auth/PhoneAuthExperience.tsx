@@ -1,6 +1,7 @@
 'use client';
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
+import { AuthKnowledgeArt } from '@/components/auth/AuthKnowledgeArt';
 import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
 import { Input } from '@/components/ui/input';
 import {
@@ -44,7 +45,6 @@ type Step =
   | 'register-profile'
   | 'reset-otp'
   | 'reset-password'
-  | 'phone-setup'
   | 'imported-password'
   | 'support';
 
@@ -136,8 +136,6 @@ function stepCopy(step: Step) {
       } as const;
     case 'imported-password':
       return { title: 'importedTitle', body: 'importedBody' } as const;
-    case 'phone-setup':
-      return { title: 'setupBody', body: 'setupBody' } as const;
     case 'support':
       return { title: 'supportTitle', body: 'supportBody' } as const;
     default:
@@ -186,7 +184,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const activationToken = useRef('');
   const registrationToken = useRef('');
   const resetToken = useRef('');
-  const pendingResult = useRef<LoginResultDTO | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const flight = useRef(false);
   const verifyHoldRef = useRef<OtpHold | null>(null);
@@ -222,7 +219,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const recoveryLeft = otpSecondsLeft(lanes.recovery, now);
   const submitLeft = otpSecondsLeft(submitHold, now);
   const verifyLeft = otpSecondsLeft(verifyHold, now);
-  const copy = stepCopy(step === 'phone-setup' ? 'phone-setup' : step);
+  const copy = stepCopy(step);
   const phase = verificationRequired ? registrationPhase(step) : null;
 
   const arm = (lane: OtpLane, seconds?: number | null) => {
@@ -303,6 +300,15 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         setVerificationRequired(identified.verificationRequired);
         setPassword('');
         setCode('');
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setRole('student');
+        setStaffCategory('other');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPassword(false);
+        setShowNewPassword(false);
         setNotice(null);
         setRegistrationBlocked(false);
         setEmailTaken(false);
@@ -344,6 +350,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         ) {
           setNotice(null);
           setStep('imported-password');
+          return;
         }
         throw caught;
       }
@@ -367,6 +374,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           activationToken.current = '';
           setNotice(null);
           setStep('imported-password');
+          return;
         }
         if (
           caught instanceof ServiceError &&
@@ -377,6 +385,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           setCode('');
           setNotice(t('activationRestart'));
           setStep('password');
+          return;
         }
         throw caught;
       }
@@ -465,12 +474,16 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const restartRegistration = () => {
     registrationToken.current = '';
     setCode('');
+    setPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
     setError(null);
     setNotice(null);
     setFieldError({});
     setRegistrationBlocked(false);
     setEmailTaken(false);
     setStep(verificationRequired ? 'register-otp' : 'identify');
+    if (verificationRequired === false) setVerificationRequired(null);
   };
 
   const onRegister = () =>
@@ -506,7 +519,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           ) {
             const again = await identifyPhone(phoneRaw, signal);
             setVerificationRequired(again.verificationRequired);
-            if (again.next === 'password') setStep('password');
+            setStep(again.next === 'password' ? 'password' : 'identify');
             setError(errorText(caught, t('genericError')));
             return;
           }
@@ -533,6 +546,11 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           return true;
         }
         if (caught.code === 'invalid_registration') {
+          if (verificationRequired === false) {
+            restartRegistration();
+            setError(t('registrationRestartHint'));
+            return true;
+          }
           setRegistrationBlocked(true);
           setError(caught.message);
           return true;
@@ -613,9 +631,12 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     activationToken.current = '';
     registrationToken.current = '';
     resetToken.current = '';
-    pendingResult.current = null;
     setPassword('');
     setCode('');
+    setFirstName('');
+    setLastName('');
+    setRole('student');
+    setStaffCategory('other');
     setNewPassword('');
     setConfirmPassword('');
     setEmail('');
@@ -638,28 +659,20 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setStep('identify');
   }, [searchParams]);
 
-  const onInitialPassword = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await completeMigratedPassword({
-        email: email.trim(),
-        temporaryPassword: password,
-        newPassword,
-        newPasswordConfirm: confirmPassword
-      });
+  const onInitialPassword = () =>
+    run(null, async (signal) => {
+      const result = await completeMigratedPassword(
+        {
+          email: email.trim(),
+          temporaryPassword: password,
+          newPassword,
+          newPasswordConfirm: confirmPassword
+        },
+        signal
+      );
       forgetSecrets();
-      if (result.kind === 'phone_setup_required') {
-        setStep('support');
-        return;
-      }
-      setStep('identify');
-    } catch (caught) {
-      if (!isAbortError(caught)) setError(errorText(caught, t('genericError')));
-    } finally {
-      setBusy(false);
-    }
-  };
+      setStep(result.kind === 'phone_setup_required' ? 'support' : 'identify');
+    });
 
   useEffect(() => {
     const onPop = () => {
@@ -690,8 +703,8 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     step === 'register-code' ||
     step === 'reset-otp' ||
     step === 'activation';
-  const heading = step === 'phone-setup' ? t('university') : t(copy.title);
-  const guidance = step === 'phone-setup' ? t('setupBody') : t(copy.body);
+  const heading = t(copy.title);
+  const guidance = t(copy.body);
   const phoneLocked = busy || step !== 'identify';
   const inputClass = (invalid?: boolean, extra?: string) =>
     [surfaceStyles.input, invalid ? surfaceStyles.invalid : '', extra ?? '']
@@ -702,32 +715,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     <main id="main-content" className={surfaceStyles.surface}>
       <div className={surfaceStyles.canvas}>
         <section className={surfaceStyles.identity}>
-          <svg
-            className={surfaceStyles.academic}
-            viewBox="0 0 640 360"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              className={surfaceStyles.arc}
-              d="M40 300c80-150 180-210 280-210s200 60 280 210"
-            />
-            <path
-              className={surfaceStyles.arcSoft}
-              d="M120 300c60-100 130-140 200-140s140 40 200 140"
-            />
-            <path className={surfaceStyles.baseLine} d="M70 312h500" />
-            <circle className={surfaceStyles.lamp} cx="180" cy="168" r="3.5" />
-            <circle className={surfaceStyles.lamp} cx="320" cy="118" r="4" />
-            <circle className={surfaceStyles.lamp} cx="460" cy="168" r="3.5" />
-            <circle
-              className={surfaceStyles.lampWarm}
-              cx="320"
-              cy="214"
-              r="3"
-            />
-            <path className={surfaceStyles.diamond} d="M320 248l8 8-8 8-8-8z" />
-          </svg>
+          <div className={surfaceStyles.identityTexture} aria-hidden="true" />
           <div
             role="group"
             aria-label={t('language')}
@@ -759,12 +747,15 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                 className="h-12 w-12 lg:h-16 lg:w-16"
               />
             </span>
-            <div>
+            <div className={surfaceStyles.identityWords}>
               <p className={`${surfaceStyles.wordmark} font-display-fa`}>
                 {t('brandName')}
               </p>
               <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
             </div>
+          </div>
+          <div className={surfaceStyles.knowledgeArt}>
+            <AuthKnowledgeArt />
           </div>
         </section>
 
@@ -1263,11 +1254,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                       </button>
                     </div>
                   ) : null}
-                  {registrationBlocked && !verificationRequired ? (
-                    <p className={surfaceStyles.banner} role="status">
-                      {t('registrationRestartHint')}
-                    </p>
-                  ) : null}
                 </form>
               ) : null}
 
@@ -1317,22 +1303,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     {t('resend')}
                   </button>
                 </form>
-              ) : null}
-
-              {step === 'phone-setup' ? (
-                <div className={surfaceStyles.form}>
-                  <button
-                    type="button"
-                    className={surfaceStyles.primary}
-                    onClick={() => {
-                      const result = pendingResult.current;
-                      if (!result) return;
-                      continueToDestination(result);
-                    }}
-                  >
-                    {t('continueToApp')}
-                  </button>
-                </div>
               ) : null}
 
               {step === 'imported-password' ? (

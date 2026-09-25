@@ -3,8 +3,6 @@ import { clearAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { parseMigratedPasswordResponse } from '@/lib/auth/migrated-password';
-import { isValidUniversityEmail } from '@/lib/server/university-config';
-import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
 import { readJsonBody } from '@/lib/server/limited-body';
 
@@ -31,9 +29,11 @@ export async function POST(request: Request) {
     const newPasswordConfirm =
       body.new_password_confirm ?? body.newPasswordConfirm ?? '';
 
-    if (!email || !isValidUniversityEmail(email)) {
+    // The migration contract requires the account's email, but does not
+    // restrict it to a university domain. The backend validates ownership.
+    if (!email) {
       return NextResponse.json(
-        { message: UNIVERSITY_EMAIL_HINT },
+        { message: 'ایمیل حساب مهاجرتی الزامی است.' },
         { status: 400 }
       );
     }

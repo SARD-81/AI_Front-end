@@ -193,6 +193,7 @@ describe('phone auth OTP countdown', () => {
     expect(
       await screen.findByRole('heading', { name: 'اول باید رمز موقت عوض شود' })
     ).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByLabelText('ایمیل حساب مهاجرتی')).toBeTruthy();
     expect(screen.getByLabelText('رمز موقت')).toBeTruthy();
     expect(
@@ -994,15 +995,51 @@ describe('phone auth OTP countdown', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'ساخت حساب و ورود' }));
     });
-    expect(screen.getByText('درخواست ثبت‌نام نامعتبر است.')).toBeTruthy();
-    expect(screen.getByText(/از شماره دوباره شروع کنید/)).toBeTruthy();
-    expect(screen.queryByText(/کد را دوباره بگیرید/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
     expect(
       screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
     ).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'از همین مرحله دوباره شروع کنید'
+    );
+    expect(screen.queryByText(/کد را دوباره بگیرید/)).toBeNull();
     expect(requestRegistrationOtp).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'درخواست کد' })).toBeNull();
+  });
+
+  it('clears the previous registration profile before identifying another number', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'register',
+      verificationRequired: false
+    });
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
+    });
+    fireEvent.change(screen.getByLabelText('نام'), {
+      target: { value: 'نام قبلی' }
+    });
+    fireEvent.change(screen.getByLabelText('ایمیل (اختیاری)'), {
+      target: { value: 'previous@example.org' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'Previous-Password-456' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09121111111' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
+    });
+    expect((screen.getByLabelText('نام') as HTMLInputElement).value).toBe('');
+    expect(
+      (screen.getByLabelText('ایمیل (اختیاری)') as HTMLInputElement).value
+    ).toBe('');
+    expect((screen.getByLabelText('رمز عبور') as HTMLInputElement).value).toBe('');
+    expect(requestRegistrationOtp).not.toHaveBeenCalled();
   });
 
   it('returns a migrated password to phone login or support without a session', async () => {

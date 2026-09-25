@@ -43,7 +43,9 @@ describe('migrated password contract', () => {
       status: 'password_updated',
       phone_setup_required: true,
       refresh: 'jwt'
-    }
+    },
+    { status: 'password_updated', phone_login_required: true, access: null },
+    { status: 'password_updated', phone_login_required: 'true' }
   ])('rejects an incomplete or contradictory body %#', (body) => {
     expect(parseMigratedPasswordResponse(body)).toBeNull();
   });
