@@ -54,7 +54,7 @@ describe('composer focus and web search hint', () => {
 
   it('does not focus the textarea when the chat first opens', () => {
     desktop();
-    renderComposer();
+    renderComposer({focusTrigger: 0});
     expect(document.activeElement).not.toBe(screen.getByRole('textbox'));
   });
 
