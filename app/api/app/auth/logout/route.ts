@@ -1,8 +1,12 @@
 import {NextResponse} from 'next/server';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {getAuthCookies, clearAuthCookies} from '@/lib/server/auth-cookies';
+import {crossSiteRejection} from '@/lib/server/request-origin';
 
-export async function POST() {
+export async function POST(request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   const {access, refresh} = await getAuthCookies();
 
   try {

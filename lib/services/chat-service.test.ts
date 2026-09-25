@@ -210,9 +210,29 @@ describe('chat websocket hardening contract', () => {
     expect(JSON.parse(sockets[0].sent[0])).toMatchObject({
       message: 'hello',
       client_message_id: CLIENT_MESSAGE_ID,
-      think_level: 'low'
+      think_level: 'low',
+      web_search: false
     });
     expect(result.content).toBe('answer');
+  });
+
+  it('sends web_search true in the existing websocket frame without a new HTTP call', async () => {
+    scenarios.push((socket) => {
+      socket.emitOpen();
+      socket.emitMessage({type: 'connected'});
+      socket.emitMessage(answer());
+    });
+
+    await sendMessageWithWebSocket('conversation', {...payload(), webSearch: true});
+
+    expect(sockets[0].sent).toHaveLength(1);
+    expect(JSON.parse(sockets[0].sent[0])).toEqual({
+      message: 'hello',
+      client_message_id: CLIENT_MESSAGE_ID,
+      think_level: 'low',
+      web_search: true
+    });
+    expect(apiFetchMock).toHaveBeenCalledTimes(1); // Existing WebSocket ticket only.
   });
 
   it('preserves a locked close code even when onerror fires first', async () => {

@@ -19,6 +19,7 @@ import {
   ChatWebSocketError
 } from '@/lib/services/chat-service';
 import {prependHistory} from '@/lib/chat/history';
+import {groupChatsByDate} from '@/lib/chat/group-chats';
 import { uuid } from '@/lib/utils/uid';
 import { revealAnswerProgressively } from '@/lib/chat/reveal-answer';
 
@@ -72,23 +73,7 @@ export function useOlderMessages(chatId?: string) {
 }
 
 export function useGroupedChats(chats: ChatSummary[] | undefined) {
-  return useMemo(() => {
-    const today: ChatSummary[] = [];
-    const month: ChatSummary[] = [];
-    const older: ChatSummary[] = [];
-
-    const nowDate = new Date();
-    chats?.forEach((chat) => {
-      const diffDays = Math.floor(
-        (nowDate.getTime() - new Date(chat.updatedAt).getTime()) / 86400000
-      );
-      if (diffDays < 1) today.push(chat);
-      else if (diffDays <= 30) month.push(chat);
-      else older.push(chat);
-    });
-
-    return { today, month, older };
-  }, [chats]);
+  return useMemo(() => groupChatsByDate(chats ?? []), [chats]);
 }
 
 function upsertChatSummary(

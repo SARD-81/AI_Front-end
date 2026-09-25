@@ -2,11 +2,15 @@ import {NextResponse} from 'next/server';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
+import {crossSiteRejection} from '@/lib/server/request-origin';
 
 // Legacy lookup: resolves STUDENT accounts by `student_id`. The static
 // `by-id` segment takes precedence over this dynamic segment, so
 // /admin/users/by-id/<pk>/toggle-lock still hits the role-agnostic route.
-export async function POST(_request: Request, context: {params: Promise<{studentId: string}>}) {
+export async function POST(request: Request, context: {params: Promise<{studentId: string}>}) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const {studentId} = await context.params;
     const normalized = studentId.trim();

@@ -62,7 +62,36 @@
       "noSearchResults": "No conversations match your search.",
       "searchDialogTitle": "Search conversations",
       "recentChats": "Recent chats",
-      "searchResults": "Search results"
+      "searchResults": "Search results",
+      "productName": "Soha",
+      "productSubtitle": "Shahid Beheshti University assistant"
+    },
+    "services": {
+      "label": "Services",
+      "open": "Open services",
+      "close": "Close services",
+      "collapse": "Collapse services",
+      "expand": "Expand services",
+      "accessDeniedTitle": "Limited access",
+      "accessDenied": "Your account does not have access to {section}.",
+      "comingSoon": "Coming soon",
+      "acknowledge": "Understood",
+      "items": {
+        "dashboard": "Dashboard",
+        "chat": "Chat",
+        "documents": "Document management",
+        "memory": "Memory management"
+      }
+    },
+    "conversations": {
+      "label": "Conversations",
+      "open": "Open conversations",
+      "close": "Close conversations"
+    },
+    "chatHeader": {
+      "productName": "Soha",
+      "subtitle": "Intelligent assistant of Shahid Beheshti University",
+      "facultyAccess": "With special access for the Faculty of Computer Science and Engineering (beta)"
     },
     "dialog": {
       "close": "Close"
@@ -117,8 +146,9 @@
     },
     "emptyState": {
       "logoAlt": "Shahid Beheshti University logo",
-      "title": "Welcome to Shahid Beheshti University AI Assistant",
-      "description": "Your educational assistant for the Faculty of Computer Science and Engineering. Ask about courses, schedules, and student services.",
+      "title": "Welcome to Soha, the intelligent assistant of Shahid Beheshti University",
+      "coverageLine": "Answers to your questions on education, research, faculty affairs, welfare, dormitories, and dining at the university",
+      "description": "Your Shahid Beheshti University assistant for academic and research questions.",
       "suggestedPrompts": [
         "What should I do to register and prepare for my first semester?",
         "Where can I find course registration, add/drop and exam dates?",
@@ -126,7 +156,8 @@
         "Where can I find my class timetable and classroom locations?",
         "How should I choose first-semester courses and check prerequisites?",
         "How can I learn about the faculty members and their areas of expertise?"
-      ]
+      ],
+      "facultyDescription": "With special access to information about professors, courses, classes, and staff of the Faculty of Computer Engineering and Science"
     },
     "messageRail": {
       "jumpToUserMessage": "Jump to your message",
@@ -137,6 +168,7 @@
     "chat": {
       "defaultTitle": "Conversation",
       "connectionError": "Could not reach the response server. Please try again.",
+      "linkLost": "The connection to Soha was lost. Check your connection and try again.",
       "copySuccess": "Copied",
       "copyError": "Could not copy the message",
       "openConversations": "Open conversations",
@@ -169,6 +201,12 @@
         }
       },
       "description": "Thinking level controls response depth for this message."
+    },
+    "webSearch": {
+      "label": "Web search",
+      "on": "On",
+      "off": "Off",
+      "hint": "When enabled, web search is requested with your message and the reply may take longer."
     },
     "attachment": {
       "label": "Attach file",
@@ -205,24 +243,105 @@
       "loadOlder": "Load earlier messages",
       "error": "Could not load earlier messages. Please try again.",
       "beginning": "Beginning of conversation"
-    }
+    },
+    "yesterday": "Yesterday"
   },
   "auth": {
     "hero": {
       "logoAlt": "University logo",
       "title": "Shahid Beheshti University AI Assistant",
-      "description": "Secure access to the educational assistant for the Faculty of Computer Science and Engineering.",
+      "description": "Soha, the assistant of Shahid Beheshti University",
       "tagline": "Secure, role-aware access for students, professors, and university staff."
     },
-    "card": {
-      "loginTitle": "Sign in",
-      "signupTitle": "Create account",
-      "loginDescription": "Enter your university email and password to sign in.",
-      "signupDescription": "To create an account, first verify your university email.",
-      "switchToSignup": "Don’t have an account? Sign up",
-      "switchToLogin": "Already have an account? Sign in",
-      "resetTitle": "Reset password",
-      "resetDescription": "Enter your university email, verify the code, and create a new password."
+    "closed": {
+      "title": "Sign-in is not available yet",
+      "body": "Mobile-number sign-in opens when this environment is connected to the new contract. Until then, this page cannot sign anyone in or create an account."
+    },
+    "phone": {
+      "logoAlt": "Shahid Beheshti University logo",
+      "brandName": "Soha",
+      "identityLine": "Intelligent assistant of Shahid Beheshti University",
+      "university": "Soha, the assistant of Shahid Beheshti University",
+      "language": "Language",
+      "identifyTitle": "Continue with your mobile number",
+      "identifyBody": "Enter your mobile number.",
+      "registerProgress": "New account steps",
+      "passwordTitle": "Password for this number",
+      "passwordBody": "Enter your password.",
+      "invalidPhoneCredentials": "The mobile number or password is incorrect.",
+      "activationTitle": "Activate this account",
+      "activationBody": "Enter the code sent to your mobile number.",
+      "activationRestart": "Activation failed and its token was used up. Start sign-in again with this number and password.",
+      "registerOtpTitle": "Create a new account",
+      "registerOtpBody": "Get a verification code to create an account.",
+      "registerCodeTitle": "Code for the new account",
+      "registerCodeBody": "Enter the verification code sent to your mobile phone.",
+      "registerBody": "Enter the account name, role, and password.",
+      "numberOwnershipNotice": "Use only a mobile number that belongs to you when creating an account. If you use someone else's number, your account will be suspended after review.",
+      "stepNumber": "Phone number",
+      "stepCode": "Verification code",
+      "stepAccount": "Create account",
+      "passwordGuide": "The server checks length, common passwords, all-numeric passwords, and similarity to your name or email. If it rejects the password, those messages stay under the field.",
+      "passwordTipsTitle": "Tips for a stronger password",
+      "passwordTipsNote": "These tips help you create a stronger password. The service makes the final decision and explains any rejection.",
+      "emailTakenHint": "This email belongs to another account. A new registration does not attach that account to this number.",
+      "registrationInvalidHint": "This registration request cannot continue. Request a code again.",
+      "registrationRestartHint": "This registration request cannot continue. Check the number and start again from this step.",
+      "requestFreshCode": "Request a fresh code",
+      "resetOtpTitle": "Reset this number's password",
+      "resetOtpBody": "Get a verification code to reset your password.",
+      "resetPasswordTitle": "New password",
+      "resetPasswordBody": "Enter a new password.",
+      "freshCodeHint": "This recovery request can no longer be used. Request a new code.",
+      "restartRegistration": "Start registration again",
+      "importedTitle": "Replace the temporary password first",
+      "importedBody": "Enter the migrated account email and temporary password, then choose a new password. This step does not create a phone sign-in session.",
+      "importedHaveCredentials": "I have the email and temporary password",
+      "importedSupport": "If you do not have the email or the temporary password, this screen will not invent one. Contact support or follow the account migration.",
+      "phoneLabel": "Mobile number",
+      "continue": "Continue with mobile number",
+      "loading": "Please wait…",
+      "passwordLabel": "Password",
+      "temporaryPassword": "Temporary password",
+      "newPassword": "New password",
+      "importedEmail": "Migrated account email",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "signIn": "Sign in",
+      "forgot": "Forgot this number's password",
+      "supportTitle": "Recover through support",
+      "supportBody": "In this pilot, password recovery goes through support for the same account. No text message or email recovery is sent.",
+      "back": "Back",
+      "smsRequested": "The SMS request was accepted. Delivery to the handset is not guaranteed.",
+      "sendCode": "Request code",
+      "codeLabel": "Verification code",
+      "verify": "Verify code",
+      "resend": "Request another code",
+      "resendWait": "Request again in {seconds}s",
+      "verifyWait": "Verify again in {seconds}s",
+      "registerTitle": "Create a new account",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "role": "Role",
+      "staffCategory": "Staff category",
+      "emailOptional": "Email (optional)",
+      "emailHint": "This email is not verified and is not used for password recovery.",
+      "confirmPassword": "Repeat password",
+      "createAccount": "Create account and sign in",
+      "savePassword": "Save new password",
+      "resetDone": "Password changed. Sign in again. The previous session was closed.",
+      "passwordMismatch": "The passwords do not match.",
+      "genericError": "The request failed.",
+      "roles": {
+        "student": "Student",
+        "professor": "Professor",
+        "staff": "Staff"
+      },
+      "categories": {
+        "faculty_administration": "Faculty administration",
+        "vice_presidency": "Vice presidency",
+        "other": "Other"
+      }
     },
     "login": {
       "success": "Signed in successfully.",
@@ -235,6 +354,27 @@
       "forgotPassword": "Forgot password?",
       "emailLabel": "University email",
       "emailPlaceholder": "Example: user@sbu.ac.ir"
+    },
+    "passwordChange": {
+      "action": "Change password",
+      "title": "Change password",
+      "description": "Enter the current password and a new password for this signed-in account. This is separate from forgot-password and SMS recovery.",
+      "current": "Current password",
+      "next": "New password",
+      "confirm": "Repeat new password",
+      "show": "Show password",
+      "hide": "Hide password",
+      "submit": "Save new password",
+      "submitting": "Saving…",
+      "success": "Your password was changed. Sign in again to continue.",
+      "mismatch": "The new password and its repeat do not match.",
+      "currentInvalid": "The current password is not correct.",
+      "unchanged": "The new password must be different from the current one.",
+      "unavailable": "This account cannot change its password right now. You are not signed in.",
+      "signInAgain": "Your session is no longer valid. Sign in again.",
+      "rateLimited": "Too many attempts. Try again later.",
+      "rateLimitedWait": "Too many attempts. Try again in {seconds} seconds.",
+      "generic": "The password could not be changed."
     },
     "setPassword": {
       "title": "Set a new password",
@@ -260,11 +400,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",

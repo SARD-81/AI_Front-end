@@ -28,6 +28,44 @@ it('returns ten latest messages, then ten older, then the remainder despite new 
   expect(first.olderCursor).toBeNull();
 });
 
+it('issues one backend request per legacy page and stops an unbounded scan', async () => {
+  const load = vi.fn(async (query: string) => {
+    const page = Number(new URLSearchParams(query).get('cursor') ?? '0');
+    return {
+      results: [message(page)],
+      next: page < 2 ? `?cursor=${page + 1}` : null
+    };
+  });
+  await readHistoryWindow(load, null);
+  expect(load).toHaveBeenCalledTimes(3);
+
+  const longLoad = vi.fn(async (query: string) => {
+    const page = Number(new URLSearchParams(query).get('cursor') ?? '0');
+    return { results: [message(page)], next: `?cursor=${page + 1}` };
+  });
+  await expect(readHistoryWindow(longLoad, null)).rejects.toMatchObject({
+    status: 503,
+    code: 'HISTORY_SCAN_LIMIT'
+  });
+  expect(longLoad.mock.calls.length).toBeLessThanOrEqual(26);
+});
+
+it('stops a slow compat scan on the cumulative budget without returning a partial window', async () => {
+  let now = 1_000_000;
+  const spy = vi.spyOn(Date, 'now').mockImplementation(() => now);
+  const load = vi.fn(async (query: string) => {
+    now += 21_000;
+    const page = Number(new URLSearchParams(query).get('cursor') ?? '0');
+    return { results: [message(page)], next: `?cursor=${page + 1}` };
+  });
+  await expect(readHistoryWindow(load, null)).rejects.toMatchObject({
+    status: 503,
+    code: 'HISTORY_SCAN_LIMIT'
+  });
+  expect(load).toHaveBeenCalledTimes(1);
+  spy.mockRestore();
+});
+
 it('uses exactly one backend call in native mode and restores chronological display order', async () => {
   const load = vi.fn(async () => ({
     results: rows.slice(15).reverse(),

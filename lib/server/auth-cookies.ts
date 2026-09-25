@@ -1,5 +1,6 @@
 import 'server-only';
 import {cookies} from 'next/headers';
+import {AUTH_COOKIE_FALLBACK, cookieMaxAgeFromToken} from '@/lib/server/jwt-expiry';
 
 const ACCESS_COOKIE = 'sbu_access';
 const REFRESH_COOKIE = 'sbu_refresh';
@@ -14,10 +15,12 @@ export function resolveAuthCookieSecure(
 ): boolean {
   const override = env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
 
+  if (env.NODE_ENV === 'production') return true;
+
   if (override === 'true') return true;
   if (override === 'false') return false;
 
-  return env.NODE_ENV === 'production';
+  return false;
 }
 
 function getCookieOptions() {
@@ -28,11 +31,6 @@ function getCookieOptions() {
     path: '/'
   };
 }
-
-// Explicit lifetimes so the session survives browser restarts and the
-// cookies don't silently outlive the tokens they carry.
-const ACCESS_COOKIE_MAX_AGE = 60 * 60; // 60 minutes (backend access token TTL)
-const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours (backend refresh token TTL)
 
 export async function getAuthCookies(): Promise<{access?: string; refresh?: string}> {
   const store = await cookies();
@@ -48,12 +46,12 @@ export async function setAuthCookies(tokens: {access: string; refresh?: string})
 
   store.set(ACCESS_COOKIE, tokens.access, {
     ...cookieOptions,
-    maxAge: ACCESS_COOKIE_MAX_AGE
+    maxAge: cookieMaxAgeFromToken(tokens.access, AUTH_COOKIE_FALLBACK.access)
   });
   if (tokens.refresh) {
     store.set(REFRESH_COOKIE, tokens.refresh, {
       ...cookieOptions,
-      maxAge: REFRESH_COOKIE_MAX_AGE
+      maxAge: cookieMaxAgeFromToken(tokens.refresh, AUTH_COOKIE_FALLBACK.refresh)
     });
   }
 }

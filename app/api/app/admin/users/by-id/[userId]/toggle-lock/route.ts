@@ -2,10 +2,14 @@ import {NextResponse} from 'next/server';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
+import {crossSiteRejection} from '@/lib/server/request-origin';
 
 // Role-agnostic account lock toggle by primary key. Preferred over the legacy
 // student-id route because it also covers professor/staff/admin accounts.
-export async function POST(_request: Request, context: {params: Promise<{userId: string}>}) {
+export async function POST(request: Request, context: {params: Promise<{userId: string}>}) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const {userId} = await context.params;
 

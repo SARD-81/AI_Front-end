@@ -69,7 +69,7 @@ function ThinkingIndicator() {
   return (
     <div className="inline-flex min-h-10 items-center gap-2.5 py-1 text-sm">
       <span
-        className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] motion-safe:animate-pulse"
+        className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)] motion-safe:animate-pulse"
         aria-hidden
       />
       <span className="loader-shimmer font-medium">{t('message.thinking')}</span>

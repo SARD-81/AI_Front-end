@@ -11,8 +11,12 @@ type BackendPage = { results: Message[]; next?: string | null };
 type Cursor = { mode: 'compat' | 'native'; value: string };
 type Load = (query: string) => Promise<BackendPage>;
 
-function fail(message: string, status = 502): never {
-  throw new ApiError(message, status, 'HISTORY_PAGE_INVALID');
+function fail(
+  message: string,
+  status = 502,
+  code = 'HISTORY_PAGE_INVALID'
+): never {
+  throw new ApiError(message, status, code);
 }
 function encode(cursor: Cursor) {
   return Buffer.from(JSON.stringify(cursor)).toString('base64url');
@@ -91,10 +95,27 @@ export async function readHistoryWindow(
 
   // The legacy contract cannot seek to the tail. Keep this scan server-side and
   // return only the requested window, rather than transfer every page to the UI.
+  // This is a temporary resource ceiling, not latest-first pagination. A longer
+  // history fails explicitly instead of scanning without a bound.
+  const COMPAT_MAX_PAGES = 25;
+  const COMPAT_MAX_ELAPSED_MS = 20_000;
+  const startedAt = Date.now();
   const messages = new Map<string, Message>();
   const visited = new Set<string>();
   let next: string | null = null;
+  let pages = 0;
   do {
+    pages += 1;
+    if (
+      pages > COMPAT_MAX_PAGES ||
+      Date.now() - startedAt > COMPAT_MAX_ELAPSED_MS
+    ) {
+      fail(
+        'تاریخچهٔ این گفتگو برای بارگذاری کامل بیش از حد بلند است. تا آماده‌شدن صفحه‌بندی سمت سرور، دوباره تلاش کنید.',
+        503,
+        'HISTORY_SCAN_LIMIT'
+      );
+    }
     const page = validate(
       await load(next ? new URLSearchParams({ cursor: next }).toString() : '')
     );

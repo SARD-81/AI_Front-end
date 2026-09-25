@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { closeActiveChatSockets } from '@/lib/services/chat-service';
 import { isEmployeeEmail, isStudentEmail } from '@/lib/config/email-domains';
 import { apiFetch, ApiError } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
@@ -15,7 +16,6 @@ import type {
   RegisterResultDTO,
   SendOtpInputDTO,
   SendOtpResultDTO,
-  SetInitialPasswordInputDTO,
   VerifyOtpInputDTO,
   VerifyOtpResultDTO
 } from '@/lib/types/auth';
@@ -41,7 +41,7 @@ function cleanBoolean(value: boolean | null | undefined): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined;
 }
 
-const loginSchema = z
+export const loginSchema = z
   .object({
     user: z
       .object({
@@ -58,7 +58,9 @@ const loginSchema = z
         mustChangePassword: nullableBoolean,
         must_change_password: nullableBoolean,
         isLocked: nullableBoolean,
-        is_locked: nullableBoolean
+        is_locked: nullableBoolean,
+        phoneSetupRequired: nullableBoolean,
+        phone_setup_required: nullableBoolean
       })
       .passthrough()
       .optional(),
@@ -67,7 +69,9 @@ const loginSchema = z
     mustChangePassword: nullableBoolean,
     must_change_password: nullableBoolean,
     isLocked: nullableBoolean,
-    is_locked: nullableBoolean
+    is_locked: nullableBoolean,
+    phoneSetupRequired: nullableBoolean,
+    phone_setup_required: nullableBoolean
   })
   .passthrough()
   .transform((value) => {
@@ -87,6 +91,11 @@ const loginSchema = z
       cleanBoolean(value.is_locked) ??
       cleanBoolean(user.isLocked) ??
       cleanBoolean(user.is_locked);
+    const phoneSetupRequired =
+      cleanBoolean(value.phoneSetupRequired) ??
+      cleanBoolean(value.phone_setup_required) ??
+      cleanBoolean(user.phoneSetupRequired) ??
+      cleanBoolean(user.phone_setup_required);
 
     return {
       user: {
@@ -97,11 +106,13 @@ const loginSchema = z
         role: normalizeRole(user.role),
         isProfileCompleted,
         mustChangePassword,
-        isLocked
+        isLocked,
+        phoneSetupRequired
       },
       isProfileCompleted,
       mustChangePassword,
-      isLocked
+      isLocked,
+      phoneSetupRequired
     };
   });
 
@@ -227,18 +238,24 @@ export class ServiceError extends Error {
   status: number;
   code: string;
   retryAfter: number | null;
+  fields?: Record<string, string[]>;
+  details?: string[];
 
   constructor(
     message: string,
     status: number,
     code = 'SERVICE_ERROR',
-    retryAfter: number | null = null
+    retryAfter: number | null = null,
+    fields?: Record<string, string[]>,
+    details?: string[]
   ) {
     super(message);
     this.name = 'ServiceError';
     this.status = status;
     this.code = code;
     this.retryAfter = retryAfter;
+    this.fields = fields;
+    this.details = details;
   }
 }
 
@@ -325,7 +342,7 @@ function toRegisterCompletePayload(input: RegisterInputDTO) {
   );
 }
 
-function toServiceError(error: unknown): ServiceError {
+export function toServiceError(error: unknown): ServiceError {
   if (error instanceof ServiceError) return error;
   if (error instanceof ApiError) {
     const message =
@@ -336,14 +353,16 @@ function toServiceError(error: unknown): ServiceError {
       error.payload &&
       typeof error.payload === 'object' &&
       'code' in error.payload &&
-      typeof (error.payload as {code?: unknown}).code === 'string'
-        ? (error.payload as {code: string}).code
+      typeof (error.payload as { code?: unknown }).code === 'string'
+        ? (error.payload as { code: string }).code
         : undefined;
     return new ServiceError(
       message,
       error.status,
       error.code ?? payloadCode ?? 'API_ERROR',
-      error.retryAfter
+      error.retryAfter,
+      error.fields,
+      error.details
     );
   }
   return new ServiceError('خطای غیرمنتظره رخ داد.', 500, 'UNEXPECTED');
@@ -359,31 +378,6 @@ export async function loginUser(
       signal: opts?.signal,
       body: JSON.stringify({ email: input.email, password: input.password })
     });
-
-    return loginSchema.parse(result);
-  } catch (error) {
-    throw toServiceError(error);
-  }
-}
-
-export async function setInitialPassword(
-  input: SetInitialPasswordInputDTO,
-  opts?: { signal?: AbortSignal }
-): Promise<LoginResultDTO> {
-  try {
-    const result = await apiFetch<LoginResponseDTO>(
-      API_ENDPOINTS.auth.setInitialPassword,
-      {
-        method: 'POST',
-        signal: opts?.signal,
-        body: JSON.stringify({
-          email: input.email,
-          temporary_password: input.temporaryPassword,
-          new_password: input.newPassword,
-          new_password_confirm: input.newPasswordConfirm
-        })
-      }
-    );
 
     return loginSchema.parse(result);
   } catch (error) {
@@ -453,6 +447,28 @@ export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {
       method: 'POST',
       signal: opts?.signal
     });
+  } catch (error) {
+    throw toServiceError(error);
+  } finally {
+    closeActiveChatSockets();
+  }
+}
+
+export async function changeAccountPassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ status?: string }> {
+  try {
+    return await apiFetch<{ status?: string }>(
+      API_ENDPOINTS.auth.passwordChange,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          current_password: input.currentPassword,
+          new_password: input.newPassword
+        })
+      }
+    );
   } catch (error) {
     throw toServiceError(error);
   }
@@ -576,6 +592,7 @@ export async function completePasswordReset(
       }
     );
 
+    closeActiveChatSockets();
     return messageSchema.parse(result);
   } catch (error) {
     throw toServiceError(error);

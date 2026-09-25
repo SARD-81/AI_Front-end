@@ -1,6 +1,9 @@
 import {beforeEach, afterEach, expect, it, vi} from 'vitest';
 const backend = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/server/backend-fetch', () => ({backendFetch: backend}));
+vi.mock('@/lib/server/backend-fetch', () => ({
+  backendFetch: backend,
+  BACKEND_HISTORY_TIMEOUT_MS: 20_000
+}));
 vi.mock('@/lib/server/with-refresh', () => ({callWithAutoRefresh: (callback: (token: string) => Promise<unknown>) => callback('session-token')}));
 import {GET} from './route';
 beforeEach(() => {backend.mockReset(); vi.stubEnv('CHAT_HISTORY_MODE', 'latest-first');});

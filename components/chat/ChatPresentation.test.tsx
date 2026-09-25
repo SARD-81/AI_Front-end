@@ -84,7 +84,9 @@ const composerProps = {
   onChange: vi.fn(),
   onSubmit: vi.fn(),
   thinkLevel: 'low' as const,
-  onThinkLevelChange: vi.fn()
+  onThinkLevelChange: vi.fn(),
+  webSearchOn: false,
+  onWebSearchChange: vi.fn()
 };
 const listProps = {
   onCopyMessage: vi.fn(),
@@ -279,15 +281,11 @@ describe('chat presentation', () => {
     (locale) => {
       render(
         <Providers locale={locale}>
-          <ChatEmptyState
-            {...composerProps}
-            value=""
-            onPromptSelect={vi.fn()}
-          />
+          <ChatEmptyState onPromptSelect={vi.fn()} />
         </Providers>
       );
       expect(screen.queryByText(/گفتگوی دوستانه|friendly chat/)).toBeNull();
-      expect(screen.getByRole('img')).toBeTruthy();
+      expect(screen.getByRole('heading')).toBeTruthy();
     }
   );
 });

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { clearAuthCookies, setAuthCookies } from '@/lib/server/auth-cookies';
+import { clearAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
-import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/server/auth-contract';
-import { isValidUniversityEmail } from '@/lib/server/university-config';
-import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
+import { parseMigratedPasswordResponse } from '@/lib/auth/migrated-password';
+import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type SetInitialPasswordBody = {
   email?: string;
@@ -17,17 +17,23 @@ type SetInitialPasswordBody = {
 };
 
 export async function POST(request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
-    const body = (await request.json()) as SetInitialPasswordBody;
+    const body = await readJsonBody<SetInitialPasswordBody>(request);
     const email = body.email?.trim() ?? '';
-    const temporaryPassword = body.temporary_password ?? body.temporaryPassword ?? '';
+    const temporaryPassword =
+      body.temporary_password ?? body.temporaryPassword ?? '';
     const newPassword = body.new_password ?? body.newPassword ?? '';
     const newPasswordConfirm =
       body.new_password_confirm ?? body.newPasswordConfirm ?? '';
 
-    if (!email || !isValidUniversityEmail(email)) {
+    // The migration contract requires the account's email, but does not
+    // restrict it to a university domain. The backend validates ownership.
+    if (!email) {
       return NextResponse.json(
-        { message: UNIVERSITY_EMAIL_HINT },
+        { message: 'ایمیل حساب مهاجرتی الزامی است.' },
         { status: 400 }
       );
     }
@@ -39,40 +45,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await backendFetch<BackendAuthContract>(
-      '/set-initial-password/',
-      {
-        base: 'auth',
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          temporary_password: temporaryPassword,
-          new_password: newPassword,
-          new_password_confirm: newPasswordConfirm
-        })
-      }
-    );
+    const data = await backendFetch<unknown>('/set-initial-password/', {
+      base: 'auth',
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        temporary_password: temporaryPassword,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm
+      })
+    });
 
-    const {access, refresh, result} = normalizeBackendAuthContract(data);
-
-    if (result.isLocked === true || result.user?.isLocked === true) {
-      await clearAuthCookies();
+    const parsed = parseMigratedPasswordResponse(data);
+    await clearAuthCookies();
+    if (!parsed) {
       return NextResponse.json(
-        { message: 'Account is locked.', code: 'ACCOUNT_LOCKED' },
-        { status: 423 }
+        {
+          message: 'پاسخ تعیین رمز با قرارداد پایلوت هم‌خوان نیست.',
+          code: 'AUTH_CONTRACT_INVALID'
+        },
+        { status: 502 }
       );
     }
 
-    if (
-      result.mustChangePassword === true ||
-      result.user?.mustChangePassword === true
-    ) {
-      await clearAuthCookies();
-    } else {
-      await setAuthCookies({ access, refresh });
-    }
-
-    return NextResponse.json(result);
+    return NextResponse.json(parsed);
   } catch (error) {
     return routeErrorResponse(error);
   }

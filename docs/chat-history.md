@@ -42,11 +42,34 @@ offset, so new arrivals do not shift older windows. Missing boundaries fail with
 409 rather than silently skipping history. Failed pages/cursor loops fail the
 request without replacing already displayed messages.
 
-**Limitation:** this saves browser transfer/rendering and implements the requested
-UI, but still reads legacy history on the BFF for each window. It is not a database
-or backend-query optimization. No shared history cache is introduced (avoiding
-cross-user caching and stale snapshots). Very long production histories should
-use the native contract below.
+**Limitation:** each browser window still walks every legacy page from the start.
+A three-page history costs three backend requests for the newest window, and the
+next older window scans those pages again. That cost is covered by
+`chat-history.test.ts`. It is not a database or backend-query optimization.
+No shared history cache is introduced (avoiding cross-user caching and stale
+snapshots).
+
+Compat mode now refuses a scan longer than 25 backend pages, or longer than
+20 seconds of accumulated BFF time, with HTTP 503 and `HISTORY_SCAN_LIMIT`.
+Neither ceiling loads a long conversation. The chat UI already keeps loaded
+messages and exposes the existing history error with a manual retry. This is
+only a stop for an unbounded loop. It is not latest-first pagination and it is
+not a capacity solution.
+
+### Release gate: do not set `CHAT_HISTORY_MODE=latest-first` until the backend proves
+
+The frontend must not enable latest-first from environment alone. Backend owners
+need a deployed, tested contract for the newest 10 messages, stable descending
+order, before this mode is turned on:
+
+- conversation ownership stays enforced on the backend for the conversation id
+- `ordering=-created_at` with a stable tie-break on message id
+- an index that can serve that order without a full table scan
+- a cursor that does not shift when a newer message arrives
+- no duplicate or missing ids across adjacent cursors
+- exactly one backend request per history window
+
+Until that evidence exists, leave `CHAT_HISTORY_MODE=compat`.
 
 ### Efficient path: `CHAT_HISTORY_MODE=latest-first`
 

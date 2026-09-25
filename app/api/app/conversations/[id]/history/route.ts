@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { backendFetch } from '@/lib/server/backend-fetch';
+import { backendFetch, BACKEND_HISTORY_TIMEOUT_MS } from '@/lib/server/backend-fetch';
 import { callWithAutoRefresh } from '@/lib/server/with-refresh';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { readHistoryWindow } from '@/lib/server/chat-history';
@@ -20,7 +20,8 @@ export async function GET(
               base: 'api',
               accessToken: access,
               method: 'GET',
-              signal: request.signal
+              signal: request.signal,
+              timeoutMs: BACKEND_HISTORY_TIMEOUT_MS
             }
           )
         ),

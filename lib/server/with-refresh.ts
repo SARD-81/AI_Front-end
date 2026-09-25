@@ -18,8 +18,12 @@ async function requestNewTokens(refresh: string): Promise<RefreshedTokens> {
     body: JSON.stringify({refresh})
   });
 
-  if (!refreshResult?.access) {
-    throw new ApiError('توکن جدید دریافت نشد.', 401, 'REFRESH_ACCESS_MISSING');
+  if (!refreshResult?.access || !refreshResult.refresh) {
+    throw new ApiError(
+      'توکن جدید دریافت نشد.',
+      401,
+      'REFRESH_ROTATION_INCOMPLETE'
+    );
   }
 
   return {access: refreshResult.access, refresh: refreshResult.refresh};

@@ -1,101 +1,136 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const backendFetchMock = vi.hoisted(() => vi.fn());
 const setAuthCookiesMock = vi.hoisted(() => vi.fn());
 const clearAuthCookiesMock = vi.hoisted(() => vi.fn());
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/server/backend-fetch', () => ({backendFetch: backendFetchMock}));
+vi.mock('@/lib/server/backend-fetch', () => ({
+  backendFetch: backendFetchMock
+}));
 vi.mock('@/lib/server/auth-cookies', () => ({
   setAuthCookies: setAuthCookiesMock,
   clearAuthCookies: clearAuthCookiesMock
 }));
 
-import {POST as login} from '@/app/api/app/auth/login/route';
-import {POST as setInitialPassword} from '@/app/api/app/auth/set-initial-password/route';
+import { ApiError } from '@/lib/server/backend-types';
+import { POST as setInitialPassword } from '@/app/api/app/auth/set-initial-password/route';
 
-function jsonRequest(path: string, body: Record<string, unknown>) {
-  return new Request(`http://localhost${path}`, {
+function jsonRequest(body: Record<string, unknown>) {
+  return new Request('http://localhost/api/app/auth/set-initial-password', {
     method: 'POST',
-    headers: {'content-type': 'application/json'},
-    body: JSON.stringify(body)
+    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+    body: JSON.stringify({
+      email: 'professor@sbu.ac.ir',
+      temporary_password: 'test-temporary-value',
+      new_password: 'test-new-value',
+      new_password_confirm: 'test-new-value',
+      ...body
+    })
   });
 }
 
-describe('forced initial-password flow', () => {
+describe('migrated initial-password contract', () => {
   beforeEach(() => {
     backendFetchMock.mockReset();
     setAuthCookiesMock.mockReset();
     clearAuthCookiesMock.mockReset();
-    setAuthCookiesMock.mockResolvedValue(undefined);
     clearAuthCookiesMock.mockResolvedValue(undefined);
   });
 
-  it('returns the normal auth contract directly after the initial password is set', async () => {
-    backendFetchMock.mockImplementation(async (path: string) => {
-      if (path === '/login/') {
-        return {
-          access: 'test-access-before-change',
-          refresh: 'test-refresh-before-change',
-          identifier: '11229',
-          personnel_id: '11229',
-          full_name: 'Professor Example',
-          role: 'professor',
-          is_profile_completed: true,
-          must_change_password: true,
-          is_locked: false
-        };
-      }
-
-      if (path === '/set-initial-password/') {
-        return {
-          access: 'test-access-after-change',
-          refresh: 'test-refresh-after-change',
-          identifier: '11229',
-          personnel_id: '11229',
-          full_name: 'Professor Example',
-          role: 'professor',
-          is_profile_completed: true,
-          must_change_password: false,
-          is_locked: false
-        };
-      }
-
-      throw new Error(`Unexpected backend path: ${path}`);
+  it('returns phone login without a session when that is the only destination', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_login_required: true
     });
 
-    const firstLoginResponse = await login(
-      jsonRequest('/api/app/auth/login', {
-        email: 'professor@sbu.ac.ir',
-        password: 'test-temporary-value'
-      })
-    );
-    const firstLoginBody = await firstLoginResponse.json();
-
-    expect(firstLoginResponse.status).toBe(200);
-    expect(firstLoginBody.mustChangePassword).toBe(true);
-    expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+    const response = await setInitialPassword(jsonRequest({}));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'password_updated',
+      phone_login_required: true,
+      phone_setup_required: false
+    });
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+  });
 
-    const passwordResponse = await setInitialPassword(
-      jsonRequest('/api/app/auth/set-initial-password', {
-        email: 'professor@sbu.ac.ir',
-        temporary_password: 'test-temporary-value',
-        new_password: 'test-new-value',
-        new_password_confirm: 'test-new-value'
+  it('returns phone setup without a session when the account has no phone', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_setup_required: true
+    });
+
+    const response = await setInitialPassword(jsonRequest({}));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'password_updated',
+      phone_login_required: false,
+      phone_setup_required: true
+    });
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards a migrated account email from another domain without inventing a university restriction', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_login_required: true
+    });
+
+    const response = await setInitialPassword(
+      jsonRequest({ email: 'migrated@example.org' })
+    );
+
+    expect(response.status).toBe(200);
+    expect(backendFetchMock).toHaveBeenCalledWith(
+      '/set-initial-password/',
+      expect.objectContaining({
+        body: expect.stringContaining('migrated@example.org')
       })
     );
-    const passwordBody = await passwordResponse.json();
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
 
-    expect(passwordResponse.status).toBe(200);
-    expect(passwordBody.mustChangePassword).toBe(false);
-    expect(passwordBody.user.mustChangePassword).toBe(false);
-    expect(passwordBody.user.role).toBe('professor');
-    expect(setAuthCookiesMock).toHaveBeenCalledTimes(1);
-    expect(setAuthCookiesMock).toHaveBeenLastCalledWith({
-      access: 'test-access-after-change',
-      refresh: 'test-refresh-after-change'
+  it.each([
+    { label: 'empty object', body: {} },
+    {
+      label: 'both destinations',
+      body: {
+        status: 'password_updated',
+        phone_login_required: true,
+        phone_setup_required: true
+      }
+    },
+    {
+      label: 'jwt access',
+      body: {
+        status: 'password_updated',
+        phone_login_required: true,
+        access: 'test-access',
+        refresh: 'test-refresh'
+      }
+    },
+    { label: 'missing status', body: { phone_login_required: true } }
+  ])('rejects a $label response without a session', async ({ body }) => {
+    backendFetchMock.mockResolvedValue(body);
+    const response = await setInitialPassword(jsonRequest({}));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      code: 'AUTH_CONTRACT_INVALID'
     });
-    expect(backendFetchMock).toHaveBeenCalledTimes(2);
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).toHaveBeenCalled();
+  });
+
+  it('forwards a rejected password update without setting a session', async () => {
+    backendFetchMock.mockRejectedValue(
+      new ApiError('رمز موقت نادرست است.', 400, 'invalid_credentials')
+    );
+
+    const response = await setInitialPassword(
+      jsonRequest({ temporary_password: 'wrong' })
+    );
+    expect(response.status).toBe(400);
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 });

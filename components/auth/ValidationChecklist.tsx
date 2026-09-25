@@ -15,6 +15,7 @@ type ValidationChecklistProps = {
   title: string;
   rules: ChecklistRule[];
   className?: string;
+  tone?: 'night' | 'paper';
 };
 
 /**
@@ -30,19 +31,22 @@ type ValidationChecklistProps = {
 export function ValidationChecklist({
   title,
   rules,
-  className
+  className,
+  tone = 'night'
 }: ValidationChecklistProps) {
   const reduceMotion = useReducedMotion();
 
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 shadow-inner shadow-black/10',
+        tone === 'paper'
+          ? 'rounded-2xl border border-[#d7e6eb] bg-[#f3f8f8] p-3.5'
+          : 'rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 shadow-inner shadow-black/10',
         className
       )}
     >
       <div className="flex items-center gap-2">
-        <p className="text-xs font-bold text-slate-200/90">{title}</p>
+        <p className={tone === 'paper' ? 'text-xs font-bold text-[#245066]' : 'text-xs font-bold text-slate-200/90'}>{title}</p>
       </div>
 
       <ul className="mt-2.5 space-y-1.5" aria-live="polite">
@@ -59,8 +63,12 @@ export function ValidationChecklist({
               className={cn(
                 'relative flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-200',
                 rule.met
-                  ? 'border-emerald-400/70 bg-emerald-400/20 text-emerald-200'
-                  : 'border-dashed border-white/25 bg-white/[0.03] text-transparent'
+                  ? tone === 'paper'
+                    ? 'border-[#1f6b4a] bg-[#e5f4ee] text-[#1f6b4a]'
+                    : 'border-emerald-400/70 bg-emerald-400/20 text-emerald-200'
+                  : tone === 'paper'
+                    ? 'border-dashed border-[#9ec3ce] bg-white text-transparent'
+                    : 'border-dashed border-white/25 bg-white/[0.03] text-transparent'
               )}
               aria-hidden="true"
             >
@@ -92,7 +100,9 @@ export function ValidationChecklist({
             <span
               className={cn(
                 'text-xs leading-5 transition-colors duration-200',
-                rule.met ? 'text-emerald-100/90' : 'text-slate-300/80'
+                rule.met
+                  ? tone === 'paper' ? 'text-[#1f6b4a]' : 'text-emerald-100/90'
+                  : tone === 'paper' ? 'text-[#245066]' : 'text-slate-300/80'
               )}
             >
               {rule.label}

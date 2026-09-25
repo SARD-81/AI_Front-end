@@ -25,7 +25,12 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams()
 }));
-vi.mock('@/components/sidebar/Sidebar', () => ({ Sidebar: () => null }));
+vi.mock('@/components/sidebar/ServicesRail', () => ({
+  ServicesRail: () => null
+}));
+vi.mock('@/components/sidebar/ConversationsPanel', () => ({
+  ConversationsPanel: () => null
+}));
 vi.mock('./MessageList', () => ({
   MessageList: ({
     messages,
@@ -135,6 +140,26 @@ afterEach(() => {
 });
 
 describe('chat composer submission lifecycle', () => {
+  it.each([false, true])('passes web search %s from the composer to the websocket payload', async (enabled) => {
+    vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
+    setup('existing');
+    const toggle = screen.getByRole('button', {name: fa.app.webSearch.label});
+    if (enabled) fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-pressed')).toBe(String(enabled));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {value: 'سؤال با تنظیم جستجو'}
+    });
+    fireEvent.keyDown(screen.getByRole('textbox'), {key: 'Enter'});
+
+    await waitFor(() =>
+      expect(sendMessageWithWebSocket).toHaveBeenCalledWith(
+        'existing',
+        expect.objectContaining({webSearch: enabled}),
+        expect.any(Object)
+      )
+    );
+  });
+
   it('keeps the committed question and answer without replacing them with a post-send snapshot', async () => {
     vi.mocked(sendMessageWithWebSocket).mockResolvedValue(answer);
     const client = setup('existing');
@@ -220,11 +245,12 @@ describe('chat composer submission lifecycle', () => {
     }
   );
 
-  it('clears immediately while the response is pending and preserves the selected thinking level', async () => {
-    window.localStorage.setItem('soha:chat:thinking-level', 'high');
+  it('starts with simple thinking even when an earlier selection was saved', async () => {
+    window.localStorage.setItem('soha:chat:thinking-level', 'medium');
     const response = deferred<ChatMessage>();
     vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
     setup('existing');
+    expect(screen.getByText('تفکر ساده')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: 'سؤال جدید' }
     });
@@ -233,7 +259,7 @@ describe('chat composer submission lifecycle', () => {
     await waitFor(() =>
       expect(sendMessageWithWebSocket).toHaveBeenCalledWith(
         'existing',
-        expect.objectContaining({ content: 'سؤال جدید', thinkLevel: 'high' }),
+        expect.objectContaining({ content: 'سؤال جدید', thinkLevel: 'low' }),
         expect.any(Object)
       )
     );
