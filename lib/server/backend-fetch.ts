@@ -1,6 +1,6 @@
 import 'server-only';
-import {ApiError} from '@/lib/server/backend-types';
-import {getTrustedClientIp} from '@/lib/server/client-ip';
+import { ApiError } from '@/lib/server/backend-types';
+import { getTrustedClientIp } from '@/lib/server/client-ip';
 
 function getBackendOrigin() {
   const origin = process.env.BACKEND_ORIGIN?.trim();
@@ -95,7 +95,7 @@ async function readLimitedText(response: Response, maxBytes: number) {
   const parts: Uint8Array[] = [];
   let total = 0;
   while (true) {
-    const {done, value} = await reader.read();
+    const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
     if (total > maxBytes) {
@@ -118,12 +118,19 @@ async function readLimitedText(response: Response, maxBytes: number) {
   return new TextDecoder().decode(merged);
 }
 
-function abortError(userSignal: AbortSignal | null | undefined, timeoutSignal: AbortSignal) {
+function abortError(
+  userSignal: AbortSignal | null | undefined,
+  timeoutSignal: AbortSignal
+) {
   if (userSignal?.aborted) {
     return new ApiError('درخواست لغو شد.', 499, 'request_aborted');
   }
   if (timeoutSignal.aborted) {
-    return new ApiError('پاسخ سرور در زمان مجاز نرسید.', 504, 'backend_timeout');
+    return new ApiError(
+      'پاسخ سرور در زمان مجاز نرسید.',
+      504,
+      'backend_timeout'
+    );
   }
   return null;
 }
@@ -159,7 +166,9 @@ export async function backendFetchResult<T = unknown>(
   const signal = init?.signal
     ? AbortSignal.any([init.signal, timeoutSignal])
     : timeoutSignal;
-  const fetchInit: RequestInit & Partial<BackendFetchInit> = {...(init ?? {base: 'api'})};
+  const fetchInit: RequestInit & Partial<BackendFetchInit> = {
+    ...(init ?? { base: 'api' })
+  };
   delete fetchInit.timeoutMs;
   delete fetchInit.maxResponseBytes;
   delete fetchInit.base;
@@ -180,10 +189,18 @@ export async function backendFetchResult<T = unknown>(
   }
 
   if (response.status === 204) {
-    return {status: 204, data: null as T};
+    return { status: 204, data: null as T };
   }
 
-  const rawText = await readLimitedText(response, maxResponseBytes);
+  let rawText: string;
+  try {
+    rawText = await readLimitedText(response, maxResponseBytes);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    const aborted = abortError(init?.signal, timeoutSignal);
+    if (aborted) throw aborted;
+    throw error;
+  }
   let data: Record<string, unknown> | undefined = undefined;
   if (rawText) {
     try {
@@ -196,7 +213,9 @@ export async function backendFetchResult<T = unknown>(
   if (!response.ok) {
     const joinStrings = (value: unknown) =>
       Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === 'string').join(' ')
+        ? value
+            .filter((item): item is string => typeof item === 'string')
+            .join(' ')
         : '';
     const message =
       (typeof data?.detail === 'string' && data.detail) ||
@@ -206,13 +225,14 @@ export async function backendFetchResult<T = unknown>(
       (typeof data?.message === 'string' && data.message) ||
       'درخواست ناموفق بود.';
     const code =
-      extractCode(data) ?? (response.status === 429 ? 'rate_limited' : undefined);
+      extractCode(data) ??
+      (response.status === 429 ? 'rate_limited' : undefined);
     const retryAfter = extractRetryAfter(data, response);
 
     throw new ApiError(message, response.status, code, data, retryAfter);
   }
 
-  return {status: response.status, data: data as T};
+  return { status: response.status, data: data as T };
 }
 
 export async function backendFetch<T = unknown>(
