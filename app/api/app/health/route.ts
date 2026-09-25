@@ -1,19 +1,10 @@
 import {NextResponse} from 'next/server';
-import {backendFetch} from '@/lib/server/backend-fetch';
-import {routeErrorResponse} from '@/lib/server/route-error';
 
-type LivenessResponse = {
-  status: 'healthy';
-};
-
-// Liveness probe. Unauthenticated by contract and intentionally independent of
-// PostgreSQL/Redis, so no access token is attached and no refresh is attempted.
+// Process liveness for the Next.js container. This must not call Django:
+// a backend outage should fail readiness, not restart this process.
 export async function GET() {
-  try {
-    const data = await backendFetch<LivenessResponse>('/health/', {base: 'api', method: 'GET'});
-
-    return NextResponse.json(data, {headers: {'Cache-Control': 'no-store'}});
-  } catch (error) {
-    return routeErrorResponse(error);
-  }
+  return NextResponse.json(
+    {status: 'live'},
+    {headers: {'Cache-Control': 'no-store'}}
+  );
 }
