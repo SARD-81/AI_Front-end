@@ -3,6 +3,8 @@ import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
 import {crossSiteRejection} from '@/lib/server/request-origin';
+import {readJsonBody} from '@/lib/server/limited-body';
+import {ApiError} from '@/lib/server/backend-types';
 
 export async function GET() {
   try {
@@ -20,7 +22,10 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = await request.json().catch(() => ({} as {title?: unknown}));
+    const body = await readJsonBody<{title?: unknown}>(request).catch((error: unknown) => {
+      if (error instanceof ApiError) throw error;
+      return {} as {title?: unknown};
+    });
     // A null title lets the backend auto-generate one after the first answer.
     const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : null;
 

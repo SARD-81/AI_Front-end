@@ -6,6 +6,7 @@ import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/se
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type SetInitialPasswordBody = {
   email?: string;
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as SetInitialPasswordBody;
+    const body = await readJsonBody<SetInitialPasswordBody>(request);
     const email = body.email?.trim() ?? '';
     const temporaryPassword = body.temporary_password ?? body.temporaryPassword ?? '';
     const newPassword = body.new_password ?? body.newPassword ?? '';

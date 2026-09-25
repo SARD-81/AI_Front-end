@@ -4,6 +4,7 @@ import { routeErrorResponse } from '@/lib/server/route-error';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type VerifyBody = {
   email?: string;
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as VerifyBody;
+    const body = await readJsonBody<VerifyBody>(request);
     const email = body.email?.trim() ?? '';
     const submittedCode = body.otp ?? body.otpCode ?? body.otp_code ?? '';
 

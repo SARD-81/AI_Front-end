@@ -66,9 +66,71 @@ export type BackendFetchResult<T> = {
   data: T;
 };
 
+/** Ordinary BFF HTTP budget. WebSocket lifetime and model generation are not this value. */
+export const BACKEND_HTTP_TIMEOUT_MS = 15_000;
+export const BACKEND_HISTORY_TIMEOUT_MS = 20_000;
+export const BACKEND_MAX_RESPONSE_BYTES = 1_048_576;
+
+type BackendFetchInit = RequestInit & {
+  base: 'auth' | 'api';
+  accessToken?: string;
+  timeoutMs?: number;
+  maxResponseBytes?: number;
+};
+
+async function readLimitedText(response: Response, maxBytes: number) {
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    await response.body?.cancel();
+    throw new ApiError(
+      'پاسخ سرور بزرگ‌تر از حد مجاز است.',
+      502,
+      'backend_response_too_large'
+    );
+  }
+
+  if (!response.body) return '';
+
+  const reader = response.body.getReader();
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new ApiError(
+        'پاسخ سرور بزرگ‌تر از حد مجاز است.',
+        502,
+        'backend_response_too_large'
+      );
+    }
+    parts.push(value);
+  }
+
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    merged.set(part, offset);
+    offset += part.byteLength;
+  }
+  return new TextDecoder().decode(merged);
+}
+
+function abortError(userSignal: AbortSignal | null | undefined, timeoutSignal: AbortSignal) {
+  if (userSignal?.aborted) {
+    return new ApiError('درخواست لغو شد.', 499, 'request_aborted');
+  }
+  if (timeoutSignal.aborted) {
+    return new ApiError('پاسخ سرور در زمان مجاز نرسید.', 504, 'backend_timeout');
+  }
+  return null;
+}
+
 export async function backendFetchResult<T = unknown>(
   urlPath: string,
-  init?: RequestInit & {base: 'auth' | 'api'; accessToken?: string}
+  init?: BackendFetchInit
 ): Promise<BackendFetchResult<T>> {
   const origin = getBackendOrigin();
   const basePath = init?.base === 'auth' ? '/api/auth' : '/api';
@@ -91,17 +153,37 @@ export async function backendFetchResult<T = unknown>(
     outgoingHeaders.set('X-Forwarded-For', clientIp);
   }
 
-  const response = await fetch(url, {
-    ...init,
-    cache: 'no-store',
-    headers: outgoingHeaders
-  });
+  const timeoutMs = init?.timeoutMs ?? BACKEND_HTTP_TIMEOUT_MS;
+  const maxResponseBytes = init?.maxResponseBytes ?? BACKEND_MAX_RESPONSE_BYTES;
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, timeoutSignal])
+    : timeoutSignal;
+  const fetchInit: RequestInit & Partial<BackendFetchInit> = {...(init ?? {base: 'api'})};
+  delete fetchInit.timeoutMs;
+  delete fetchInit.maxResponseBytes;
+  delete fetchInit.base;
+  delete fetchInit.accessToken;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchInit,
+      signal,
+      cache: 'no-store',
+      headers: outgoingHeaders
+    });
+  } catch (error) {
+    const aborted = abortError(init?.signal, timeoutSignal);
+    if (aborted) throw aborted;
+    throw error;
+  }
 
   if (response.status === 204) {
     return {status: 204, data: null as T};
   }
 
-  const rawText = await response.text();
+  const rawText = await readLimitedText(response, maxResponseBytes);
   let data: Record<string, unknown> | undefined = undefined;
   if (rawText) {
     try {
@@ -135,7 +217,7 @@ export async function backendFetchResult<T = unknown>(
 
 export async function backendFetch<T = unknown>(
   urlPath: string,
-  init?: RequestInit & {base: 'auth' | 'api'; accessToken?: string}
+  init?: BackendFetchInit
 ): Promise<T> {
   const result = await backendFetchResult<T>(urlPath, init);
   return result.data;

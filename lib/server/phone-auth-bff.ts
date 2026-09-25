@@ -9,7 +9,9 @@ import {
 } from '@/lib/server/auth-contract';
 import {backendFetchResult} from '@/lib/server/backend-fetch';
 import {crossSiteRejection} from '@/lib/server/request-origin';
+import {readJsonBody} from '@/lib/server/limited-body';
 import {routeErrorResponse} from '@/lib/server/route-error';
+import {ApiError} from '@/lib/server/backend-types';
 
 const STAFF_CATEGORIES = ['faculty_administration', 'vice_presidency', 'other'] as const;
 type StaffCategory = (typeof STAFF_CATEGORIES)[number];
@@ -33,7 +35,10 @@ function guard(request: Request) {
 }
 
 async function readJson(request: Request): Promise<JsonRecord> {
-  const body = await request.json().catch(() => null);
+  const body = await readJsonBody(request).catch((error: unknown) => {
+    if (error instanceof ApiError) throw error;
+    return null;
+  });
   if (!body || typeof body !== 'object' || Array.isArray(body)) return {};
   return body as JsonRecord;
 }

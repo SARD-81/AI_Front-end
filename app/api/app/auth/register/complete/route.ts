@@ -3,6 +3,7 @@ import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type RegisterRole = 'professor' | 'staff';
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as RegisterCompleteBody;
+    const body = await readJsonBody<RegisterCompleteBody>(request);
     const email = body.email?.trim() ?? '';
     const firstName = body.first_name ?? body.firstName ?? '';
     const lastName = body.last_name ?? body.lastName ?? '';

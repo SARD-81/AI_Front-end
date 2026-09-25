@@ -5,6 +5,7 @@ import { routeErrorResponse } from '@/lib/server/route-error';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type CompleteBody = {
   email?: string;
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as CompleteBody;
+    const body = await readJsonBody<CompleteBody>(request);
     const email = body.email?.trim() ?? '';
     const newPassword = body.new_password ?? body.newPassword ?? '';
     const flowToken = (body.flow_token ?? body.flowToken ?? body.otpToken ?? '').trim();

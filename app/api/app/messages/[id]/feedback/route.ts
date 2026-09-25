@@ -4,6 +4,7 @@ import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
 import type {FeedbackReasonCategory, MessageFeedbackPayload} from '@/lib/api/chat';
 import {crossSiteRejection} from '@/lib/server/request-origin';
+import {readJsonBody} from '@/lib/server/limited-body';
 
 const allowedReasonCategories = new Set<FeedbackReasonCategory>(['inaccurate', 'irrelevant', 'tone', 'incomplete', 'other']);
 
@@ -77,7 +78,7 @@ export async function PUT(request: Request, context: {params: Promise<{id: strin
 
   try {
     const {id} = await context.params;
-    const payload = normalizePayload(await request.json());
+    const payload = normalizePayload(await readJsonBody(request));
 
     const data = await callWithAutoRefresh((access) =>
       backendFetch(`/messages/${id}/feedback/`, {

@@ -98,4 +98,65 @@ describe('backendFetch hardening contract', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('returns a healthy JSON body without reading past the response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify({ok: true}), {
+          status: 200,
+          headers: {'Content-Type': 'application/json'}
+        })
+      )
+    );
+
+    await expect(backendFetch('/health/', {base: 'api'})).resolves.toEqual({ok: true});
+  });
+
+  it('fails a slow backend with backend_timeout and aborts the request', async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(init.signal?.reason ?? new DOMException('timeout', 'TimeoutError'));
+          });
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      backendFetch('/health/', {base: 'api', timeoutMs: 30})
+    ).rejects.toMatchObject({status: 504, code: 'backend_timeout'});
+  });
+
+  it('reports a caller abort separately from the server timeout', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetchMock = vi.fn(async () => {
+      throw new DOMException('aborted', 'AbortError');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      backendFetch('/health/', {base: 'api', signal: controller.signal, timeoutMs: 5_000})
+    ).rejects.toMatchObject({status: 499, code: 'request_aborted'});
+  });
+
+  it('stops reading a chunked response that exceeds the byte ceiling', async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('x'.repeat(40)));
+        controller.enqueue(new TextEncoder().encode('y'.repeat(40)));
+        controller.close();
+      }
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(stream, {status: 200}))
+    );
+
+    await expect(
+      backendFetch('/health/', {base: 'api', maxResponseBytes: 50})
+    ).rejects.toMatchObject({status: 502, code: 'backend_response_too_large'});
+  });
 });

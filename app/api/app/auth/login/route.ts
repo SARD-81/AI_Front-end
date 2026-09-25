@@ -6,6 +6,7 @@ import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/se
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
+import { readJsonBody } from '@/lib/server/limited-body';
 
 type LoginBody = {
   email?: string;
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as LoginBody;
+    const body = await readJsonBody<LoginBody>(request);
     const password = body.password ?? '';
     const email = body.email?.trim() ?? '';
 

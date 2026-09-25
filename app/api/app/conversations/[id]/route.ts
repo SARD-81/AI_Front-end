@@ -4,6 +4,7 @@ import {ApiError} from '@/lib/server/backend-types';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
 import {crossSiteRejection} from '@/lib/server/request-origin';
+import {readJsonBody} from '@/lib/server/limited-body';
 
 export async function GET(_request: Request, context: {params: Promise<{id: string}>}) {
   try {
@@ -54,7 +55,7 @@ async function handleTitleUpdate(
 
   try {
     const {id} = await context.params;
-    const body = await request.json();
+    const body = await readJsonBody<{title?: unknown}>(request);
 
     const data = await callWithAutoRefresh((access) =>
       backendFetch(`/conversations/${id}/`, {
