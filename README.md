@@ -73,7 +73,7 @@ npm run dev
 
 اکنون پروژه روی آدرس `http://localhost:3000` در دسترس خواهد بود.
 
-حالت پایلوت و حالت پیامکِ بعدی، تفاوت محیط تست و انتشار، و blockerهای بک‌اند در [docs/PHONE_AUTH_V1.md](docs/PHONE_AUTH_V1.md) است. پیش‌فرض `PHONE_AUTH_ENABLED` خاموش است. تصویرهای `docs/phone-auth-screenshots/` نسخهٔ فعلی نیستند.
+حالت پایلوت با شماره، و حالت پیامک فقط وقتی سرور `verification_required=true` برگرداند، در [docs/PHONE_AUTH_V1.md](docs/PHONE_AUTH_V1.md) است. بدون پرچم و بک‌اند قرارداد جدید، صفحهٔ ورود می‌گوید ورود در دسترس نیست. تصویرهای `docs/phone-auth-screenshots/` نسخهٔ فعلی نیستند.
 
 ## 📜 مجوز و حقوق اثر
 

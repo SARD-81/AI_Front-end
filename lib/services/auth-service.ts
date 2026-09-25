@@ -16,7 +16,6 @@ import type {
   RegisterResultDTO,
   SendOtpInputDTO,
   SendOtpResultDTO,
-  SetInitialPasswordInputDTO,
   VerifyOtpInputDTO,
   VerifyOtpResultDTO
 } from '@/lib/types/auth';
@@ -354,8 +353,8 @@ export function toServiceError(error: unknown): ServiceError {
       error.payload &&
       typeof error.payload === 'object' &&
       'code' in error.payload &&
-      typeof (error.payload as {code?: unknown}).code === 'string'
-        ? (error.payload as {code: string}).code
+      typeof (error.payload as { code?: unknown }).code === 'string'
+        ? (error.payload as { code: string }).code
         : undefined;
     return new ServiceError(
       message,
@@ -379,31 +378,6 @@ export async function loginUser(
       signal: opts?.signal,
       body: JSON.stringify({ email: input.email, password: input.password })
     });
-
-    return loginSchema.parse(result);
-  } catch (error) {
-    throw toServiceError(error);
-  }
-}
-
-export async function setInitialPassword(
-  input: SetInitialPasswordInputDTO,
-  opts?: { signal?: AbortSignal }
-): Promise<LoginResultDTO> {
-  try {
-    const result = await apiFetch<LoginResponseDTO>(
-      API_ENDPOINTS.auth.setInitialPassword,
-      {
-        method: 'POST',
-        signal: opts?.signal,
-        body: JSON.stringify({
-          email: input.email,
-          temporary_password: input.temporaryPassword,
-          new_password: input.newPassword,
-          new_password_confirm: input.newPasswordConfirm
-        })
-      }
-    );
 
     return loginSchema.parse(result);
   } catch (error) {
@@ -483,15 +457,18 @@ export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {
 export async function changeAccountPassword(input: {
   currentPassword: string;
   newPassword: string;
-}): Promise<{status?: string}> {
+}): Promise<{ status?: string }> {
   try {
-    return await apiFetch<{status?: string}>(API_ENDPOINTS.auth.passwordChange, {
-      method: 'POST',
-      body: JSON.stringify({
-        current_password: input.currentPassword,
-        new_password: input.newPassword
-      })
-    });
+    return await apiFetch<{ status?: string }>(
+      API_ENDPOINTS.auth.passwordChange,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          current_password: input.currentPassword,
+          new_password: input.newPassword
+        })
+      }
+    );
   } catch (error) {
     throw toServiceError(error);
   }

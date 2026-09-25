@@ -4,7 +4,7 @@ The current pilot contract is `SOHA_FRONTEND_PILOT_AUTH_CONTRACT.md`. The backen
 
 ## Pilot and a later SMS mode
 
-`PHONE_AUTH_ENABLED=true` turns on the phone-first auth page and the `/api/app/auth/phone/*` BFF routes. Any other value, including an unset variable, keeps the existing email auth UI and returns `404 phone_auth_disabled` from the phone routes. A frontend flag alone does not allow registration without the server’s `verification_required` boolean.
+`PHONE_AUTH_ENABLED=true` turns on the phone-first auth page and the `/api/app/auth/phone/*` BFF routes. Any other value, including an unset variable, shows that sign-in is not available and returns `404 phone_auth_disabled` from the phone routes. It does not open public email sign-in. A frontend flag alone does not allow registration without the server’s `verification_required` boolean.
 
 Identify returns `next` (`password` or `register`) and `verification_required`. A missing or non-boolean `verification_required` is a contract error. It is a server mode, not proof that this number was verified.
 
@@ -14,17 +14,15 @@ Identify returns `next` (`password` or `register`) and `verification_required`. 
 
 Sending both `phone_number` and `registration_token` is `400 invalid_registration`. Login `200` and register `201` create the existing HttpOnly session. Failures do not. Tokens stay out of the URL, `localStorage`, and `sessionStorage`.
 
-Public email login is not a pilot option inside this phone page. `entry=email`, the old chooser, and «تغییر روش ورود» do not open it. Email sign-in remains the separate page used when `PHONE_AUTH_ENABLED` is off, which is the environment that still supports that contract.
+Public email login, email registration, and email password reset are not part of this contract. Direct URLs such as `entry=email` or `mode=signup` stay on the phone number step. The old BFF routes answer `410` and do not call the backend or set a session. With `PHONE_AUTH_ENABLED` off, the auth page says sign-in is not available. It does not show the old email form. Turn the flag on only where the new backend contract is deployed. SMS is not required for this pilot; `verification_required=true` is the later mode.
 
-`403 password_change_required` opens the migrated-account form on this page. It posts to the existing set-initial-password route and is not part of ordinary registration. A phone-only `200` is `password_updated` with `phone_login_required` or `phone_setup_required` and no JWT. That response does not pass through `normalizeBackendAuthContract` and does not set session cookies. `phone_login_required` returns to the phone number. `phone_setup_required` opens support so the same user can have a number attached. There is no self-service attach.
+An optional email on the phone registration form is account data. It is not verified and it is not a way to sign in or recover a password. The migrated-account form appears only after `403 password_change_required`. Its success is `password_updated` with exactly one of `phone_login_required` or `phone_setup_required`, no JWT, and no session cookie. Any other body, including `{}`, both destinations, or a JWT, is a contract error.
 
-Pilot password recovery is the support step, not SMS and not an unverified email. The product owner has not confirmed a public phone number or address, so the page does not invent one. Publishing that contact is a delivery dependency.
+Pilot password recovery is the support step. It does not promise a text message or an email. A confirmed public contact channel for that step is still a release dependency; the screen does not invent one and does not discuss that internal gap.
 
 ## Enablement
 
-Use the flag only in an environment whose backend implements this contract. Production stays off until that deploy is confirmed. SMS delivery is a later switch via `verification_required=true`, not a reason to describe the pilot screens as waiting on a text message.
-
-Rollback is turning the variable off and redeploying this frontend. No phone token is stored in the browser outside component memory. Access and refresh stay in HttpOnly cookies.
+Use the flag only where the backend implements this contract. Leaving it off shows that sign-in is unavailable. It is not a rollback to public email login. SMS delivery is not a prerequisite for the pilot.
 
 ## What the browser calls
 
@@ -36,10 +34,10 @@ Cookie lifetime is the JWT `exp` claim minus 30 seconds. If the token has no rea
 
 ## Release blockers
 
-- The phone backend in the contract is local-only until it is deployed with SMS delivery configured.
+- The new phone contract is not an observed deployment. Do not release until `PHONE_AUTH_ENABLED=true` and that backend are both in place. SMS is not required for the pilot. A confirmed public support contact is still missing; do not invent one in the UI.
 - A phone-only chat can still reach the AI bridge with `user_id` null. Hiding the send button is not a server guard. Do not describe public AI-on-phone-accounts as ready.
 - Legacy `POST /api/auth/register/*` routes stay callable on the server. Hiding them in the phone UI does not disable them.
-- There is no self-service endpoint to attach a phone to an old email account. The UI points that person to email login and support or the planned migration.
+- There is no self-service endpoint to attach a phone to an old email account. That person is not sent to email login. Support has to attach the number to the same user.
 - An open WebSocket is closed in this frontend after logout, email reset complete, phone reset complete, or password change. The server does not close it.
 
 ## Countdown and recovery
@@ -48,7 +46,7 @@ Each OTP send lane (activation, registration, recovery) stores its own request i
 
 `phone_already_registered` returns the same number to the password form. An expired registration token can be dropped in memory and the OTP step started again without reloading the page. `invalid_reset_token` and `password_reset_unavailable` return to the recovery code step, where another code can be requested within the server limit. Activation verify `503` `sms_unavailable` clears the activation token and returns to the password form. Temporary tokens stay in component memory only.
 
-Phone login `403` `password_change_required` does not set a session cookie. The phone page shows the migrated-account form. Its phone-only success returns to phone login or to support and does not create a session. The older email auth page can still receive a JWT from the same route when that environment returns one.
+Phone login `403` `password_change_required` does not set a session cookie. The phone page shows the migrated-account form. Success returns to phone login or to support and does not create a session. A JWT in that response is a contract error.
 
 ## What this branch does not include
 

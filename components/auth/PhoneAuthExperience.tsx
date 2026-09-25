@@ -2,8 +2,6 @@
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
 import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { PasswordResetWizard } from '@/components/auth/PasswordResetWizard';
 import { Input } from '@/components/ui/input';
 import {
   isAcceptedPhoneInput,
@@ -38,7 +36,6 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 type Step =
-  | 'choose'
   | 'identify'
   | 'password'
   | 'activation'
@@ -47,8 +44,6 @@ type Step =
   | 'register-profile'
   | 'reset-otp'
   | 'reset-password'
-  | 'legacy'
-  | 'legacy-reset'
   | 'phone-setup'
   | 'imported-password'
   | 'support';
@@ -143,13 +138,8 @@ function stepCopy(step: Step) {
       return { title: 'importedTitle', body: 'importedBody' } as const;
     case 'phone-setup':
       return { title: 'setupBody', body: 'setupBody' } as const;
-    case 'legacy':
-    case 'legacy-reset':
-      return { title: 'legacyAction', body: 'legacyBody' } as const;
     case 'support':
       return { title: 'supportTitle', body: 'supportBody' } as const;
-    case 'choose':
-      return { title: 'chooseTitle', body: 'chooseBody' } as const;
     default:
       return { title: 'identifyTitle', body: 'identifyBody' } as const;
   }
@@ -198,7 +188,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const resetToken = useRef('');
   const pendingResult = useRef<LoginResultDTO | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const legacyAbort = useRef<AbortController | null>(null);
   const flight = useRef(false);
   const verifyHoldRef = useRef<OtpHold | null>(null);
 
@@ -621,7 +610,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
 
   const forgetSecrets = () => {
     abortRef.current?.abort();
-    legacyAbort.current?.abort();
     activationToken.current = '';
     registrationToken.current = '';
     resetToken.current = '';
@@ -640,24 +628,15 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setRegistrationBlocked(false);
   };
 
-  const rememberEntry = (entry: 'choose' | 'phone' | 'email') => {
+  useEffect(() => {
     const url = new URL(window.location.href);
-    if (entry === 'choose') url.searchParams.delete('entry');
-    else url.searchParams.set('entry', entry);
-    window.history.pushState({ entry }, '', `${url.pathname}${url.search}`);
-  };
-
-  const openPhonePath = () => {
-    forgetSecrets();
+    if (!url.searchParams.has('entry') && !url.searchParams.has('mode')) return;
+    url.searchParams.delete('entry');
+    url.searchParams.delete('mode');
+    const next = `${url.pathname}${url.search}`;
+    window.history.replaceState({ entry: 'phone' }, '', next);
     setStep('identify');
-    rememberEntry('phone');
-  };
-
-  const openEmailPath = () => {
-    forgetSecrets();
-    setStep('legacy');
-    rememberEntry('email');
-  };
+  }, [searchParams]);
 
   const onInitialPassword = async () => {
     setBusy(true);
@@ -682,21 +661,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     }
   };
 
-  const changeMethod = () => {
-    forgetSecrets();
-    setVerificationRequired(null);
-    setStep('identify');
-    rememberEntry('phone');
-  };
-
-  useEffect(() => {
-    const entry =
-      searchParams.get('entry') ||
-      new URLSearchParams(window.location.search).get('entry');
-    if (entry !== 'phone' && entry !== 'email') return;
-    setStep((current) => (current === 'choose' ? 'identify' : current));
-  }, [searchParams]);
-
   useEffect(() => {
     const onPop = () => {
       forgetSecrets();
@@ -707,8 +671,8 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   }, []);
 
   useEffect(() => {
-    if (step === 'choose') return;
-    document.getElementById('auth-step-title')?.focus();
+    if (step === 'identify') return;
+    document.getElementById('auth-step-title')?.focus({ preventScroll: true });
   }, [step]);
 
   const selectLocale = (nextLocale: 'fa' | 'en') => {
@@ -738,10 +702,32 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     <main id="main-content" className={surfaceStyles.surface}>
       <div className={surfaceStyles.canvas}>
         <section className={surfaceStyles.identity}>
-          <div className={surfaceStyles.fieldArt} aria-hidden="true">
-            <span className={surfaceStyles.glow} />
-            <span className={surfaceStyles.veil} />
-          </div>
+          <svg
+            className={surfaceStyles.academic}
+            viewBox="0 0 640 360"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              className={surfaceStyles.arc}
+              d="M40 300c80-150 180-210 280-210s200 60 280 210"
+            />
+            <path
+              className={surfaceStyles.arcSoft}
+              d="M120 300c60-100 130-140 200-140s140 40 200 140"
+            />
+            <path className={surfaceStyles.baseLine} d="M70 312h500" />
+            <circle className={surfaceStyles.lamp} cx="180" cy="168" r="3.5" />
+            <circle className={surfaceStyles.lamp} cx="320" cy="118" r="4" />
+            <circle className={surfaceStyles.lamp} cx="460" cy="168" r="3.5" />
+            <circle
+              className={surfaceStyles.lampWarm}
+              cx="320"
+              cy="214"
+              r="3"
+            />
+            <path className={surfaceStyles.diamond} d="M320 248l8 8-8 8-8-8z" />
+          </svg>
           <div
             role="group"
             aria-label={t('language')}
@@ -766,19 +752,19 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
             </div>
           </div>
           <div className={surfaceStyles.identityCopy}>
-            <div className={surfaceStyles.brandRow}>
-              <span className={surfaceStyles.markPlate}>
-                <UniversityLogo
-                  alt={t('logoAlt')}
-                  onLight
-                  className="h-11 w-11 lg:h-14 lg:w-14"
-                />
-              </span>
+            <span className={surfaceStyles.markPlate}>
+              <UniversityLogo
+                alt={t('logoAlt')}
+                onLight
+                className="h-12 w-12 lg:h-16 lg:w-16"
+              />
+            </span>
+            <div>
               <p className={`${surfaceStyles.wordmark} font-display-fa`}>
                 {t('brandName')}
               </p>
+              <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
             </div>
-            <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
           </div>
         </section>
 
@@ -799,16 +785,24 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                 type="button"
                 className={surfaceStyles.back}
                 onClick={() => {
-                  if (
-                    step === 'support' ||
-                    step === 'imported-password' ||
-                    step === 'register-profile'
-                  ) {
+                  if (step === 'support' || step === 'imported-password') {
                     setPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
                     setCode('');
                     go('identify');
+                  } else if (step === 'register-profile') {
+                    registrationToken.current = verificationRequired
+                      ? registrationToken.current
+                      : '';
+                    setPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setCode('');
+                    go(verificationRequired ? 'register-code' : 'identify');
                   } else if (step === 'register-code') {
                     setCode('');
+                    registrationToken.current = '';
                     go(verificationRequired ? 'register-otp' : 'identify');
                   } else if (step === 'register-otp') {
                     go('identify');
@@ -931,25 +925,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
             ) : null}
 
             <div key={step} className={surfaceStyles.motion}>
-              {step === 'choose' ? (
-                <div className={surfaceStyles.form}>
-                  <button
-                    type="button"
-                    className={surfaceStyles.primary}
-                    onClick={openEmailPath}
-                  >
-                    {t('chooseEmail')}
-                  </button>
-                  <button
-                    type="button"
-                    className={surfaceStyles.secondary}
-                    onClick={openPhonePath}
-                  >
-                    {t('choosePhone')}
-                  </button>
-                </div>
-              ) : null}
-
               {step === 'identify' ? (
                 <div className={surfaceStyles.form}>
                   <button
@@ -1276,32 +1251,23 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                         ? t('resendWait', { seconds: submitLeft })
                         : t('createAccount')}
                   </button>
-                  {registrationBlocked ? (
+                  {registrationBlocked && verificationRequired ? (
                     <div className={surfaceStyles.decision}>
-                      <p>
-                        {verificationRequired
-                          ? t('registrationInvalidHint')
-                          : t('registrationRestartHint')}
-                      </p>
+                      <p>{t('registrationInvalidHint')}</p>
                       <button
                         type="button"
                         className={`${surfaceStyles.secondary} mt-3`}
                         onClick={restartRegistration}
                       >
-                        {verificationRequired
-                          ? t('requestFreshCode')
-                          : t('restartRegistration')}
+                        {t('requestFreshCode')}
                       </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={surfaceStyles.secondary}
-                      onClick={restartRegistration}
-                    >
-                      {t('restartRegistration')}
-                    </button>
-                  )}
+                  ) : null}
+                  {registrationBlocked && !verificationRequired ? (
+                    <p className={surfaceStyles.banner} role="status">
+                      {t('registrationRestartHint')}
+                    </p>
+                  ) : null}
                 </form>
               ) : null}
 
@@ -1351,43 +1317,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     {t('resend')}
                   </button>
                 </form>
-              ) : null}
-
-              {step === 'legacy' ? (
-                <div
-                  className={`${surfaceStyles.form} ${surfaceStyles.legacyPaper}`}
-                >
-                  <LoginForm
-                    appearance="paper"
-                    busy={busy}
-                    setBusy={setBusy}
-                    abortRef={legacyAbort}
-                    onForgotPassword={() => setStep('legacy-reset')}
-                    onSuccess={enterApp}
-                  />
-                </div>
-              ) : null}
-
-              {step === 'legacy-reset' ? (
-                <div
-                  className={`${surfaceStyles.form} ${surfaceStyles.legacyPaper}`}
-                >
-                  <PasswordResetWizard
-                    appearance="paper"
-                    busy={busy}
-                    setBusy={setBusy}
-                    controllerRefs={{
-                      requestOtp: abortRef,
-                      verifyOtp: abortRef,
-                      complete: abortRef
-                    }}
-                    onBackToLogin={() => go('legacy')}
-                    onCompleted={() => {
-                      setNotice(t('resetDone'));
-                      setStep('legacy');
-                    }}
-                  />
-                </div>
               ) : null}
 
               {step === 'phone-setup' ? (
@@ -1462,17 +1391,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     {busy ? t('loading') : t('savePassword')}
                   </button>
                 </form>
-              ) : null}
-              {step !== 'choose' &&
-              step !== 'identify' &&
-              step !== 'support' ? (
-                <button
-                  type="button"
-                  className={surfaceStyles.methodSwitch}
-                  onClick={changeMethod}
-                >
-                  {t('changeMethod')}
-                </button>
               ) : null}
             </div>
           </section>

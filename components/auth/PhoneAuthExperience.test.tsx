@@ -944,9 +944,8 @@ describe('phone auth OTP countdown', () => {
       screen.getByRole('heading', { name: 'بازیابی از پشتیبانی' })
     ).toBeTruthy();
     expect(requestPhonePasswordReset).not.toHaveBeenCalled();
-    expect(
-      screen.getByText(/راه تماس عمومی هنوز از طرف صاحب محصول تأیید نشده/)
-    ).toBeTruthy();
+    expect(screen.getByText(/از راه پشتیبانی همان حساب/)).toBeTruthy();
+    expect(screen.queryByText(/صاحب محصول/)).toBeNull();
     expect(screen.queryByText(/09\d{9}/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
     expect(
@@ -998,9 +997,7 @@ describe('phone auth OTP countdown', () => {
     expect(screen.getByText('درخواست ثبت‌نام نامعتبر است.')).toBeTruthy();
     expect(screen.getByText(/از شماره دوباره شروع کنید/)).toBeTruthy();
     expect(screen.queryByText(/کد را دوباره بگیرید/)).toBeNull();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'شروع دوبارهٔ ثبت‌نام' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
     expect(
       screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
     ).toBeTruthy();

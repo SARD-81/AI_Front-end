@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api/client';
+import { parseMigratedPasswordResponse } from '@/lib/auth/migrated-password';
 import { API_ENDPOINTS } from '@/lib/config/api-endpoints';
 import { closeActiveChatSockets } from '@/lib/services/chat-service';
 import {
@@ -241,11 +242,7 @@ export async function completeMigratedPassword(
 ): Promise<
   { kind: 'phone_login_required' } | { kind: 'phone_setup_required' }
 > {
-  const data = await post<{
-    phone_login_required?: boolean;
-    phone_setup_required?: boolean;
-    access?: string;
-  }>(
+  const data = await post<unknown>(
     API_ENDPOINTS.auth.setInitialPassword,
     {
       email: input.email,
@@ -255,20 +252,17 @@ export async function completeMigratedPassword(
     },
     signal
   );
-  if (data.access) {
+  const parsed = parseMigratedPasswordResponse(data);
+  if (!parsed) {
     throw new ServiceError(
-      'پاسخ تعیین رمز نشست ساخت.',
+      'پاسخ تعیین رمز نامعتبر است.',
       502,
       'AUTH_CONTRACT_INVALID'
     );
   }
-  if (data.phone_setup_required) return { kind: 'phone_setup_required' };
-  if (data.phone_login_required) return { kind: 'phone_login_required' };
-  throw new ServiceError(
-    'پاسخ تعیین رمز نامعتبر است.',
-    502,
-    'AUTH_CONTRACT_INVALID'
-  );
+  return parsed.phone_setup_required
+    ? { kind: 'phone_setup_required' }
+    : { kind: 'phone_login_required' };
 }
 
 export async function completePhonePasswordReset(

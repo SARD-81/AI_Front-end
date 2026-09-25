@@ -252,15 +252,9 @@
       "description": "Soha, the assistant of Shahid Beheshti University",
       "tagline": "Secure, role-aware access for students, professors, and university staff."
     },
-    "card": {
-      "loginTitle": "Sign in",
-      "signupTitle": "Create account",
-      "loginDescription": "Enter your university email and password to sign in.",
-      "signupDescription": "To create an account, first verify your university email.",
-      "switchToSignup": "Don’t have an account? Sign up",
-      "switchToLogin": "Already have an account? Sign in",
-      "resetTitle": "Reset password",
-      "resetDescription": "Enter your university email, verify the code, and create a new password."
+    "closed": {
+      "title": "Sign-in is not available yet",
+      "body": "Mobile-number sign-in opens when this environment is connected to the new contract. Until then, this page cannot sign anyone in or create an account."
     },
     "phone": {
       "logoAlt": "Shahid Beheshti University logo",
@@ -325,7 +319,7 @@
       "signIn": "Sign in",
       "forgot": "Forgot this number's password",
       "supportTitle": "Recover through support",
-      "supportBody": "Password recovery by text message or email is not available in this pilot. A public contact channel has not been confirmed by the product owner, so none is shown here. Until that channel is published, recovery stays on this support path.",
+      "supportBody": "In this pilot, password recovery goes through support for the same account. No text message or email recovery is sent.",
       "back": "Back",
       "smsRequested": "The SMS request was accepted. Delivery to the handset is not guaranteed.",
       "registerWarningTitle": "Already have an email account?",

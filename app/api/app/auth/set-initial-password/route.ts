@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
-import { clearAuthCookies, setAuthCookies } from '@/lib/server/auth-cookies';
+import { clearAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
-import {
-  normalizeBackendAuthContract,
-  type BackendAuthContract
-} from '@/lib/server/auth-contract';
+import { parseMigratedPasswordResponse } from '@/lib/auth/migrated-password';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
@@ -48,13 +45,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await backendFetch<
-      BackendAuthContract & {
-        status?: string;
-        phone_login_required?: boolean;
-        phone_setup_required?: boolean;
-      }
-    >('/set-initial-password/', {
+    const data = await backendFetch<unknown>('/set-initial-password/', {
       base: 'auth',
       method: 'POST',
       body: JSON.stringify({
@@ -65,41 +56,19 @@ export async function POST(request: Request) {
       })
     });
 
-    const access = typeof data.access === 'string' ? data.access : '';
-    if (!access) {
-      await clearAuthCookies();
-      return NextResponse.json({
-        status:
-          typeof data.status === 'string' ? data.status : 'password_updated',
-        phone_login_required: data.phone_login_required === true,
-        phone_setup_required: data.phone_setup_required === true
-      });
-    }
-
-    const {
-      access: token,
-      refresh,
-      result
-    } = normalizeBackendAuthContract(data as BackendAuthContract);
-
-    if (result.isLocked === true || result.user?.isLocked === true) {
-      await clearAuthCookies();
+    const parsed = parseMigratedPasswordResponse(data);
+    await clearAuthCookies();
+    if (!parsed) {
       return NextResponse.json(
-        { message: 'Account is locked.', code: 'ACCOUNT_LOCKED' },
-        { status: 423 }
+        {
+          message: 'پاسخ تعیین رمز با قرارداد پایلوت هم‌خوان نیست.',
+          code: 'AUTH_CONTRACT_INVALID'
+        },
+        { status: 502 }
       );
     }
 
-    if (
-      result.mustChangePassword === true ||
-      result.user?.mustChangePassword === true
-    ) {
-      await clearAuthCookies();
-    } else {
-      await setAuthCookies({ access: token, refresh });
-    }
-
-    return NextResponse.json(result);
+    return NextResponse.json(parsed);
   } catch (error) {
     return routeErrorResponse(error);
   }
