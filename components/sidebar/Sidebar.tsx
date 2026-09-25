@@ -263,7 +263,10 @@ export function Sidebar({
   const rawProfileName =
     fullName || firstLastName || user?.studentId || t('sidebar.guestUser');
   const rawProfileSubtitle =
-    user?.email || user?.studentId || t('sidebar.demoVersion');
+    user?.email ||
+    user?.studentId ||
+    user?.personnelId ||
+    (fullName || firstLastName ? '' : t('sidebar.demoVersion'));
   const profileName = formatDigitsForLocale(rawProfileName, locale);
   const profileSubtitle = formatDigitsForLocale(rawProfileSubtitle, locale);
 

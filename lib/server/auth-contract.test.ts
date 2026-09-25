@@ -31,11 +31,13 @@ describe('backend auth contract normalization', () => {
           role: 'professor',
           isProfileCompleted: true,
           mustChangePassword: false,
-          isLocked: false
+          isLocked: false,
+          phoneSetupRequired: undefined
         },
         isProfileCompleted: true,
         mustChangePassword: false,
-        isLocked: false
+        isLocked: false,
+        phoneSetupRequired: undefined
       }
     });
   });

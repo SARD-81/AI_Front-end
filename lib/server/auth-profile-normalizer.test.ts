@@ -79,4 +79,24 @@ describe('normalizeAuthProfile', () => {
       isLocked: false
     });
   });
+
+  it('keeps a completed phone profile when email and university ids are null', () => {
+    const result = normalizeAuthProfile({
+      email: null,
+      first_name: 'علی',
+      last_name: 'رضایی',
+      full_name: 'علی رضایی',
+      role: 'student',
+      student_id: null,
+      faculty: '',
+      major: '',
+      degree_level: '',
+      is_profile_completed: true
+    });
+
+    expect(result.user.email).toBe('');
+    expect(result.user.studentId).toBeUndefined();
+    expect(result.isProfileCompleted).toBe(true);
+    expect(result.user.faculty).toBe('');
+  });
 });

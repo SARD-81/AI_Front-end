@@ -19,6 +19,8 @@ export type BackendAuthContract = {
   mustChangePassword?: boolean | null;
   is_locked?: boolean | null;
   isLocked?: boolean | null;
+  phone_setup_required?: boolean | null;
+  phoneSetupRequired?: boolean | null;
   user?: {
     identifier?: string | null;
     student_id?: string | null;
@@ -34,6 +36,8 @@ export type BackendAuthContract = {
     mustChangePassword?: boolean | null;
     is_locked?: boolean | null;
     isLocked?: boolean | null;
+    phone_setup_required?: boolean | null;
+    phoneSetupRequired?: boolean | null;
   };
 };
 
@@ -77,6 +81,11 @@ export function normalizeBackendAuthContract(data: BackendAuthContract): {
     flag(data.isLocked) ??
     flag(user.is_locked) ??
     flag(user.isLocked);
+  const phoneSetupRequired =
+    flag(data.phone_setup_required) ??
+    flag(data.phoneSetupRequired) ??
+    flag(user.phone_setup_required) ??
+    flag(user.phoneSetupRequired);
 
   const result: LoginResponseDTO = {
     user: {
@@ -99,11 +108,13 @@ export function normalizeBackendAuthContract(data: BackendAuthContract): {
       role: text(data.role) ?? text(user.role),
       isProfileCompleted,
       mustChangePassword,
-      isLocked
+      isLocked,
+      phoneSetupRequired
     },
     isProfileCompleted,
     mustChangePassword,
-    isLocked
+    isLocked,
+    phoneSetupRequired
   };
 
   return {

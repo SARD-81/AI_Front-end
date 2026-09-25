@@ -61,10 +61,15 @@ function extractRetryAfter(
   return null;
 }
 
-export async function backendFetch<T = unknown>(
+export type BackendFetchResult<T> = {
+  status: number;
+  data: T;
+};
+
+export async function backendFetchResult<T = unknown>(
   urlPath: string,
   init?: RequestInit & {base: 'auth' | 'api'; accessToken?: string}
-): Promise<T> {
+): Promise<BackendFetchResult<T>> {
   const origin = getBackendOrigin();
   const basePath = init?.base === 'auth' ? '/api/auth' : '/api';
   const normalizedPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
@@ -93,7 +98,7 @@ export async function backendFetch<T = unknown>(
   });
 
   if (response.status === 204) {
-    return null as T;
+    return {status: 204, data: null as T};
   }
 
   const rawText = await response.text();
@@ -125,5 +130,13 @@ export async function backendFetch<T = unknown>(
     throw new ApiError(message, response.status, code, data, retryAfter);
   }
 
-  return data as T;
+  return {status: response.status, data: data as T};
+}
+
+export async function backendFetch<T = unknown>(
+  urlPath: string,
+  init?: RequestInit & {base: 'auth' | 'api'; accessToken?: string}
+): Promise<T> {
+  const result = await backendFetchResult<T>(urlPath, init);
+  return result.data;
 }

@@ -14,6 +14,19 @@ export const API_ENDPOINTS = {
       requestOtp: '/api/app/auth/password-reset/request-otp',
       verifyOtp: '/api/app/auth/password-reset/verify-otp',
       complete: '/api/app/auth/password-reset/complete'
+    },
+    passwordChange: '/api/app/auth/password/change',
+    phone: {
+      identify: '/api/app/auth/phone/identify',
+      login: '/api/app/auth/phone/login',
+      activationResend: '/api/app/auth/phone/activation/resend-otp',
+      activationVerify: '/api/app/auth/phone/activation/verify-otp',
+      registrationRequestOtp: '/api/app/auth/phone/registration/request-otp',
+      registrationVerifyOtp: '/api/app/auth/phone/registration/verify-otp',
+      register: '/api/app/auth/phone/register',
+      resetRequestOtp: '/api/app/auth/phone/password-reset/request-otp',
+      resetVerifyOtp: '/api/app/auth/phone/password-reset/verify-otp',
+      resetComplete: '/api/app/auth/phone/password-reset/complete'
     }
   },
   conversations: {

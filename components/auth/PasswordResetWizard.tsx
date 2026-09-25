@@ -62,6 +62,7 @@ type PasswordResetWizardProps = {
     verifyOtp: React.MutableRefObject<AbortController | null>;
     complete: React.MutableRefObject<AbortController | null>;
   };
+  appearance?: 'night' | 'paper';
 };
 
 export function PasswordResetWizard({
@@ -69,7 +70,8 @@ export function PasswordResetWizard({
   setBusy,
   onBackToLogin,
   onCompleted,
-  controllerRefs
+  controllerRefs,
+  appearance = 'night'
 }: PasswordResetWizardProps) {
   const [stage, setStage] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState('');
@@ -80,6 +82,11 @@ export function PasswordResetWizard({
   const locale = useLocale();
   const t = useTranslations('auth');
   const schemaT: AuthSchemaTranslator = (key) => t(`validation.${key}`);
+  const paper = appearance === 'paper';
+  const labelTone = paper ? 'text-[#245066]' : 'text-slate-200/90';
+  const linkTone = paper
+    ? 'w-full min-h-11 text-center text-sm font-semibold text-[#075373] transition hover:bg-[#e7f4f7] disabled:cursor-not-allowed disabled:text-[#5c7380] disabled:opacity-100'
+    : 'w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50';
 
   const emailForm = useForm<SignupStep1EmailValues>({
     resolver: zodResolver(createSignupStep1EmailSchema(schemaT)),
@@ -245,7 +252,7 @@ export function PasswordResetWizard({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-200/90">{t('reset.emailLabel')}</FormLabel>
+                      <FormLabel className={labelTone}>{t('reset.emailLabel')}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -284,7 +291,7 @@ export function PasswordResetWizard({
                   name="otpCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-200/90">{t('reset.otpLabel')}</FormLabel>
+                      <FormLabel className={labelTone}>{t('reset.otpLabel')}</FormLabel>
                       <FormControl>
                         <OtpInput value={field.value ?? ''} onChange={field.onChange} disabled={busy} />
                       </FormControl>
@@ -316,7 +323,7 @@ export function PasswordResetWizard({
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-200/90">{t('reset.newPasswordLabel')}</FormLabel>
+                      <FormLabel className={labelTone}>{t('reset.newPasswordLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input {...field} type={showPassword ? 'text' : 'password'} className={`${authInputClassName} pl-11`} />
@@ -332,13 +339,14 @@ export function PasswordResetWizard({
                 <ValidationChecklist
                   title={t('passwordRules.title')}
                   rules={passwordChecklistRules}
+                  tone={appearance}
                 />
                 <FormField
                   control={passwordForm.control}
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-200/90">{t('reset.confirmPasswordLabel')}</FormLabel>
+                      <FormLabel className={labelTone}>{t('reset.confirmPasswordLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input {...field} type={showConfirmPassword ? 'text' : 'password'} className={`${authInputClassName} pl-11`} />
@@ -361,7 +369,7 @@ export function PasswordResetWizard({
         ) : null}
       </AnimatePresence>
 
-      <button type="button" className="w-full text-center text-sm font-medium text-sky-100/85 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={onBackToLogin} disabled={busy}>
+      <button type="button" className={linkTone} onClick={onBackToLogin} disabled={busy}>
         {t('reset.backToLogin')}
       </button>
     </div>

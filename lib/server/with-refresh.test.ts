@@ -87,7 +87,10 @@ describe('callWithAutoRefresh error preservation', () => {
 
   it('clears cookies when the refreshed access token is still rejected', async () => {
     getAuthCookiesMock.mockResolvedValue({access: 'stale-access', refresh: 'refresh-token'});
-    backendFetchMock.mockResolvedValue({access: 'fresh-access'});
+    backendFetchMock.mockResolvedValue({
+      access: 'fresh-access',
+      refresh: 'rotated-refresh'
+    });
     const endpoint = vi
       .fn()
       .mockRejectedValueOnce(new ApiError('expired access', 401, 'token_not_valid'))
@@ -98,5 +101,25 @@ describe('callWithAutoRefresh error preservation', () => {
       code: 'SESSION_EXPIRED'
     });
     expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+    expect(setAuthCookiesMock).toHaveBeenCalledWith({
+      access: 'fresh-access',
+      refresh: 'rotated-refresh'
+    });
+  });
+
+  it('ends the session when refresh rotation omits the new refresh token', async () => {
+    getAuthCookiesMock.mockResolvedValue({access: 'stale-access', refresh: 'refresh-token'});
+    backendFetchMock.mockResolvedValue({access: 'fresh-access'});
+    const endpoint = vi
+      .fn()
+      .mockRejectedValue(new ApiError('expired access', 401, 'token_not_valid'));
+
+    await expect(callWithAutoRefresh(endpoint)).rejects.toMatchObject({
+      status: 401,
+      code: 'SESSION_EXPIRED'
+    });
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+    expect(endpoint).toHaveBeenCalledTimes(1);
   });
 });

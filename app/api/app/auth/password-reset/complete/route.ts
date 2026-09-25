@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clearAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({ email, flow_token: flowToken, new_password: newPassword })
     });
 
+    await clearAuthCookies();
     return NextResponse.json(data);
   } catch (error) {
     return routeErrorResponse(error);

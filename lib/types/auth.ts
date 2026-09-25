@@ -19,6 +19,7 @@ export type AuthUserDTO = {
   isProfileCompleted?: boolean;
   mustChangePassword?: boolean;
   isLocked?: boolean;
+  phoneSetupRequired?: boolean;
 };
 
 export type LoginInputDTO = {
@@ -43,6 +44,8 @@ export type LoginResponseDTO = {
     must_change_password?: boolean | null;
     isLocked?: boolean | null;
     is_locked?: boolean | null;
+    phoneSetupRequired?: boolean | null;
+    phone_setup_required?: boolean | null;
   };
   isProfileCompleted?: boolean | null;
   is_profile_completed?: boolean | null;
@@ -50,6 +53,8 @@ export type LoginResponseDTO = {
   must_change_password?: boolean | null;
   isLocked?: boolean | null;
   is_locked?: boolean | null;
+  phoneSetupRequired?: boolean | null;
+  phone_setup_required?: boolean | null;
 };
 
 export type SendOtpInputDTO = {
@@ -165,10 +170,12 @@ export type LoginResultDTO = {
     | 'isProfileCompleted'
     | 'mustChangePassword'
     | 'isLocked'
+    | 'phoneSetupRequired'
   >;
   isProfileCompleted?: boolean;
   mustChangePassword?: boolean;
   isLocked?: boolean;
+  phoneSetupRequired?: boolean;
 };
 
 export type SendOtpResultDTO = {

@@ -332,6 +332,17 @@ function abortedError() {
   return new ChatWebSocketError('WebSocket send was aborted.', 'ABORTED');
 }
 
+const activeChatSockets = new Set<WebSocket>();
+
+export function closeActiveChatSockets() {
+  for (const socket of activeChatSockets) {
+    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+      socket.close();
+    }
+  }
+  activeChatSockets.clear();
+}
+
 function attemptSendMessageOverWebSocket(
   conversationId: string,
   wsTicket: string,
@@ -348,8 +359,10 @@ function attemptSendMessageOverWebSocket(
     let settled = false;
     let answered = false;
     const socket = new WebSocket(resolveChatWebSocketUrl(conversationId, wsTicket));
+    activeChatSockets.add(socket);
 
     const cleanup = () => {
+      activeChatSockets.delete(socket);
       clearTimeout(connectTimer);
       clearTimeout(answerTimer);
       opts?.signal?.removeEventListener('abort', handleAbort);
