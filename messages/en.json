@@ -77,10 +77,10 @@
       "comingSoon": "Coming soon",
       "acknowledge": "Understood",
       "items": {
+        "dashboard": "Dashboard",
         "chat": "Chat",
-        "users": "Memory management",
         "documents": "Document management",
-        "databases": "Database management"
+        "memory": "Memory management"
       }
     },
     "conversations": {
