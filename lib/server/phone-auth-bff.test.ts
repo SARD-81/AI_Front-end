@@ -540,10 +540,33 @@ describe('phone auth BFF contract', () => {
       })
     );
     expect(response.status).toBe(403);
-    expect(await response.json()).toMatchObject({code: 'cross_site_request'});
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('https://evil.example'));
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('http://localhost'));
+    const body = await response.json();
+    expect(body).toMatchObject({code: 'cross_site_request'});
+    expect(body).not.toHaveProperty('reason');
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('origin-mismatch'),
+      expect.objectContaining({origin: 'https://evil.example', received: 'http://localhost'})
+    );
     expect(backendFetchResultMock).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('names the rejecting condition in development without accepting the origin', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const response = await handlePasswordChange(
+      post('/api/app/auth/password/change', {current_password: 'old', new_password: 'new'}, {
+        origin: 'https://evil.example'
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'cross_site_request',
+      reason: 'origin-mismatch',
+      origin: 'https://evil.example',
+      received: 'http://localhost'
+    });
+    expect(backendFetchResultMock).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+    vi.stubEnv('PHONE_AUTH_ENABLED', 'true');
   });
 });

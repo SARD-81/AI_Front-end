@@ -53,6 +53,7 @@ export function Composer({
   const composerRef = useRef<HTMLDivElement | null>(null);
   const restoreFocusRef = useRef(false);
   const [webSearchOn, setWebSearchOn] = useState(false);
+  const [webHint, setWebHint] = useState(false);
 
   const prefersTouchKeyboard = () =>
     window.matchMedia('(max-width: 767px)').matches ||
@@ -175,8 +176,12 @@ export function Composer({
             aria-pressed={webSearchOn}
             aria-describedby="web-search-hint"
             onClick={() => setWebSearchOn((current) => !current)}
+            onMouseEnter={() => setWebHint(true)}
+            onMouseLeave={() => setWebHint(false)}
+            onFocus={() => setWebHint(true)}
+            onBlur={() => setWebHint(false)}
             className={cn(
-              'peer inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+              'inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
               webSearchOn
                 ? 'bg-[hsl(var(--surface-elevated))] text-foreground'
                 : 'text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground'
@@ -189,7 +194,10 @@ export function Composer({
           <span
             id="web-search-hint"
             role="tooltip"
-            className="invisible absolute bottom-[calc(100%+0.35rem)] start-0 z-20 w-56 rounded-lg bg-foreground px-2 py-1 text-start text-xs leading-5 text-background opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100"
+            className={cn(
+              'absolute bottom-[calc(100%+0.35rem)] end-0 z-30 w-[min(14rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] whitespace-normal break-words rounded-lg bg-foreground px-2 py-1 text-start text-xs leading-5 text-background shadow-lg',
+              webHint ? 'visible opacity-100' : 'invisible opacity-0'
+            )}
           >
             {t('webSearch.hint')}
           </span>

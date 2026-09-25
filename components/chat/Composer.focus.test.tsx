@@ -23,33 +23,35 @@ function renderComposer(props: Partial<React.ComponentProps<typeof Composer>> = 
 }
 
 function desktop() {
-  vi.stubGlobal('matchMedia', (query: string) => ({
+  vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
     matches: false,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     addListener: vi.fn(),
     removeListener: vi.fn(),
-    dispatchEvent: vi.fn()
+    dispatchEvent: vi.fn(),
+    onchange: null
   }));
 }
 
 function mobile() {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: /max-width:\s*767px|pointer:\s*coarse/.test(query),
+  vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
+    matches: true,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     addListener: vi.fn(),
     removeListener: vi.fn(),
-    dispatchEvent: vi.fn()
+    dispatchEvent: vi.fn(),
+    onchange: null
   }));
 }
 
 describe('composer focus and web search hint', () => {
   afterEach(() => {
     cleanup();
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('does not focus the textarea when the chat first opens', () => {
@@ -85,15 +87,70 @@ describe('composer focus and web search hint', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox'));
   });
 
-  it('does not steal focus after a click-send if the user moved to another control', () => {
+  function cycleSend(view: ReturnType<typeof renderComposer>, onSubmit: () => void, mobileView = false) {
+    const box = screen.getByRole('textbox');
+    const send = screen.getByRole('button', {name: 'ارسال'});
+    if (!mobileView) box.focus();
+    fireEvent.click(send);
+    expect(onSubmit).toHaveBeenCalledOnce();
+    const frame = (disabled: boolean) => (
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <Composer
+          value=""
+          onChange={vi.fn()}
+          onSubmit={onSubmit}
+          onStop={vi.fn()}
+          thinkLevel="low"
+          onThinkLevelChange={vi.fn()}
+          disabled={disabled}
+          isSending={disabled}
+        />
+      </NextIntlClientProvider>
+    );
+    view.rerender(frame(true));
+    expect(screen.getByRole('button', {name: 'توقف تولید پاسخ'})).toBeTruthy();
+    if (!mobileView) fireEvent.blur(screen.getByRole('textbox'));
+    view.rerender(frame(false));
+    const textarea = screen.getByRole('textbox');
+    if (mobileView) expect(document.activeElement).not.toBe(textarea);
+    else expect(document.activeElement).toBe(textarea);
+  }
+
+  it('restores desktop focus after a real click send, pending state, and reply end', () => {
     desktop();
-    renderComposer();
+    const onSubmit = vi.fn();
+    cycleSend(renderComposer({onSubmit}), onSubmit);
+  });
+
+  it('does not reopen the mobile keyboard after click send ends', () => {
+    mobile();
+    const onSubmit = vi.fn();
+    cycleSend(renderComposer({onSubmit}), onSubmit, true);
+  });
+
+  it('does not steal focus when the user left the composer during the pending reply', () => {
+    desktop();
+    const onSubmit = vi.fn();
+    const view = renderComposer({onSubmit});
     const box = screen.getByRole('textbox');
     const outside = document.createElement('button');
+    outside.textContent = 'elsewhere';
     document.body.append(outside);
     box.focus();
-    fireEvent.blur(box, {relatedTarget: outside});
+    fireEvent.click(screen.getByRole('button', {name: 'ارسال'}));
+    view.rerender(
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} onStop={vi.fn()} thinkLevel="low" onThinkLevelChange={vi.fn()} disabled isSending />
+      </NextIntlClientProvider>
+    );
+    const pendingBox = screen.getByRole('textbox');
+    fireEvent.blur(pendingBox, {relatedTarget: outside});
     outside.focus();
+    view.rerender(
+      <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
+        <Composer value="" onChange={vi.fn()} onSubmit={onSubmit} thinkLevel="low" onThinkLevelChange={vi.fn()} />
+      </NextIntlClientProvider>
+    );
     expect(document.activeElement).toBe(outside);
   });
 
