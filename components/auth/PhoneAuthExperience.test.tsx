@@ -25,7 +25,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: (props: {alt?: string}) => <span role="img" aria-label={props.alt ?? ''} />
+  default: (props: {alt?: string; className?: string}) => (
+    <span role="img" aria-label={props.alt ?? ''} className={props.className} />
+  )
 }));
 
 vi.mock('@/lib/services/phone-auth-service', () => ({
@@ -221,5 +223,19 @@ describe('phone auth OTP countdown', () => {
     expect(result.phoneSetupRequired).toBe(true);
     expect(result.user.phoneSetupRequired).toBe(true);
     expect(replace).toHaveBeenCalledWith('/fa/chat');
+  });
+
+  it('keeps the university mark colored when the document theme is dark', () => {
+    document.documentElement.classList.add('dark');
+    renderAuth();
+    const logos = screen.getAllByRole('img', {name: 'لوگوی دانشگاه شهید بهشتی'});
+    expect(logos.length).toBeGreaterThan(0);
+    for (const logo of logos) {
+      expect(logo.className).not.toContain('dark:invert');
+      expect(logo.className).not.toContain('dark:brightness-0');
+      expect(logo.className).toContain('invert-0');
+      expect(logo.className).toContain('brightness-100');
+    }
+    document.documentElement.classList.remove('dark');
   });
 });

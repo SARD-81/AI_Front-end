@@ -1,6 +1,7 @@
 'use client';
 
 import {UniversityLogo} from '@/components/branding/UniversityLogo';
+import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
 import {LoginForm} from '@/components/auth/LoginForm';
 import {PasswordResetWizard} from '@/components/auth/PasswordResetWizard';
 import {Button} from '@/components/ui/button';
@@ -403,10 +404,10 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const guidance = step === 'phone-setup' ? t('setupBody') : t(copy.body);
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-[#f3f8f8] text-[#073044] [color-scheme:light]">
+    <main className={`${surfaceStyles.surface} min-h-[100dvh] overflow-x-hidden bg-[#f3f8f8] text-[#073044]`}>
       <div className="mx-auto grid min-h-[100dvh] w-full max-w-6xl lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] lg:items-center lg:gap-16 lg:px-10">
         <aside className="hidden lg:block">
-          <UniversityLogo alt={t('logoAlt')} className="h-16 w-16" />
+          <UniversityLogo alt={t('logoAlt')} onLight className="h-16 w-16" />
           <p className="mt-6 text-5xl font-bold leading-none text-[#075373]">سها</p>
           <p className="mt-4 max-w-md text-lg leading-8 text-[#0b3a4d]">{t('university')}</p>
           <p className="mt-4 max-w-md text-base leading-8 text-[#3d6574]">{t('desktopBrand')}</p>
@@ -415,7 +416,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
         <div className="flex min-h-[100dvh] w-full flex-col px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 lg:min-h-0 lg:px-0 lg:py-10">
           <header className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3 lg:hidden">
-              <UniversityLogo alt={t('logoAlt')} className="h-12 w-12 shrink-0" />
+              <UniversityLogo alt={t('logoAlt')} onLight className="h-12 w-12 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xl font-bold leading-7 text-[#075373]">سها</p>
                 <p className="text-xs leading-5 text-[#3d6574]">{t('university')}</p>

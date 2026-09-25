@@ -5,11 +5,14 @@ import { cn } from '@/lib/utils';
 export function UniversityLogo({
   alt,
   className,
-  inverse = false
+  inverse = false,
+  onLight = false
 }: {
   alt: string;
   className?: string;
   inverse?: boolean;
+  /** Keep the colored mark on a light surface, even when the document theme is dark. */
+  onLight?: boolean;
 }) {
   return (
     <span className={cn('relative block shrink-0 overflow-hidden', className)}>
@@ -21,7 +24,11 @@ export function UniversityLogo({
         priority
         className={cn(
           'scale-[1.9] object-contain',
-          inverse ? 'brightness-0 invert' : 'dark:brightness-0 dark:invert'
+          onLight
+            ? 'brightness-100 invert-0'
+            : inverse
+              ? 'brightness-0 invert'
+              : 'dark:brightness-0 dark:invert'
         )}
       />
     </span>

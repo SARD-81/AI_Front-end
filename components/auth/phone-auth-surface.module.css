@@ -1,0 +1,21 @@
+.surface {
+  color-scheme: light;
+  --background: 210 28% 97%;
+  --foreground: 222 35% 12%;
+  --muted-foreground: 218 16% 40%;
+  --border: 214 20% 90%;
+  --ring: 222 80% 52%;
+  --primary: 222 72% 50%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 22% 94%;
+  --secondary-foreground: 222 35% 12%;
+  --accent: 210 25% 95%;
+  --accent-foreground: 222 35% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 35% 12%;
+  --field: 0 0% 100%;
+  --field-foreground: 198 82% 15%;
+  --field-border: 191 32% 79%;
+  --field-placeholder: 196 22% 42%;
+  --field-focus: 193 89% 35%;
+}

@@ -48,8 +48,10 @@ They were captured against a local mock of the contract on `127.0.0.1:8099`, not
 | --- | --- |
 | `phone-login-320.png` | 320×900 |
 | `phone-login-375.png` | 375×900 |
+| `phone-login-375-dark.png` | 375×900 |
 | `phone-login-412.png` | 412×900 |
 | `phone-login-1280.png` | 1280×900 |
+| `phone-login-1280-dark.png` | 1280×900 |
 | `phone-activation-320.png` | 320×900 |
 | `phone-activation-375.png` | 375×900 |
 | `phone-activation-412.png` | 412×900 |
@@ -67,4 +69,4 @@ They were captured against a local mock of the contract on `127.0.0.1:8099`, not
 | `phone-error-412.png` | 412×900 |
 | `phone-error-1280.png` | 1280×900 |
 
-Desktop registration is included as `phone-register-1280.png`.
+Desktop registration is included as `phone-register-1280.png`. `phone-login-375.png` and `phone-login-1280.png` are the light document theme. `phone-login-375-dark.png` and `phone-login-1280-dark.png` use `html.dark`. In both themes the university mark stays colored and the login controls stay on the light surface.
