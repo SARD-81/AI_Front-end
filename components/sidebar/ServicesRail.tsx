@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BrainCircuit,
-  Database,
   Files,
+  LayoutDashboard,
   LogOut,
   MessageSquare,
   PanelRight,
@@ -33,13 +33,12 @@ import { getMe, logout } from '@/lib/services/auth-service';
 import { cn } from '@/lib/utils';
 import { formatDigitsForLocale } from '@/lib/utils/digits';
 
-const RESTRICTED_SERVICES = [
-  { id: 'users', icon: BrainCircuit },
-  { id: 'documents', icon: Files },
-  { id: 'databases', icon: Database }
+const SERVICE_ITEMS = [
+  { id: 'dashboard', icon: LayoutDashboard, comingSoon: true },
+  { id: 'chat', icon: MessageSquare, comingSoon: false },
+  { id: 'documents', icon: Files, comingSoon: true },
+  { id: 'memory', icon: BrainCircuit, comingSoon: true }
 ] as const;
-
-type RestrictedServiceId = (typeof RESTRICTED_SERVICES)[number]['id'];
 
 export function ServicesRail({
   locale,
@@ -71,9 +70,6 @@ export function ServicesRail({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  const [deniedService, setDeniedService] = useState<RestrictedServiceId | null>(
-    null
-  );
 
   const user = profileQuery.data?.user;
   const fullName = user?.fullName?.trim();
@@ -88,9 +84,6 @@ export function ServicesRail({
     user?.personnelId ||
     (fullName || firstLastName ? '' : t('sidebar.demoVersion'));
   const profileSubtitle = formatDigitsForLocale(rawProfileSubtitle, locale);
-  const deniedLabel = deniedService
-    ? t(`services.items.${deniedService}`)
-    : '';
 
   const handleLogout = async () => {
     try {
@@ -179,50 +172,57 @@ export function ServicesRail({
           className="soha-sidebar-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-3"
           aria-label={t('services.label')}
         >
-          <button
-            type="button"
-            aria-label={t('services.items.chat')}
-            aria-current={pathname?.includes('/chat') ? 'page' : undefined}
-            title={t('services.items.chat')}
-            onClick={() => {
-              onClose();
-              if (pathname?.includes('/chat')) return;
-              router.push(`/${locale}/chat`);
-            }}
-            className={cn(
-              'flex min-h-11 items-center rounded-xl border text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
-              'justify-center md:justify-center max-md:justify-start max-md:gap-3 max-md:px-3',
-              !collapsed && 'xl:justify-start xl:gap-3 xl:px-3',
-              pathname?.includes('/chat')
-                ? 'border-white/25 bg-white/15 font-semibold text-white'
-                : 'border-transparent text-[#e7f4f8] hover:border-white/15 hover:bg-white/10'
-            )}
-          >
-            <MessageSquare className="h-[1.15rem] w-[1.15rem] shrink-0" aria-hidden="true" />
-            <span className={cn('truncate max-md:inline md:hidden', !collapsed && 'xl:inline')}>
-              {t('services.items.chat')}
-            </span>
-          </button>
-          {RESTRICTED_SERVICES.map((item) => {
+          {SERVICE_ITEMS.map((item) => {
             const Icon = item.icon;
             const label = t(`services.items.${item.id}`);
+            const isChat = item.id === 'chat';
+            const isCurrentChat = isChat && pathname?.includes('/chat');
+
             return (
               <button
                 key={item.id}
                 type="button"
-                aria-label={item.id === 'users' ? `${label} — ${t('services.comingSoon')}` : label}
-                aria-disabled={item.id === 'users' ? true : undefined}
-                title={item.id === 'users' ? t('services.comingSoon') : label}
-                onClick={item.id === 'users' ? undefined : () => setDeniedService(item.id)}
+                aria-label={item.comingSoon ? `${label} — ${t('services.comingSoon')}` : label}
+                aria-current={isCurrentChat ? 'page' : undefined}
+                aria-disabled={item.comingSoon ? true : undefined}
+                title={item.comingSoon ? t('services.comingSoon') : label}
+                onClick={
+                  isChat
+                    ? () => {
+                        onClose();
+                        if (pathname?.includes('/chat')) return;
+                        router.push(`/${locale}/chat`);
+                      }
+                    : undefined
+                }
                 className={cn(
-                  'flex min-h-11 items-center rounded-xl border border-transparent text-start text-sm text-[#e7f4f8] transition-colors hover:border-white/15 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:bg-white/15',
+                  'group relative flex min-h-11 items-center rounded-xl border text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
                   'justify-center md:justify-center max-md:justify-start max-md:gap-3 max-md:px-3',
                   !collapsed && 'xl:justify-start xl:gap-3 xl:px-3',
-                  item.id === 'users' && 'cursor-not-allowed text-[#b7dbe4] hover:border-transparent hover:bg-transparent active:bg-transparent'
+                  isCurrentChat
+                    ? 'border-white/25 bg-white/15 font-semibold text-white'
+                    : 'border-transparent text-[#e7f4f8]',
+                  !item.comingSoon && !isCurrentChat && 'hover:border-white/15 hover:bg-white/10 active:bg-white/15',
+                  item.comingSoon &&
+                    'cursor-not-allowed text-[#b7dbe4] hover:border-transparent hover:bg-transparent active:bg-transparent'
                 )}
               >
                 <Icon className="h-[1.15rem] w-[1.15rem] shrink-0" aria-hidden="true" />
-                <span className={cn('truncate max-md:inline md:hidden', !collapsed && 'xl:inline')}>{label}</span>
+                <span className={cn('truncate max-md:inline md:hidden', !collapsed && 'xl:inline')}>
+                  {label}
+                </span>
+                {item.comingSoon ? (
+                  <span
+                    role="tooltip"
+                    aria-hidden="true"
+                    className={cn(
+                      'pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#06131b] px-2 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100',
+                      isRtl ? 'right-[calc(100%+0.5rem)]' : 'left-[calc(100%+0.5rem)]'
+                    )}
+                  >
+                    {t('services.comingSoon')}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -286,25 +286,6 @@ export function ServicesRail({
           </DropdownMenu>
         </div>
       </aside>
-
-      <Dialog
-        open={Boolean(deniedService)}
-        onOpenChange={(next) => {
-          if (!next) setDeniedService(null);
-        }}
-      >
-        <DialogContent className="max-w-sm" dir={isRtl ? 'rtl' : 'ltr'}>
-          <DialogTitle>{t('services.accessDeniedTitle')}</DialogTitle>
-          <DialogDescription>
-            {t('services.accessDenied', { section: deniedLabel })}
-          </DialogDescription>
-          <div className="flex justify-end">
-            <Button type="button" onClick={() => setDeniedService(null)}>
-              {t('services.acknowledge')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <SettingsModal
         open={settingsOpen}
