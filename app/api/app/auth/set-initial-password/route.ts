@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { clearAuthCookies, setAuthCookies } from '@/lib/server/auth-cookies';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
-import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/server/auth-contract';
+import {
+  normalizeBackendAuthContract,
+  type BackendAuthContract
+} from '@/lib/server/auth-contract';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
 import { crossSiteRejection } from '@/lib/server/request-origin';
@@ -25,7 +28,8 @@ export async function POST(request: Request) {
   try {
     const body = await readJsonBody<SetInitialPasswordBody>(request);
     const email = body.email?.trim() ?? '';
-    const temporaryPassword = body.temporary_password ?? body.temporaryPassword ?? '';
+    const temporaryPassword =
+      body.temporary_password ?? body.temporaryPassword ?? '';
     const newPassword = body.new_password ?? body.newPassword ?? '';
     const newPasswordConfirm =
       body.new_password_confirm ?? body.newPasswordConfirm ?? '';
@@ -44,21 +48,39 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await backendFetch<BackendAuthContract>(
-      '/set-initial-password/',
-      {
-        base: 'auth',
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          temporary_password: temporaryPassword,
-          new_password: newPassword,
-          new_password_confirm: newPasswordConfirm
-        })
+    const data = await backendFetch<
+      BackendAuthContract & {
+        status?: string;
+        phone_login_required?: boolean;
+        phone_setup_required?: boolean;
       }
-    );
+    >('/set-initial-password/', {
+      base: 'auth',
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        temporary_password: temporaryPassword,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm
+      })
+    });
 
-    const {access, refresh, result} = normalizeBackendAuthContract(data);
+    const access = typeof data.access === 'string' ? data.access : '';
+    if (!access) {
+      await clearAuthCookies();
+      return NextResponse.json({
+        status:
+          typeof data.status === 'string' ? data.status : 'password_updated',
+        phone_login_required: data.phone_login_required === true,
+        phone_setup_required: data.phone_setup_required === true
+      });
+    }
+
+    const {
+      access: token,
+      refresh,
+      result
+    } = normalizeBackendAuthContract(data as BackendAuthContract);
 
     if (result.isLocked === true || result.user?.isLocked === true) {
       await clearAuthCookies();
@@ -74,7 +96,7 @@ export async function POST(request: Request) {
     ) {
       await clearAuthCookies();
     } else {
-      await setAuthCookies({ access, refresh });
+      await setAuthCookies({ access: token, refresh });
     }
 
     return NextResponse.json(result);

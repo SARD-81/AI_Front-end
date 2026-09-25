@@ -20,6 +20,7 @@ const loginWithPhone = vi.hoisted(() => vi.fn());
 const requestPhonePasswordReset = vi.hoisted(() => vi.fn());
 const verifyPhonePasswordReset = vi.hoisted(() => vi.fn());
 const completePhonePasswordReset = vi.hoisted(() => vi.fn());
+const completeMigratedPassword = vi.hoisted(() => vi.fn());
 const registerWithPhone = vi.hoisted(() => vi.fn());
 const verifyRegistrationOtp = vi.hoisted(() => vi.fn());
 const replace = vi.hoisted(() => vi.fn());
@@ -45,6 +46,7 @@ vi.mock('@/lib/services/phone-auth-service', () => ({
   requestPhonePasswordReset,
   verifyPhonePasswordReset,
   completePhonePasswordReset,
+  completeMigratedPassword,
   registerWithPhone,
   resendActivationOtp: vi.fn(),
   verifyActivationOtp: vi.fn(),
@@ -76,7 +78,7 @@ async function openRegistration() {
     );
   });
   expect(
-    await screen.findByRole('heading', { name: 'ساخت حساب تازه' })
+    await screen.findByRole('heading', { name: 'ساخت حساب کاربری جدید' })
   ).toBeTruthy();
 }
 
@@ -88,6 +90,8 @@ describe('phone auth OTP countdown', () => {
     requestRegistrationOtp.mockReset();
     loginWithPhone.mockReset();
     requestPhonePasswordReset.mockReset();
+    completePhonePasswordReset.mockReset();
+    completeMigratedPassword.mockReset();
     registerWithPhone.mockReset();
     verifyRegistrationOtp.mockReset();
     replace.mockReset();
@@ -189,13 +193,11 @@ describe('phone auth OTP countdown', () => {
     expect(
       await screen.findByRole('heading', { name: 'اول باید رمز موقت عوض شود' })
     ).toBeTruthy();
-    expect(screen.getAllByText(/set-initial-password/).length).toBeGreaterThan(
-      0
-    );
-    expect(screen.getByText(/پشتیبانی یا روند مهاجرت/)).toBeTruthy();
+    expect(screen.getByLabelText('ایمیل حساب مهاجرتی')).toBeTruthy();
+    expect(screen.getByLabelText('رمز موقت')).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'ایمیل و رمز موقت را دارم' })
-    ).toBeTruthy();
+      screen.queryByRole('button', { name: 'ایمیل و رمز موقت را دارم' })
+    ).toBeNull();
     expect(setItem).not.toHaveBeenCalled();
     expect(document.cookie).not.toContain('sbu_access');
     setItem.mockRestore();
@@ -343,15 +345,10 @@ describe('phone auth OTP countdown', () => {
     renderAuth();
     await openRegistration();
 
-    expect(
-      screen.getByRole('button', { name: 'قبلاً با ایمیل حساب داشتم' })
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        'ثبت‌نام با شماره حساب جدید می‌سازد و حساب ایمیلی قبلی را وصل نمی‌کند.'
-      )
-    ).toBeTruthy();
     expect(screen.queryByLabelText('کد تأیید')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'قبلاً با ایمیل حساب داشتم' })
+    ).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'درخواست کد' }));
@@ -426,7 +423,7 @@ describe('phone auth OTP countdown', () => {
     ).toBeTruthy();
     expect(screen.getByText('09120000000')).toBeTruthy();
     expect(
-      screen.queryByRole('heading', { name: 'ساخت حساب تازه' })
+      screen.queryByRole('heading', { name: 'ساخت حساب کاربری جدید' })
     ).toBeNull();
     expect(identifyPhone).toHaveBeenCalledWith(
       '۰۹۱۲۰۰۰۰۰۰۰',
@@ -570,11 +567,14 @@ describe('phone auth OTP countdown', () => {
       screen.getByText(/ثبت‌نام تازه آن حساب را به این شماره وصل نمی‌کند/)
     ).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'ورود به حساب ایمیلی' })
-    ).toBeTruthy();
-    expect(
-      (screen.getByLabelText('ایمیل (اختیاری)') as HTMLInputElement).value
-    ).toBe('old@sbu.ac.ir');
+      screen.queryByRole('button', { name: 'ورود به حساب ایمیلی' })
+    ).toBeNull();
+    const emailField = screen.getByLabelText(
+      'ایمیل (اختیاری)'
+    ) as HTMLInputElement;
+    expect(emailField.value).toBe('old@sbu.ac.ir');
+    fireEvent.change(emailField, { target: { value: '' } });
+    expect(emailField.value).toBe('');
   });
 
   it('sends staff category only for staff and restarts a blocked registration without claiming expiry', async () => {
@@ -665,7 +665,7 @@ describe('phone auth OTP countdown', () => {
     expect(screen.queryByText(/منقضی/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'دریافت کد تازه' }));
     expect(
-      await screen.findByRole('heading', { name: 'ساخت حساب تازه' })
+      await screen.findByRole('heading', { name: 'ساخت حساب کاربری جدید' })
     ).toBeTruthy();
     expect(screen.queryByLabelText('نام')).toBeNull();
   });
@@ -878,9 +878,15 @@ describe('phone auth OTP countdown', () => {
   it('shows registration progress only after a new account is chosen', async () => {
     renderAuth();
     await openRegistration();
-    expect(
-      screen.getByRole('list', { name: 'مراحل ساخت حساب تازه' })
-    ).toBeTruthy();
+    const heading = screen.getByRole('heading', {
+      name: 'ساخت حساب کاربری جدید'
+    });
+    const progress = screen.getByRole('list', { name: 'مراحل ساخت حساب تازه' });
+    expect(heading.nextElementSibling).toBe(progress);
+    expect(progress.textContent).toContain('شماره تلفن');
+    expect(progress.textContent).toContain('کد تأیید');
+    expect(progress.textContent).toContain('ساخت حساب کاربری');
+    expect(screen.queryByText('حساب ایمیلی قدیمی دارید؟')).toBeNull();
     expect(
       screen.getByRole('listitem', { current: 'step' }).textContent
     ).toContain('شماره');
@@ -938,5 +944,233 @@ describe('phone auth OTP countdown', () => {
       screen.getByRole('heading', { name: 'بازیابی از پشتیبانی' })
     ).toBeTruthy();
     expect(requestPhonePasswordReset).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/راه تماس عمومی هنوز از طرف صاحب محصول تأیید نشده/)
+    ).toBeTruthy();
+    expect(screen.queryByText(/09\d{9}/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
+    expect(
+      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
+    ).toBeTruthy();
+  });
+
+  it('restarts a pilot registration from the number step and never requests a code', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'register',
+      verificationRequired: false
+    });
+    registerWithPhone.mockRejectedValue(
+      new ServiceError(
+        'درخواست ثبت‌نام نامعتبر است.',
+        400,
+        'invalid_registration'
+      )
+    );
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    expect(
+      await screen.findByRole('heading', { name: 'ساخت حساب کاربری جدید' })
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'درخواست کد' })).toBeNull();
+    expect(screen.queryByLabelText('کد تأیید')).toBeNull();
+    fireEvent.change(screen.getByLabelText('نام'), {
+      target: { value: 'علی' }
+    });
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {
+      target: { value: 'رضایی' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ساخت حساب و ورود' }));
+    });
+    expect(screen.getByText('درخواست ثبت‌نام نامعتبر است.')).toBeTruthy();
+    expect(screen.getByText(/از شماره دوباره شروع کنید/)).toBeTruthy();
+    expect(screen.queryByText(/کد را دوباره بگیرید/)).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'شروع دوبارهٔ ثبت‌نام' })
+    );
+    expect(
+      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
+    ).toBeTruthy();
+    expect(requestRegistrationOtp).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'درخواست کد' })).toBeNull();
+  });
+
+  it('returns a migrated password to phone login or support without a session', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'password',
+      verificationRequired: false
+    });
+    loginWithPhone.mockRejectedValue(
+      new ServiceError(
+        'رمز موقت باید عوض شود.',
+        403,
+        'password_change_required'
+      )
+    );
+    completeMigratedPassword.mockResolvedValueOnce({
+      kind: 'phone_login_required'
+    });
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'Temp-Pass-123' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+    fireEvent.change(await screen.findByLabelText('ایمیل حساب مهاجرتی'), {
+      target: { value: 'professor@sbu.ac.ir' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز موقت'), {
+      target: { value: 'Temp-Pass-123' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز جدید'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ثبت رمز جدید' }));
+    });
+    expect(
+      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
+    ).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+    expect(document.cookie).not.toContain('sbu_access');
+
+    loginWithPhone.mockRejectedValue(
+      new ServiceError(
+        'رمز موقت باید عوض شود.',
+        403,
+        'password_change_required'
+      )
+    );
+    completeMigratedPassword.mockResolvedValueOnce({
+      kind: 'phone_setup_required'
+    });
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'Temp-Pass-123' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+    fireEvent.change(await screen.findByLabelText('ایمیل حساب مهاجرتی'), {
+      target: { value: 'professor@sbu.ac.ir' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز موقت'), {
+      target: { value: 'Temp-Pass-123' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز جدید'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ثبت رمز جدید' }));
+    });
+    expect(
+      screen.getByRole('heading', { name: 'بازیابی از پشتیبانی' })
+    ).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('shows the migrated-password error and stays on the form', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'password',
+      verificationRequired: false
+    });
+    loginWithPhone.mockRejectedValue(
+      new ServiceError(
+        'رمز موقت باید عوض شود.',
+        403,
+        'password_change_required'
+      )
+    );
+    completeMigratedPassword.mockRejectedValue(
+      new ServiceError('رمز موقت نادرست است.', 400, 'invalid_credentials')
+    );
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'Temp-Pass-123' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+    fireEvent.change(await screen.findByLabelText('ایمیل حساب مهاجرتی'), {
+      target: { value: 'professor@sbu.ac.ir' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز موقت'), {
+      target: { value: 'wrong' }
+    });
+    fireEvent.change(screen.getByLabelText('رمز جدید'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {
+      target: { value: 'N3w-Pass-456' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ثبت رمز جدید' }));
+    });
+    expect(screen.getByRole('alert').textContent).toContain(
+      'رمز موقت نادرست است.'
+    );
+    expect(
+      screen.getByRole('heading', { name: 'اول باید رمز موقت عوض شود' })
+    ).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('ignores an email entry and keeps public sign-in on the phone number', () => {
+    window.history.replaceState({}, '', '/fa/auth?entry=email');
+    renderAuth();
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(
+      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'تغییر روش ورود' })).toBeNull();
+    expect(
+      screen.queryByRole('heading', { name: 'قبلاً در سها حساب داشته‌اید؟' })
+    ).toBeNull();
+    expect(screen.queryByLabelText('ایمیل دانشگاهی')).toBeNull();
   });
 });

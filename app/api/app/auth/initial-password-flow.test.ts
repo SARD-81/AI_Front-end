@@ -1,23 +1,25 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const backendFetchMock = vi.hoisted(() => vi.fn());
 const setAuthCookiesMock = vi.hoisted(() => vi.fn());
 const clearAuthCookiesMock = vi.hoisted(() => vi.fn());
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/server/backend-fetch', () => ({backendFetch: backendFetchMock}));
+vi.mock('@/lib/server/backend-fetch', () => ({
+  backendFetch: backendFetchMock
+}));
 vi.mock('@/lib/server/auth-cookies', () => ({
   setAuthCookies: setAuthCookiesMock,
   clearAuthCookies: clearAuthCookiesMock
 }));
 
-import {POST as login} from '@/app/api/app/auth/login/route';
-import {POST as setInitialPassword} from '@/app/api/app/auth/set-initial-password/route';
+import { POST as login } from '@/app/api/app/auth/login/route';
+import { POST as setInitialPassword } from '@/app/api/app/auth/set-initial-password/route';
 
 function jsonRequest(path: string, body: Record<string, unknown>) {
   return new Request(`http://localhost${path}`, {
     method: 'POST',
-    headers: {'content-type': 'application/json', origin: 'http://localhost'},
+    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
     body: JSON.stringify(body)
   });
 }
@@ -97,5 +99,73 @@ describe('forced initial-password flow', () => {
       refresh: 'test-refresh-after-change'
     });
     expect(backendFetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns phone login without a session when the phone-only password update has no JWT', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_login_required: true
+    });
+
+    const response = await setInitialPassword(
+      jsonRequest('/api/app/auth/set-initial-password', {
+        email: 'professor@sbu.ac.ir',
+        temporary_password: 'test-temporary-value',
+        new_password: 'test-new-value',
+        new_password_confirm: 'test-new-value'
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'password_updated',
+      phone_login_required: true,
+      phone_setup_required: false
+    });
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns phone setup without a session when the migrated account has no phone', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_setup_required: true
+    });
+
+    const response = await setInitialPassword(
+      jsonRequest('/api/app/auth/set-initial-password', {
+        email: 'professor@sbu.ac.ir',
+        temporary_password: 'test-temporary-value',
+        new_password: 'test-new-value',
+        new_password_confirm: 'test-new-value'
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'password_updated',
+      phone_login_required: false,
+      phone_setup_required: true
+    });
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards a rejected password update without setting a session', async () => {
+    const { ApiError } = await import('@/lib/server/backend-types');
+    backendFetchMock.mockRejectedValue(
+      new ApiError('رمز موقت نادرست است.', 400, 'invalid_credentials')
+    );
+
+    const response = await setInitialPassword(
+      jsonRequest('/api/app/auth/set-initial-password', {
+        email: 'professor@sbu.ac.ir',
+        temporary_password: 'wrong',
+        new_password: 'test-new-value',
+        new_password_confirm: 'test-new-value'
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 });

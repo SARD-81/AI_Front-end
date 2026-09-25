@@ -230,6 +230,47 @@ export async function verifyPhonePasswordReset(
   };
 }
 
+export async function completeMigratedPassword(
+  input: {
+    email: string;
+    temporaryPassword: string;
+    newPassword: string;
+    newPasswordConfirm: string;
+  },
+  signal?: AbortSignal
+): Promise<
+  { kind: 'phone_login_required' } | { kind: 'phone_setup_required' }
+> {
+  const data = await post<{
+    phone_login_required?: boolean;
+    phone_setup_required?: boolean;
+    access?: string;
+  }>(
+    API_ENDPOINTS.auth.setInitialPassword,
+    {
+      email: input.email,
+      temporary_password: input.temporaryPassword,
+      new_password: input.newPassword,
+      new_password_confirm: input.newPasswordConfirm
+    },
+    signal
+  );
+  if (data.access) {
+    throw new ServiceError(
+      'پاسخ تعیین رمز نشست ساخت.',
+      502,
+      'AUTH_CONTRACT_INVALID'
+    );
+  }
+  if (data.phone_setup_required) return { kind: 'phone_setup_required' };
+  if (data.phone_login_required) return { kind: 'phone_login_required' };
+  throw new ServiceError(
+    'پاسخ تعیین رمز نامعتبر است.',
+    502,
+    'AUTH_CONTRACT_INVALID'
+  );
+}
+
 export async function completePhonePasswordReset(
   resetToken: string,
   newPassword: string,

@@ -19,6 +19,7 @@ import {
 import { ServiceError, isAbortError } from '@/lib/services/auth-service';
 import {
   completePhonePasswordReset,
+  completeMigratedPassword,
   identifyPhone,
   loginWithPhone,
   registerWithPhone,
@@ -119,12 +120,6 @@ function nextHold(
   };
 }
 
-function stepFromEntry(entry: string | null): Step {
-  if (entry === 'phone') return 'identify';
-  if (entry === 'email') return 'legacy';
-  return 'choose';
-}
-
 function stepCopy(step: Step) {
   switch (step) {
     case 'password':
@@ -132,9 +127,9 @@ function stepCopy(step: Step) {
     case 'activation':
       return { title: 'activationTitle', body: 'activationBody' } as const;
     case 'register-otp':
-      return { title: 'registerOtpTitle', body: 'registerOtpBody' } as const;
+      return { title: 'registerTitle', body: 'registerOtpBody' } as const;
     case 'register-code':
-      return { title: 'registerCodeTitle', body: 'registerCodeBody' } as const;
+      return { title: 'registerTitle', body: 'registerCodeBody' } as const;
     case 'register-profile':
       return { title: 'registerTitle', body: 'registerBody' } as const;
     case 'reset-otp':
@@ -239,7 +234,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const submitLeft = otpSecondsLeft(submitHold, now);
   const verifyLeft = otpSecondsLeft(verifyHold, now);
   const copy = stepCopy(step === 'phone-setup' ? 'phone-setup' : step);
-  const phase = registrationPhase(step);
+  const phase = verificationRequired ? registrationPhase(step) : null;
 
   const arm = (lane: OtpLane, seconds?: number | null) => {
     const at = Date.now();
@@ -486,7 +481,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setFieldError({});
     setRegistrationBlocked(false);
     setEmailTaken(false);
-    setStep('register-otp');
+    setStep(verificationRequired ? 'register-otp' : 'identify');
   };
 
   const onRegister = () =>
@@ -518,15 +513,20 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         } catch (caught) {
           if (
             caught instanceof ServiceError &&
-            (caught.code === 'phone_already_registered' ||
-              caught.code === 'email_already_registered')
+            caught.code === 'phone_already_registered'
           ) {
             const again = await identifyPhone(phoneRaw, signal);
             setVerificationRequired(again.verificationRequired);
             if (again.next === 'password') setStep('password');
-            else if (caught.code === 'email_already_registered')
-              setEmailTaken(true);
             setError(errorText(caught, t('genericError')));
+            return;
+          }
+          if (
+            caught instanceof ServiceError &&
+            caught.code === 'email_already_registered'
+          ) {
+            setEmailTaken(true);
+            setFieldError({ email: caught.message });
             return;
           }
           throw caught;
@@ -659,10 +659,34 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     rememberEntry('email');
   };
 
+  const onInitialPassword = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await completeMigratedPassword({
+        email: email.trim(),
+        temporaryPassword: password,
+        newPassword,
+        newPasswordConfirm: confirmPassword
+      });
+      forgetSecrets();
+      if (result.kind === 'phone_setup_required') {
+        setStep('support');
+        return;
+      }
+      setStep('identify');
+    } catch (caught) {
+      if (!isAbortError(caught)) setError(errorText(caught, t('genericError')));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const changeMethod = () => {
     forgetSecrets();
-    setStep('choose');
-    rememberEntry('choose');
+    setVerificationRequired(null);
+    setStep('identify');
+    rememberEntry('phone');
   };
 
   useEffect(() => {
@@ -670,18 +694,13 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
       searchParams.get('entry') ||
       new URLSearchParams(window.location.search).get('entry');
     if (entry !== 'phone' && entry !== 'email') return;
-    setStep((current) =>
-      current === 'choose' ? stepFromEntry(entry) : current
-    );
+    setStep((current) => (current === 'choose' ? 'identify' : current));
   }, [searchParams]);
 
   useEffect(() => {
     const onPop = () => {
-      const entry = new URLSearchParams(window.location.search).get('entry');
       forgetSecrets();
-      setStep(
-        entry === 'phone' ? 'identify' : entry === 'email' ? 'legacy' : 'choose'
-      );
+      setStep('identify');
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -771,21 +790,28 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
             {step === 'password' ||
             step === 'register-otp' ||
             step === 'register-code' ||
+            step === 'register-profile' ||
             step === 'activation' ||
             step === 'reset-otp' ||
-            step === 'legacy' ||
-            step === 'legacy-reset' ||
+            step === 'support' ||
             step === 'imported-password' ? (
               <button
                 type="button"
                 className={surfaceStyles.back}
                 onClick={() => {
-                  if (step === 'legacy' || step === 'imported-password')
-                    changeMethod();
-                  else if (step === 'legacy-reset') go('legacy');
-                  else if (step === 'register-code') {
+                  if (
+                    step === 'support' ||
+                    step === 'imported-password' ||
+                    step === 'register-profile'
+                  ) {
+                    setPassword('');
                     setCode('');
-                    go('register-otp');
+                    go('identify');
+                  } else if (step === 'register-code') {
+                    setCode('');
+                    go(verificationRequired ? 'register-otp' : 'identify');
+                  } else if (step === 'register-otp') {
+                    go('identify');
                   } else if (step === 'activation' || step === 'reset-otp') {
                     setCode('');
                     go('password');
@@ -806,8 +832,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
             >
               {heading}
             </h1>
-            <p className={surfaceStyles.lead}>{guidance}</p>
-
             {phase ? (
               <ol
                 className={surfaceStyles.progress}
@@ -839,6 +863,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                 })}
               </ol>
             ) : null}
+            <p className={surfaceStyles.lead}>{guidance}</p>
 
             {error ? (
               <p
@@ -938,7 +963,10 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                   <button
                     type="button"
                     className={surfaceStyles.methodSwitch}
-                    onClick={() => setStep('support')}
+                    onClick={() => {
+                      setError(null);
+                      setStep('support');
+                    }}
                   >
                     {t('supportTitle')}
                   </button>
@@ -974,11 +1002,13 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                   <button
                     type="button"
                     className={surfaceStyles.secondary}
-                    onClick={() =>
-                      verificationRequired
-                        ? onResetRequest()
-                        : setStep('support')
-                    }
+                    onClick={() => {
+                      if (verificationRequired) onResetRequest();
+                      else {
+                        setError(null);
+                        setStep('support');
+                      }
+                    }}
                     disabled={
                       busy ||
                       (verificationRequired === true && recoveryLeft > 0)
@@ -993,17 +1023,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
 
               {step === 'register-otp' ? (
                 <div className={surfaceStyles.form}>
-                  <div className={surfaceStyles.decision}>
-                    <strong>{t('registerWarningTitle')}</strong>
-                    <p>{t('registerWarningBody')}</p>
-                    <button
-                      type="button"
-                      className={`${surfaceStyles.secondary} mt-3`}
-                      onClick={() => go('legacy')}
-                    >
-                      {t('legacyAction')}
-                    </button>
-                  </div>
                   <button
                     type="button"
                     className={surfaceStyles.primary}
@@ -1200,16 +1219,9 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     optional
                   />
                   {emailTaken ? (
-                    <div className={surfaceStyles.decision}>
-                      <p>{t('emailTakenHint')}</p>
-                      <button
-                        type="button"
-                        className={`${surfaceStyles.secondary} mt-3`}
-                        onClick={() => go('legacy')}
-                      >
-                        {t('emailAccountPath')}
-                      </button>
-                    </div>
+                    <p className={surfaceStyles.banner} role="alert">
+                      {t('emailTakenHint')}
+                    </p>
                   ) : null}
                   <PasswordField
                     label={t('passwordLabel')}
@@ -1266,13 +1278,19 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                   </button>
                   {registrationBlocked ? (
                     <div className={surfaceStyles.decision}>
-                      <p>{t('registrationInvalidHint')}</p>
+                      <p>
+                        {verificationRequired
+                          ? t('registrationInvalidHint')
+                          : t('registrationRestartHint')}
+                      </p>
                       <button
                         type="button"
                         className={`${surfaceStyles.secondary} mt-3`}
                         onClick={restartRegistration}
                       >
-                        {t('requestFreshCode')}
+                        {verificationRequired
+                          ? t('requestFreshCode')
+                          : t('restartRegistration')}
                       </button>
                     </div>
                   ) : (
@@ -1389,20 +1407,65 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
               ) : null}
 
               {step === 'imported-password' ? (
-                <div className={surfaceStyles.form}>
-                  <p className={surfaceStyles.asideNote}>
-                    {t('importedSupport')}
-                  </p>
+                <form
+                  className={surfaceStyles.form}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void onInitialPassword();
+                  }}
+                >
+                  <TextField
+                    label={t('importedEmail')}
+                    value={email}
+                    onChange={setEmail}
+                    className={inputClass()}
+                    type="email"
+                    autoComplete="username"
+                  />
+                  <PasswordField
+                    label={t('temporaryPassword')}
+                    value={password}
+                    onChange={setPassword}
+                    shown={showPassword}
+                    onToggle={() => setShowPassword((value) => !value)}
+                    showLabel={t('showPassword')}
+                    hideLabel={t('hidePassword')}
+                    autoComplete="current-password"
+                    className={inputClass()}
+                  />
+                  <PasswordField
+                    label={t('newPassword')}
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    shown={showNewPassword}
+                    onToggle={() => setShowNewPassword((value) => !value)}
+                    showLabel={t('showPassword')}
+                    hideLabel={t('hidePassword')}
+                    autoComplete="new-password"
+                    className={inputClass()}
+                  />
+                  <TextField
+                    label={t('confirmPassword')}
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    className={inputClass()}
+                    type="password"
+                    autoComplete="new-password"
+                  />
                   <button
-                    type="button"
+                    type="submit"
                     className={surfaceStyles.primary}
-                    onClick={() => go('legacy')}
+                    disabled={
+                      busy || !email.trim() || !password || !newPassword
+                    }
                   >
-                    {t('importedHaveCredentials')}
+                    {busy ? t('loading') : t('savePassword')}
                   </button>
-                </div>
+                </form>
               ) : null}
-              {step !== 'choose' ? (
+              {step !== 'choose' &&
+              step !== 'identify' &&
+              step !== 'support' ? (
                 <button
                   type="button"
                   className={surfaceStyles.methodSwitch}
