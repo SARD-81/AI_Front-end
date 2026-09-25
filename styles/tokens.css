@@ -136,3 +136,67 @@
   --shadow-color: 220 45% 3%;
   --shadow-strength: 42%;
 }
+
+/* The chat experience follows the university's navy and turquoise palette.
+   These variables stay within the chat shell while auth keeps its own design. */
+.chat-workspace {
+  --background: 196 58% 97%;
+  --foreground: 201 69% 17%;
+  --muted: 192 46% 95%;
+  --muted-foreground: 199 25% 37%;
+  --border: 194 37% 87%;
+  --input: 194 37% 84%;
+  --ring: 191 86% 36%;
+  --primary: 191 87% 31%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 193 45% 93%;
+  --secondary-foreground: 201 69% 17%;
+  --accent: 190 50% 92%;
+  --accent-foreground: 201 69% 17%;
+  --surface-1: 196 58% 97%;
+  --surface-2: 193 45% 93%;
+  --card: 0 0% 100%;
+  --card-foreground: 201 69% 17%;
+  --surface-base: 196 58% 97%;
+  --surface-card: 0 0% 100%;
+  --surface-elevated: 192 49% 93%;
+  --surface-subtle: 194 37% 87%;
+  --field: 0 0% 100%;
+  --field-foreground: 201 69% 17%;
+  --field-border: 193 34% 81%;
+  --field-placeholder: 198 19% 41%;
+  --field-focus: 191 86% 36%;
+  --bubble-user: 191 67% 94%;
+  --bubble-user-border: 190 46% 84%;
+}
+
+.dark .chat-workspace {
+  --background: 200 59% 10%;
+  --foreground: 190 38% 94%;
+  --muted: 199 42% 17%;
+  --muted-foreground: 192 24% 73%;
+  --border: 196 32% 26%;
+  --input: 196 32% 29%;
+  --ring: 186 67% 66%;
+  --primary: 186 67% 66%;
+  --primary-foreground: 200 59% 10%;
+  --secondary: 199 40% 19%;
+  --secondary-foreground: 190 38% 94%;
+  --accent: 198 38% 22%;
+  --accent-foreground: 190 38% 94%;
+  --surface-1: 200 53% 13%;
+  --surface-2: 199 42% 17%;
+  --card: 199 45% 15%;
+  --card-foreground: 190 38% 94%;
+  --surface-base: 200 59% 10%;
+  --surface-card: 199 45% 15%;
+  --surface-elevated: 198 39% 20%;
+  --surface-subtle: 196 32% 26%;
+  --field: 199 42% 16%;
+  --field-foreground: 190 38% 94%;
+  --field-border: 196 32% 29%;
+  --field-placeholder: 192 24% 72%;
+  --field-focus: 186 67% 66%;
+  --bubble-user: 196 38% 22%;
+  --bubble-user-border: 194 32% 31%;
+}

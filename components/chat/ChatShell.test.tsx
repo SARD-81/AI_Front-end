@@ -25,7 +25,12 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams()
 }));
-vi.mock('@/components/sidebar/Sidebar', () => ({ Sidebar: () => null }));
+vi.mock('@/components/sidebar/ServicesRail', () => ({
+  ServicesRail: () => null
+}));
+vi.mock('@/components/sidebar/ConversationsPanel', () => ({
+  ConversationsPanel: () => null
+}));
 vi.mock('./MessageList', () => ({
   MessageList: ({
     messages,

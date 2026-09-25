@@ -3,18 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { LayoutGroup } from 'motion/react';
-import { Menu } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Sidebar } from '@/components/sidebar/Sidebar';
+import { ConversationsPanel } from '@/components/sidebar/ConversationsPanel';
+import { ServicesRail } from '@/components/sidebar/ServicesRail';
 import { SohaFooter } from '@/components/layout/SohaFooter';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversityChatHeader } from './UniversityChatHeader';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ChatEmptyState } from './ChatEmptyState';
-import { useChat, useChatActions, useSendMessage, useOlderMessages } from '@/hooks/use-chat-data';
+import {
+  useChat,
+  useChatActions,
+  useSendMessage,
+  useOlderMessages
+} from '@/hooks/use-chat-data';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import { uuid } from '@/lib/utils/uid';
 import { toast } from 'sonner';
@@ -50,7 +54,11 @@ export function ChatShell({
   const t = useTranslations('app');
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<
+    'services' | 'conversations' | null
+  >(null);
+  const [servicesCollapsed, setServicesCollapsed] = useState(false);
+  const [conversationsOpen, setConversationsOpen] = useState(true);
   const queryClient = useQueryClient();
   const editingMessageIdRef = useRef<string | null>(null);
   const [value, setValue] = useState('');
@@ -66,7 +74,10 @@ export function ChatShell({
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [thinkLevel, setThinkLevel] = useState<ThinkingLevel>('low');
   const [activeChatId, setActiveChatId] = useState(chatId);
-  const regenerateTargetRef = useRef<{ userId: string; assistantId: string } | null>(null);
+  const regenerateTargetRef = useRef<{
+    userId: string;
+    assistantId: string;
+  } | null>(null);
 
   const chatQuery = useChat(activeChatId);
   const chat = chatQuery.data;
@@ -153,8 +164,7 @@ export function ChatShell({
   }, []);
 
   const shouldAutoFocus = searchParams.get('focus') === '1';
-  const isChatLoading =
-    Boolean(activeChatId) && !chat && chatQuery.isFetching;
+  const isChatLoading = Boolean(activeChatId) && !chat && chatQuery.isFetching;
   const isSendingOrStreaming = sendMutation.isPending || Boolean(streamContent);
   const hasMessages = messages.length > 0;
   const shouldShowEmptyState =
@@ -173,7 +183,10 @@ export function ChatShell({
 
   const getChatUserErrorMessage = (error: unknown) => {
     if (error instanceof ChatWebSocketError) {
-      if (error.shouldRedirectToProfile || error.code === 'PROFILE_INCOMPLETE') {
+      if (
+        error.shouldRedirectToProfile ||
+        error.code === 'PROFILE_INCOMPLETE'
+      ) {
         return t('chat.profileIncomplete');
       }
 
@@ -252,7 +265,10 @@ export function ChatShell({
     if (error instanceof Error) {
       const normalizedMessage = error.message.toLowerCase();
 
-      if (error.name === 'AbortError' || normalizedMessage.includes('timeout')) {
+      if (
+        error.name === 'AbortError' ||
+        normalizedMessage.includes('timeout')
+      ) {
         return t('chat.timeout');
       }
 
@@ -319,7 +335,9 @@ export function ChatShell({
 
     try {
       if (!resolvedChatId) {
-        const created = await actions.create.mutateAsync({ title: t('newChat') });
+        const created = await actions.create.mutateAsync({
+          title: t('newChat')
+        });
         resolvedChatId = created.id;
         createdChatId = created.id;
         setActiveChatId(created.id);
@@ -383,7 +401,10 @@ export function ChatShell({
         console.error('Chat send failed', error);
       }
 
-      if (error instanceof ChatWebSocketError && error.shouldRedirectToProfile) {
+      if (
+        error instanceof ChatWebSocketError &&
+        error.shouldRedirectToProfile
+      ) {
         router.push(`/${locale}/profile`);
       }
 
@@ -423,11 +444,11 @@ export function ChatShell({
   const dropMessagesFrom = (messageId: string) => {
     if (!activeChatId) return;
     queryClient.setQueryData(['chat', activeChatId], (previous: unknown) => {
-      const current = previous as {messages?: ChatMessage[]} | undefined;
+      const current = previous as { messages?: ChatMessage[] } | undefined;
       if (!current?.messages) return previous;
       const index = current.messages.findIndex((item) => item.id === messageId);
       if (index < 0) return previous;
-      return {...current, messages: current.messages.slice(0, index)};
+      return { ...current, messages: current.messages.slice(0, index) };
     });
   };
 
@@ -477,118 +498,148 @@ export function ChatShell({
     });
   };
 
+  const isRtl = locale === 'fa';
+  const openServices = () => setMobilePanel('services');
+  const openConversations = () => {
+    setMobilePanel('conversations');
+    setConversationsOpen(true);
+  };
+  const closeConversations = () => {
+    setMobilePanel((current) => (current === 'conversations' ? null : current));
+    setConversationsOpen(false);
+  };
+
+  const services = (
+    <ServicesRail
+      locale={locale}
+      collapsed={servicesCollapsed}
+      mobileOpen={mobilePanel === 'services'}
+      onClose={() => setMobilePanel(null)}
+      onToggleCollapsed={() => setServicesCollapsed((current) => !current)}
+    />
+  );
+  const conversations = (
+    <ConversationsPanel
+      locale={locale}
+      mobileOpen={mobilePanel === 'conversations'}
+      desktopOpen={conversationsOpen}
+      onClose={closeConversations}
+    />
+  );
+  const conversationPane = (
+    <main
+      id="main-content"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.55),transparent_46%)]"
+    >
+      <UniversityChatHeader
+        locale={locale}
+        compact={!shouldShowEmptyState}
+        chatTitle={headerTitle}
+        onOpenServices={openServices}
+        onOpenConversations={openConversations}
+      />
+
+      {!isOnline ? (
+        <div
+          role="status"
+          className="bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]"
+        >
+          <div className="mx-auto w-full max-w-3xl">{t('chat.offline')}</div>
+        </div>
+      ) : null}
+
+      <LayoutGroup>
+        <section className="min-h-0 flex-1 overflow-hidden">
+          {isChatLoading ? (
+            <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 sm:px-6">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-16 w-4/5" />
+              <Skeleton className="h-12 w-3/5" />
+              <Skeleton className="h-20 w-5/6" />
+            </div>
+          ) : shouldShowEmptyState ? (
+            <ChatEmptyState
+              onPromptSelect={(prompt) => {
+                void submitMessage(prompt, undefined, { clearComposer: true });
+              }}
+            />
+          ) : (
+            <div className="h-full w-full">
+              <MessageList
+                key={activeChatId}
+                hasOlder={Boolean(chat?.olderCursor)}
+                loadingOlder={olderHistory.isPending}
+                olderError={olderHistory.isError}
+                historyStartIndex={chat?.historyStartIndex}
+                onLoadOlder={() => {
+                  if (!olderHistory.isPending) olderHistory.mutate();
+                }}
+                messages={messages}
+                typing={sendMutation.isPending && !streamContent}
+                onCopyMessage={handleCopyMessage}
+                onEditMessage={handleEditMessage}
+                onRegenerate={handleRegenerate}
+                onRestoreMessage={(message) => {
+                  setValue(message.content);
+                  setFocusTrigger((prev) => prev + 1);
+                }}
+              />
+            </div>
+          )}
+        </section>
+
+        <div className="shrink-0 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+          <Composer
+            value={value}
+            onChange={setValue}
+            onSubmit={submit}
+            disabled={sendMutation.isPending || actions.create.isPending}
+            isSending={sendMutation.isPending}
+            onStop={handleStopGeneration}
+            autoFocus={shouldShowEmptyState && shouldAutoFocus}
+            focusTrigger={focusTrigger}
+            thinkLevel={thinkLevel}
+            onThinkLevelChange={handleThinkLevelChange}
+          />
+          <SohaFooter className="mt-1.5" />
+        </div>
+      </LayoutGroup>
+    </main>
+  );
+
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background">
-      <div className="hidden h-full shrink-0 lg:block">
-        <Sidebar locale={locale} />
-      </div>
-
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent className="h-[100dvh] w-[304px] p-0 sm:max-w-[304px] lg:hidden">
-          <Sidebar locale={locale} onNavigate={() => setMobileOpen(false)} />
-        </SheetContent>
-
-        <main id="main-content" className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-h-14 items-center border-0 bg-transparent py-1 sm:h-14 sm:py-0">
-            <div className="pointer-events-none absolute inset-0 backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)]" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background)/0.82)] to-transparent" />
-            <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl items-center px-3 sm:px-6">
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="lg:hidden"
-                  aria-label={t('chat.openConversations')}
-                  title={t('chat.openConversations')}
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-            </div>
-
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <h1 className="max-w-[min(32rem,68%)] truncate rounded-full px-3 text-center text-sm font-semibold leading-6 text-foreground/90 sm:max-w-[min(32rem,72%)] sm:px-4 md:text-base">
-                {headerTitle}
-              </h1>
-            </div>
-          </header>
-
-          {!isOnline ? (
-            <div role="status" className="mt-14 bg-[hsl(var(--warning-surface,var(--info-surface)))] px-4 py-2 text-sm text-[hsl(var(--warning-text))]">
-              <div className="mx-auto w-full max-w-3xl">{t('chat.offline')}</div>
-            </div>
-          ) : null}
-
-          <LayoutGroup>
-            <section className="min-h-0 flex-1 overflow-hidden">
-              {isChatLoading ? (
-                <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-6 pt-20 sm:px-6">
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-16 w-4/5" />
-                  <Skeleton className="h-12 w-3/5" />
-                  <Skeleton className="h-20 w-5/6" />
-                </div>
-              ) : shouldShowEmptyState ? (
-                <ChatEmptyState
-                  value={value}
-                  onChange={setValue}
-                  onSubmit={submit}
-                  disabled={sendMutation.isPending || actions.create.isPending}
-                  autoFocus={shouldAutoFocus}
-                  focusTrigger={focusTrigger}
-                  thinkLevel={thinkLevel}
-                  onThinkLevelChange={handleThinkLevelChange}
-                  onPromptSelect={(prompt) => {
-                    void submitMessage(prompt, undefined, { clearComposer: true });
-                  }}
-                />
-              ) : (
-                <div className="h-full w-full">
-                  <MessageList
-                    key={activeChatId}
-                    hasOlder={Boolean(chat?.olderCursor)}
-                    loadingOlder={olderHistory.isPending}
-                    olderError={olderHistory.isError}
-                    historyStartIndex={chat?.historyStartIndex}
-                    onLoadOlder={() => { if (!olderHistory.isPending) olderHistory.mutate(); }}
-                    messages={messages}
-                    typing={sendMutation.isPending && !streamContent}
-                    onCopyMessage={handleCopyMessage}
-                    onEditMessage={handleEditMessage}
-                    onRegenerate={handleRegenerate}
-                    onRestoreMessage={(message) => {
-                      setValue(message.content);
-                      setFocusTrigger((prev) => prev + 1);
-                    }}
-                  />
-                </div>
-              )}
-            </section>
-
-            {!shouldShowEmptyState ? (
-              <div className="sticky bottom-0 z-10 border-t border-[hsl(var(--surface-subtle))] bg-[hsl(var(--surface-card))]/95 py-2 backdrop-blur sm:py-3 md:py-4">
-                <div className="mx-auto w-full max-w-3xl px-3 sm:px-6">
-                  <Composer
-                    value={value}
-                    onChange={setValue}
-                    onSubmit={submit}
-                    disabled={
-                      sendMutation.isPending || actions.create.isPending
-                    }
-                    isSending={sendMutation.isPending}
-                    onStop={handleStopGeneration}
-                    focusTrigger={focusTrigger}
-                    thinkLevel={thinkLevel}
-                    onThinkLevelChange={handleThinkLevelChange}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </LayoutGroup>
-
-          <SohaFooter />
-        </main>
-      </Sheet>
+    <div
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="chat-workspace flex h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground"
+    >
+      {mobilePanel ? (
+        <button
+          type="button"
+          aria-label={t('dialog.close')}
+          className={
+            mobilePanel === 'services'
+              ? 'fixed inset-0 z-30 bg-foreground/30 md:hidden'
+              : 'fixed inset-0 z-30 bg-foreground/30 xl:hidden'
+          }
+          onClick={() =>
+            mobilePanel === 'services' ? setMobilePanel(null) : closeConversations()
+          }
+        />
+      ) : null}
+      {isRtl ? (
+        <>
+          {services}
+          {conversationPane}
+          {conversations}
+        </>
+      ) : (
+        <>
+          {conversations}
+          {conversationPane}
+          {services}
+        </>
+      )}
     </div>
   );
 }

@@ -62,7 +62,34 @@
       "noSearchResults": "No conversations match your search.",
       "searchDialogTitle": "Search conversations",
       "recentChats": "Recent chats",
-      "searchResults": "Search results"
+      "searchResults": "Search results",
+      "productName": "Soha",
+      "productSubtitle": "Shahid Beheshti University assistant"
+    },
+    "services": {
+      "label": "Services",
+      "open": "Open services",
+      "close": "Close services",
+      "collapse": "Collapse services",
+      "expand": "Expand services",
+      "accessDeniedTitle": "Limited access",
+      "accessDenied": "Your account does not have access to {section}.",
+      "acknowledge": "Understood",
+      "items": {
+        "users": "User management",
+        "documents": "Document management",
+        "databases": "Database management"
+      }
+    },
+    "conversations": {
+      "label": "Conversations",
+      "open": "Open conversations",
+      "close": "Close conversations"
+    },
+    "chatHeader": {
+      "productName": "Soha",
+      "subtitle": "Intelligent assistant of Shahid Beheshti University",
+      "facultyAccess": "With special access for the Faculty of Computer Science and Engineering (beta)"
     },
     "dialog": {
       "close": "Close"
@@ -117,9 +144,8 @@
     },
     "emptyState": {
       "logoAlt": "Shahid Beheshti University logo",
-      "title": "Welcome to Shahid Beheshti University AI Assistant",
-      "description": "Soha, the assistant of Shahid Beheshti University",
-      "facultyDescription": "Ask about courses, schedules, and university services.",
+      "title": "What would you like to ask Soha?",
+      "description": "Your Shahid Beheshti University assistant for academic and research questions.",
       "suggestedPrompts": [
         "What should I do to register and prepare for my first semester?",
         "Where can I find course registration, add/drop and exam dates?",
@@ -127,7 +153,8 @@
         "Where can I find my class timetable and classroom locations?",
         "How should I choose first-semester courses and check prerequisites?",
         "How can I learn about the faculty members and their areas of expertise?"
-      ]
+      ],
+      "facultyDescription": "Type your question or choose a suggestion below to get started."
     },
     "messageRail": {
       "jumpToUserMessage": "Jump to your message",
@@ -206,7 +233,8 @@
       "loadOlder": "Load earlier messages",
       "error": "Could not load earlier messages. Please try again.",
       "beginning": "Beginning of conversation"
-    }
+    },
+    "yesterday": "Yesterday"
   },
   "auth": {
     "hero": {
@@ -350,11 +378,7 @@
       "studentIdLabel": "Student ID",
       "degreeLevelLabel": "Degree level",
       "selectOption": "Select",
-      "degreeOptions": [
-        "Bachelor’s",
-        "Master’s",
-        "PhD"
-      ],
+      "degreeOptions": ["Bachelor’s", "Master’s", "PhD"],
       "facultyLabel": "Faculty",
       "majorLabel": "Major",
       "passwordLabel": "Password",

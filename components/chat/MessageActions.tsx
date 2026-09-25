@@ -40,7 +40,7 @@ export function MessageActions({
   // Slightly bigger hit area, softer hover surface and a calmer easing so
   // the row does not 'pop' the moment the pointer crosses the bubble.
   const baseClass =
-    'h-8 w-8 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.97]';
+    'h-11 w-11 rounded-xl text-muted-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.97] sm:h-9 sm:w-9';
 
   return (
     <div className={cn('mt-1 flex items-center gap-0.5', className)}>

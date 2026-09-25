@@ -18,6 +18,25 @@ body {
   font-feature-settings: 'ss01';
 }
 
+.soha-sidebar-scroll {
+  scrollbar-color: #488ea3 transparent;
+  scrollbar-width: thin;
+}
+
+.soha-sidebar {
+  background: radial-gradient(circle at 0% 95%, rgba(18, 150, 177, 0.28), transparent 38%),
+    linear-gradient(180deg, #07516f 0%, #064763 45%, #053d59 100%);
+}
+
+.soha-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.soha-sidebar-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #488ea3;
+}
+
 /* Text fields take their direction from what the user actually typed instead of
    a hard-coded LTR/RTL, so typing Persian in an "English" field (or the other
    way round) is never fought by the field itself. */
@@ -60,7 +79,6 @@ textarea:-webkit-autofill:focus {
   border: 1px solid hsl(var(--border));
   border-radius: 0.375rem;
 }
-
 
 .prose-chat {
   color: hsl(var(--foreground));
