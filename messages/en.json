@@ -74,10 +74,11 @@
       "expand": "Expand services",
       "accessDeniedTitle": "Limited access",
       "accessDenied": "Your account does not have access to {section}.",
+      "comingSoon": "Coming soon",
       "acknowledge": "Understood",
       "items": {
         "chat": "Chat",
-        "users": "User management",
+        "users": "Memory management",
         "documents": "Document management",
         "databases": "Database management"
       }
@@ -267,6 +268,7 @@
       "registerProgress": "New account steps",
       "passwordTitle": "Password for this number",
       "passwordBody": "Enter your password.",
+      "invalidPhoneCredentials": "The mobile number or password is incorrect.",
       "activationTitle": "Activate this account",
       "activationBody": "Enter the code sent to your mobile number.",
       "activationRestart": "Activation failed and its token was used up. Start sign-in again with this number and password.",
@@ -280,6 +282,8 @@
       "stepCode": "Verification code",
       "stepAccount": "Create account",
       "passwordGuide": "The server checks length, common passwords, all-numeric passwords, and similarity to your name or email. If it rejects the password, those messages stay under the field.",
+      "passwordTipsTitle": "Tips for a stronger password",
+      "passwordTipsNote": "These tips help you create a stronger password. The service makes the final decision and explains any rejection.",
       "emailTakenHint": "This email belongs to another account. A new registration does not attach that account to this number.",
       "registrationInvalidHint": "This registration request cannot continue. Request a code again.",
       "registrationRestartHint": "This registration request cannot continue. Check the number and start again from this step.",

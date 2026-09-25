@@ -876,6 +876,63 @@ describe('phone auth OTP countdown', () => {
     ).toBeNull();
   });
 
+  it('uses the phone number in the wrong-password message for an existing account', async () => {
+    identifyPhone.mockResolvedValue({ next: 'password', verificationRequired: false });
+    loginWithPhone.mockRejectedValue(
+      new ServiceError('ایمیل یا رمز عبور نادرست است.', 401, 'invalid_credentials')
+    );
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'wrong-password' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+    expect(screen.getByRole('alert').textContent).toContain('شماره موبایل یا رمز عبور نادرست است.');
+    expect(screen.getByRole('alert').textContent).not.toContain('ایمیل');
+    expect(replace).not.toHaveBeenCalledWith('/fa/chat');
+  });
+
+  it('shows live password tips and controls the registration confirmation independently', async () => {
+    identifyPhone.mockResolvedValue({ next: 'register', verificationRequired: false });
+    registerWithPhone.mockRejectedValue(
+      new ServiceError('رمز قابل قبول نیست.', 400, 'invalid_password', null, undefined, ['از رمز قوی‌تری استفاده کنید.'])
+    );
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
+    });
+    const passwordInput = screen.getByLabelText('رمز عبور') as HTMLInputElement;
+    const confirmationInput = screen.getByLabelText('تکرار رمز') as HTMLInputElement;
+    expect(screen.getByText('راهنمای ساخت رمز قوی')).toBeTruthy();
+    expect(screen.getByText('حداقل ۸ کاراکتر').closest('li')?.textContent).toContain('—');
+    fireEvent.change(passwordInput, { target: { value: 'N3w-Pass-456!' } });
+    expect(screen.getByText('حداقل ۸ کاراکتر').closest('li')?.textContent).toContain('✓');
+    fireEvent.change(confirmationInput, { target: { value: 'N3w-Pass-456!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش رمز' }));
+    expect(passwordInput.type).toBe('text');
+    expect(confirmationInput.type).toBe('password');
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش رمز تکرار رمز' }));
+    expect(confirmationInput.type).toBe('text');
+    expect(screen.getByText('تکرار رمز عبور مطابقت دارد').closest('li')?.textContent).toContain('✓');
+    fireEvent.change(screen.getByLabelText('نام'), { target: { value: 'علی' } });
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), { target: { value: 'رضایی' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ساخت حساب و ورود' }));
+    });
+    expect(registerWithPhone).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toContain('از رمز قوی‌تری استفاده کنید.');
+  });
+
   it('shows registration progress only after a new account is chosen', async () => {
     renderAuth();
     await openRegistration();

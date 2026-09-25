@@ -1,6 +1,7 @@
 'use client';
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
+import { ValidationChecklist } from '@/components/auth/ValidationChecklist';
 import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +16,7 @@ import {
   type OtpLane
 } from '@/lib/auth/otp-cooldown';
 import { ServiceError, isAbortError } from '@/lib/services/auth-service';
+import { evaluatePasswordRules, PASSWORD_RULE_IDS, passwordsMatch } from '@/lib/validation/password-rules';
 import {
   completePhonePasswordReset,
   completeMigratedPassword,
@@ -151,6 +153,7 @@ function registrationPhase(step: Step): 1 | 2 | 3 | null {
 
 export function PhoneAuthExperience({ locale }: { locale: string }) {
   const t = useTranslations('auth.phone');
+  const passwordRule = useTranslations('auth.passwordRules');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -167,6 +170,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -220,6 +224,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const verifyLeft = otpSecondsLeft(verifyHold, now);
   const copy = stepCopy(step);
   const phase = verificationRequired ? registrationPhase(step) : null;
+  const passwordRules = evaluatePasswordRules(newPassword);
 
   const arm = (lane: OtpLane, seconds?: number | null) => {
     const at = Date.now();
@@ -308,6 +313,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         setConfirmPassword('');
         setShowPassword(false);
         setShowNewPassword(false);
+        setShowConfirmPassword(false);
         setNotice(null);
         setRegistrationBlocked(false);
         setEmailTaken(false);
@@ -353,6 +359,16 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         }
         throw caught;
       }
+    }, (caught) => {
+      if (
+        caught instanceof ServiceError &&
+        caught.status === 401 &&
+        caught.code === 'invalid_credentials'
+      ) {
+        setError(t('invalidPhoneCredentials'));
+        return true;
+      }
+      return false;
     });
 
   const onActivationVerify = () =>
@@ -641,6 +657,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setEmail('');
     setShowPassword(false);
     setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setError(null);
     setNotice(null);
     setFieldError({});
@@ -1223,14 +1240,35 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                       ))}
                     </ul>
                   ) : null}
-                  <TextField
+                  <PasswordField
                     label={t('confirmPassword')}
                     value={confirmPassword}
                     onChange={setConfirmPassword}
+                    shown={showConfirmPassword}
+                    onToggle={() => setShowConfirmPassword((value) => !value)}
+                    showLabel={t('showPassword')}
+                    hideLabel={t('hidePassword')}
+                    buttonLabel={t('confirmPassword')}
                     className={inputClass()}
-                    type={showNewPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                   />
+                  <ValidationChecklist
+                    tone="paper"
+                    title={t('passwordTipsTitle')}
+                    rules={[
+                      ...PASSWORD_RULE_IDS.map((id) => ({
+                        id,
+                        label: passwordRule(id),
+                        met: passwordRules[id]
+                      })),
+                      {
+                        id: 'match',
+                        label: passwordRule('match'),
+                        met: passwordsMatch(newPassword, confirmPassword)
+                      }
+                    ]}
+                  />
+                  <p className={surfaceStyles.hint}>{t('passwordTipsNote')}</p>
                   <button
                     type="submit"
                     className={surfaceStyles.primary}
@@ -1282,12 +1320,16 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     autoComplete="new-password"
                     className={inputClass()}
                   />
-                  <TextField
+                  <PasswordField
                     label={t('confirmPassword')}
                     value={confirmPassword}
                     onChange={setConfirmPassword}
+                    shown={showConfirmPassword}
+                    onToggle={() => setShowConfirmPassword((value) => !value)}
+                    showLabel={t('showPassword')}
+                    hideLabel={t('hidePassword')}
+                    buttonLabel={t('confirmPassword')}
                     className={inputClass()}
-                    type={showNewPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                   />
                   <button
@@ -1349,12 +1391,16 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     autoComplete="new-password"
                     className={inputClass()}
                   />
-                  <TextField
+                  <PasswordField
                     label={t('confirmPassword')}
                     value={confirmPassword}
                     onChange={setConfirmPassword}
+                    shown={showConfirmPassword}
+                    onToggle={() => setShowConfirmPassword((value) => !value)}
+                    showLabel={t('showPassword')}
+                    hideLabel={t('hidePassword')}
+                    buttonLabel={t('confirmPassword')}
                     className={inputClass()}
-                    type="password"
                     autoComplete="new-password"
                   />
                   <button
@@ -1442,7 +1488,8 @@ function PasswordField({
   hideLabel,
   autoComplete,
   className,
-  invalid
+  invalid,
+  buttonLabel
 }: {
   label: string;
   value: string;
@@ -1454,6 +1501,7 @@ function PasswordField({
   autoComplete: string;
   className: string;
   invalid?: boolean;
+  buttonLabel?: string;
 }) {
   const fieldId = `secret-${label}`;
   return (
@@ -1475,6 +1523,7 @@ function PasswordField({
           type="button"
           className={surfaceStyles.reveal}
           aria-pressed={shown}
+          aria-label={buttonLabel ? `${shown ? hideLabel : showLabel} ${buttonLabel}` : undefined}
           onClick={onToggle}
         >
           {shown ? hideLabel : showLabel}

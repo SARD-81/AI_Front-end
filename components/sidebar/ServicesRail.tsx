@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  BrainCircuit,
   Database,
   Files,
   LogOut,
@@ -11,7 +12,6 @@ import {
   PanelRight,
   Settings,
   UserCircle2,
-  Users,
   X
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { formatDigitsForLocale } from '@/lib/utils/digits';
 
 const RESTRICTED_SERVICES = [
-  { id: 'users', icon: Users },
+  { id: 'users', icon: BrainCircuit },
   { id: 'documents', icon: Files },
   { id: 'databases', icon: Database }
 ] as const;
@@ -210,13 +210,15 @@ export function ServicesRail({
               <button
                 key={item.id}
                 type="button"
-                aria-label={label}
-                title={label}
-                onClick={() => setDeniedService(item.id)}
+                aria-label={item.id === 'users' ? `${label} — ${t('services.comingSoon')}` : label}
+                aria-disabled={item.id === 'users' ? true : undefined}
+                title={item.id === 'users' ? t('services.comingSoon') : label}
+                onClick={item.id === 'users' ? undefined : () => setDeniedService(item.id)}
                 className={cn(
                   'flex min-h-11 items-center rounded-xl border border-transparent text-start text-sm text-[#e7f4f8] transition-colors hover:border-white/15 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb] active:bg-white/15',
                   'justify-center md:justify-center max-md:justify-start max-md:gap-3 max-md:px-3',
-                  !collapsed && 'xl:justify-start xl:gap-3 xl:px-3'
+                  !collapsed && 'xl:justify-start xl:gap-3 xl:px-3',
+                  item.id === 'users' && 'cursor-not-allowed text-[#b7dbe4] hover:border-transparent hover:bg-transparent active:bg-transparent'
                 )}
               >
                 <Icon className="h-[1.15rem] w-[1.15rem] shrink-0" aria-hidden="true" />
@@ -233,7 +235,7 @@ export function ServicesRail({
             !collapsed && 'xl:block'
           )}
         >
-          <DropdownMenu>
+          <DropdownMenu dir={isRtl ? 'rtl' : 'ltr'}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -261,7 +263,7 @@ export function ServicesRail({
             <DropdownMenuContent
               align="start"
               side={isRtl ? 'left' : 'right'}
-              className="w-64"
+              className={cn('w-64', isRtl ? 'text-right' : 'text-left')}
             >
               <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                 <Settings className="me-2 h-4 w-4" />

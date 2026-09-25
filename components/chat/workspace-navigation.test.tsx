@@ -95,9 +95,15 @@ describe('chat workspace navigation', () => {
     expect(screen.queryByRole('button', { name: 'گفت‌وگوی جدید' })).toBeNull();
     expect(screen.queryByRole('link', { name: /admin/i })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'مدیریت کاربران' }));
+    const memory = screen.getByRole('button', { name: 'مدیریت حافظه — به‌زودی' });
+    expect(memory.getAttribute('aria-disabled')).toBe('true');
+    expect(memory.getAttribute('title')).toBe('به‌زودی');
+    fireEvent.click(memory);
+    expect(screen.queryByText('دسترسی محدود')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'مدیریت اسناد' }));
     expect(
-      screen.getByText('حساب کاربری شما دسترسی به مدیریت کاربران را ندارد.')
+      screen.getByText('حساب کاربری شما دسترسی به مدیریت اسناد را ندارد.')
     ).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
