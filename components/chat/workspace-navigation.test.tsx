@@ -99,11 +99,11 @@ describe('chat workspace navigation', () => {
 
     const services = screen.getByRole('navigation', { name: 'خدمات' });
     const serviceButtons = Array.from(services.querySelectorAll('button'));
-    expect(serviceButtons.map((button) => button.textContent?.trim())).toEqual([
-      'داشبوردبه‌زودی',
+    expect(serviceButtons.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'داشبورد — به‌زودی',
       'گفتگو',
-      'مدیریت اسنادبه‌زودی',
-      'مدیریت حافظهبه‌زودی'
+      'مدیریت اسناد — به‌زودی',
+      'مدیریت حافظه — به‌زودی'
     ]);
 
     for (const label of ['داشبورد', 'مدیریت اسناد', 'مدیریت حافظه']) {
