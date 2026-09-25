@@ -79,10 +79,10 @@
       "comingSoon": "به‌زودی",
       "acknowledge": "متوجه شدم",
       "items": {
+        "dashboard": "داشبورد",
         "chat": "گفتگو",
-        "users": "مدیریت حافظه",
         "documents": "مدیریت اسناد",
-        "databases": "مدیریت پایگاه‌های داده"
+        "memory": "مدیریت حافظه"
       }
     },
     "conversations": {
