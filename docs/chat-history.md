@@ -49,10 +49,12 @@ next older window scans those pages again. That cost is covered by
 No shared history cache is introduced (avoiding cross-user caching and stale
 snapshots).
 
-Compat mode now refuses a scan longer than 25 backend pages with HTTP 503 and
-`HISTORY_SCAN_LIMIT`. The chat UI already keeps loaded messages and exposes the
-existing history error with a manual retry. This ceiling only stops an unbounded
-BFF loop. It is not the release path and it does not show a guessed last page.
+Compat mode now refuses a scan longer than 25 backend pages, or longer than
+20 seconds of accumulated BFF time, with HTTP 503 and `HISTORY_SCAN_LIMIT`.
+Neither ceiling loads a long conversation. The chat UI already keeps loaded
+messages and exposes the existing history error with a manual retry. This is
+only a stop for an unbounded loop. It is not latest-first pagination and it is
+not a capacity solution.
 
 ### Release gate: do not set `CHAT_HISTORY_MODE=latest-first` until the backend proves
 
