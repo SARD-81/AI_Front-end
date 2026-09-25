@@ -480,6 +480,23 @@ export async function logout(opts?: { signal?: AbortSignal }): Promise<void> {
   }
 }
 
+export async function changeAccountPassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{status?: string}> {
+  try {
+    return await apiFetch<{status?: string}>(API_ENDPOINTS.auth.passwordChange, {
+      method: 'POST',
+      body: JSON.stringify({
+        current_password: input.currentPassword,
+        new_password: input.newPassword
+      })
+    });
+  } catch (error) {
+    throw toServiceError(error);
+  }
+}
+
 export async function sendOtp(
   input: SendOtpInputDTO,
   opts?: { signal?: AbortSignal }

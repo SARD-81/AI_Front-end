@@ -7,13 +7,14 @@ import {
   Database,
   Files,
   LogOut,
+  MessageSquare,
   PanelRight,
   Settings,
   UserCircle2,
   Users,
   X
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { SettingsModal } from '@/components/settings/SettingsModal';
+import { PasswordChangeDialog } from '@/components/auth/PasswordChangeDialog';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { getMe, logout } from '@/lib/services/auth-service';
@@ -53,8 +55,10 @@ export function ServicesRail({
   onToggleCollapsed: () => void;
 }) {
   const t = useTranslations('app');
+  const account = useTranslations('auth.passwordChange');
   const isMobile = useMediaQuery('(max-width: 767px)');
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const isRtl = locale === 'fa';
   const profileQuery = useQuery({
@@ -65,6 +69,7 @@ export function ServicesRail({
   });
   const { settings, setSettings } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [deniedService, setDeniedService] = useState<RestrictedServiceId | null>(
     null
@@ -142,8 +147,8 @@ export function ServicesRail({
                 <span className="block font-display-fa text-xl leading-7">
                   {t('chatHeader.productName')}
                 </span>
-                <span className="block truncate text-[11px] leading-4 text-[#b7dbe4]">
-                  {t('sidebar.universityName')}
+                <span className="line-clamp-2 text-[11px] leading-4 text-[#b7dbe4]">
+                  {t('chatHeader.subtitle')}
                 </span>
             </span>
           </Link>
@@ -174,6 +179,30 @@ export function ServicesRail({
           className="soha-sidebar-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-3"
           aria-label={t('services.label')}
         >
+          <button
+            type="button"
+            aria-label={t('services.items.chat')}
+            aria-current={pathname?.includes('/chat') ? 'page' : undefined}
+            title={t('services.items.chat')}
+            onClick={() => {
+              onClose();
+              if (pathname?.includes('/chat')) return;
+              router.push(`/${locale}/chat`);
+            }}
+            className={cn(
+              'flex min-h-11 items-center rounded-xl border text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
+              'justify-center md:justify-center max-md:justify-start max-md:gap-3 max-md:px-3',
+              !collapsed && 'xl:justify-start xl:gap-3 xl:px-3',
+              pathname?.includes('/chat')
+                ? 'border-white/25 bg-white/15 font-semibold text-white'
+                : 'border-transparent text-[#e7f4f8] hover:border-white/15 hover:bg-white/10'
+            )}
+          >
+            <MessageSquare className="h-[1.15rem] w-[1.15rem] shrink-0" aria-hidden="true" />
+            <span className={cn('truncate max-md:inline md:hidden', !collapsed && 'xl:inline')}>
+              {t('services.items.chat')}
+            </span>
+          </button>
           {RESTRICTED_SERVICES.map((item) => {
             const Icon = item.icon;
             const label = t(`services.items.${item.id}`);
@@ -238,6 +267,9 @@ export function ServicesRail({
                 <Settings className="me-2 h-4 w-4" />
                 {t('sidebar.settings')}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPasswordOpen(true)}>
+                {account('action')}
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={`/${locale}/profile`}>{t('sidebar.editProfile')}</Link>
               </DropdownMenuItem>
@@ -280,6 +312,12 @@ export function ServicesRail({
         user={user}
         isUserLoading={profileQuery.isLoading}
         onNavigate={onClose}
+      />
+
+      <PasswordChangeDialog
+        open={passwordOpen}
+        onOpenChange={setPasswordOpen}
+        locale={locale}
       />
 
       <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>

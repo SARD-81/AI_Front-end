@@ -76,6 +76,7 @@
       "accessDenied": "Your account does not have access to {section}.",
       "acknowledge": "Understood",
       "items": {
+        "chat": "Chat",
         "users": "User management",
         "documents": "Document management",
         "databases": "Database management"
@@ -145,7 +146,7 @@
     "emptyState": {
       "logoAlt": "Shahid Beheshti University logo",
       "title": "Welcome to Soha, the intelligent assistant of Shahid Beheshti University",
-      "coverageLine": "Answers to your questions on education, research, faculty affairs, welfare, dormitories, dining, and more",
+      "coverageLine": "Answers to your questions on education, research, faculty affairs, welfare, dormitories, and dining at the university",
       "description": "Your Shahid Beheshti University assistant for academic and research questions.",
       "suggestedPrompts": [
         "What should I do to register and prepare for my first semester?",
@@ -155,7 +156,7 @@
         "How should I choose first-semester courses and check prerequisites?",
         "How can I learn about the faculty members and their areas of expertise?"
       ],
-      "facultyDescription": "Including answers about professors, courses, procedures, and specific spaces of the Faculty of Computer Engineering and Science"
+      "facultyDescription": "With special access to information about professors, courses, classes, and staff of the Faculty of Computer Engineering and Science"
     },
     "messageRail": {
       "jumpToUserMessage": "Jump to your message",
@@ -166,6 +167,7 @@
     "chat": {
       "defaultTitle": "Conversation",
       "connectionError": "Could not reach the response server. Please try again.",
+      "linkLost": "The connection to Soha was lost. Check your connection and try again.",
       "copySuccess": "Copied",
       "copyError": "Could not copy the message",
       "openConversations": "Open conversations",
@@ -198,6 +200,12 @@
         }
       },
       "description": "Thinking level controls response depth for this message."
+    },
+    "webSearch": {
+      "label": "Web search",
+      "on": "On",
+      "off": "Off",
+      "hint": "Turning on web search can make the answer take longer. This control is not connected yet and does not affect the reply."
     },
     "attachment": {
       "label": "Attach file",
@@ -260,6 +268,11 @@
       "identityLine": "Intelligent assistant of Shahid Beheshti University",
       "university": "Soha, the assistant of Shahid Beheshti University",
       "language": "Language",
+      "chooseTitle": "Have you used Soha before?",
+      "chooseBody": "An account created with a phone number also signs in through the phone path.",
+      "chooseEmail": "Yes, I have an older email account",
+      "choosePhone": "Continue with my mobile number",
+      "changeMethod": "Change sign-in method",
       "identifyTitle": "Continue with your mobile number",
       "identifyBody": "Enter your mobile number.",
       "registerProgress": "New account steps",
@@ -354,6 +367,27 @@
       "forgotPassword": "Forgot password?",
       "emailLabel": "University email",
       "emailPlaceholder": "Example: user@sbu.ac.ir"
+    },
+    "passwordChange": {
+      "action": "Change password",
+      "title": "Change password",
+      "description": "Enter the current password and a new password for this signed-in account. This is separate from forgot-password and SMS recovery.",
+      "current": "Current password",
+      "next": "New password",
+      "confirm": "Repeat new password",
+      "show": "Show password",
+      "hide": "Hide password",
+      "submit": "Save new password",
+      "submitting": "Saving…",
+      "success": "Your password was changed. Sign in again to continue.",
+      "mismatch": "The new password and its repeat do not match.",
+      "currentInvalid": "The current password is not correct.",
+      "unchanged": "The new password must be different from the current one.",
+      "unavailable": "This account cannot change its password right now. You are not signed in.",
+      "signInAgain": "Your session is no longer valid. Sign in again.",
+      "rateLimited": "Too many attempts. Try again later.",
+      "rateLimitedWait": "Too many attempts. Try again in {seconds} seconds.",
+      "generic": "The password could not be changed."
     },
     "setPassword": {
       "title": "Set a new password",

@@ -9,7 +9,7 @@ import { ConversationsPanel } from '@/components/sidebar/ConversationsPanel';
 import { ServicesRail } from '@/components/sidebar/ServicesRail';
 import { SohaFooter } from '@/components/layout/SohaFooter';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UniversityChatHeader } from './UniversityChatHeader';
+import { MessagesSquare, PanelsTopLeft } from 'lucide-react';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ChatEmptyState } from './ChatEmptyState';
@@ -172,14 +172,6 @@ export function ChatShell({
     !isSendingOrStreaming &&
     !hasMessages &&
     !hasSubmittedMessage;
-  const headerTitle = useMemo(() => {
-    const rawTitle = chat?.title?.trim() || t('chat.defaultTitle');
-    const compactTitle = rawTitle.replace(/\s+/g, ' ').trim();
-    const maxLength = 72;
-    return compactTitle.length > maxLength
-      ? `${compactTitle.slice(0, maxLength)}…`
-      : compactTitle;
-  }, [chat?.title, t]);
 
   const getChatUserErrorMessage = (error: unknown) => {
     if (error instanceof ChatWebSocketError) {
@@ -227,7 +219,7 @@ export function ChatShell({
         return t('chat.timeout');
       }
 
-      return t('chat.connectionError');
+      return t('chat.linkLost');
     }
 
     if (error instanceof ApiError) {
@@ -279,7 +271,7 @@ export function ChatShell({
         normalizedMessage.includes('websocket') ||
         normalizedMessage.includes('connection')
       ) {
-        return t('chat.connectionError');
+        return t('chat.linkLost');
       }
     }
 
@@ -532,13 +524,26 @@ export function ChatShell({
       dir={isRtl ? 'rtl' : 'ltr'}
       className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.55),transparent_46%)]"
     >
-      <UniversityChatHeader
-        locale={locale}
-        compact={!shouldShowEmptyState}
-        chatTitle={headerTitle}
-        onOpenServices={openServices}
-        onOpenConversations={openConversations}
-      />
+      <div className="flex shrink-0 items-center justify-between px-2 pt-2 xl:hidden" dir="ltr">
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-foreground hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]"
+          aria-label={t('conversations.open')}
+          aria-controls="conversations-panel"
+          onClick={openConversations}
+        >
+          <MessagesSquare className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-foreground hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] md:hidden"
+          aria-label={t('services.open')}
+          aria-controls="services-panel"
+          onClick={openServices}
+        >
+          <PanelsTopLeft className="h-5 w-5" />
+        </button>
+      </div>
 
       {!isOnline ? (
         <div

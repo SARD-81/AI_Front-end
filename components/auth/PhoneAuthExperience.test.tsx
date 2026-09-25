@@ -45,11 +45,13 @@ vi.mock('@/lib/services/phone-auth-service', () => ({
 }));
 
 function renderAuth() {
-  return render(
+  const view = render(
     <NextIntlClientProvider locale="fa" messages={fa as unknown as AbstractIntlMessages}>
       <PhoneAuthExperience locale="fa" />
     </NextIntlClientProvider>
   );
+  fireEvent.click(screen.getByRole('button', {name: 'با شماره موبایل ادامه می‌دهم'}));
+  return view;
 }
 
 async function openRegistration() {

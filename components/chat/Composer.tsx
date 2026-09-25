@@ -1,9 +1,9 @@
 'use client';
 
 import {motion} from 'motion/react';
-import {ArrowUp, Check, ChevronDown, Square} from 'lucide-react';
+import {ArrowUp, Check, ChevronDown, Globe, Square} from 'lucide-react';
 import {useLocale, useTranslations} from 'next-intl';
-import {useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {
   DropdownMenu,
@@ -50,15 +50,32 @@ export function Composer({
   const isAtCharacterLimit = characterCount >= MAX_MESSAGE_LENGTH;
   const canSend = !disabled && value.trim().length > 0;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const restoreFocusRef = useRef(false);
+  const [webSearchOn, setWebSearchOn] = useState(false);
 
   useEffect(() => {
     if (autoFocus) textareaRef.current?.focus();
   }, [autoFocus]);
 
   useEffect(() => {
-    if (focusTrigger === undefined) return;
+    if (focusTrigger === undefined || disabled) return;
     textareaRef.current?.focus();
-  }, [focusTrigger]);
+  }, [focusTrigger, disabled]);
+
+  useEffect(() => {
+    if (disabled) return;
+    if (!restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    const mobile =
+      window.matchMedia('(max-width: 767px)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+    if (mobile) return;
+    const active = document.activeElement;
+    const idle =
+      !active || active === document.body || active === textareaRef.current;
+    if (!idle) return;
+    textareaRef.current?.focus();
+  }, [disabled]);
 
   return (
     <motion.div
@@ -78,6 +95,14 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
+        onFocus={() => {
+          restoreFocusRef.current = true;
+        }}
+        onBlur={(event) => {
+          if (event.relatedTarget && event.relatedTarget !== textareaRef.current) {
+            restoreFocusRef.current = false;
+          }
+        }}
         className="max-h-36 min-h-11 flex-1 resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-2 text-base leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
@@ -136,6 +161,27 @@ export function Composer({
             })}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <button
+          type="button"
+          aria-pressed={webSearchOn}
+          aria-describedby="web-search-hint"
+          title={t('webSearch.hint')}
+          onClick={() => setWebSearchOn((current) => !current)}
+          className={cn(
+            'inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))]',
+            webSearchOn
+              ? 'bg-[hsl(var(--surface-elevated))] text-foreground'
+              : 'text-muted-foreground hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground'
+          )}
+        >
+          <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="max-w-24 truncate">{t('webSearch.label')}</span>
+          <span className="sr-only">{webSearchOn ? t('webSearch.on') : t('webSearch.off')}</span>
+        </button>
+        <span id="web-search-hint" role="tooltip" className="sr-only">
+          {t('webSearch.hint')}
+        </span>
 
         <div
           id="composer-character-counter"

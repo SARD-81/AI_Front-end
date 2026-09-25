@@ -34,6 +34,7 @@ import {useTranslations} from 'next-intl';
 import {useEffect, useRef, useState} from 'react';
 
 type Step =
+  | 'choose'
   | 'identify'
   | 'password'
   | 'activation'
@@ -121,6 +122,8 @@ function stepCopy(step: Step) {
     case 'legacy':
     case 'legacy-reset':
       return {title: 'legacyAction', body: 'legacyBody'} as const;
+    case 'choose':
+      return {title: 'chooseTitle', body: 'chooseBody'} as const;
     default:
       return {title: 'identifyTitle', body: 'identifyBody'} as const;
   }
@@ -138,7 +141,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<Step>('identify');
+  const [step, setStep] = useState<Step>('choose');
   const [phoneRaw, setPhoneRaw] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -511,6 +514,67 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
     setStep(next);
   };
 
+  const forgetSecrets = () => {
+    abortRef.current?.abort();
+    legacyAbort.current?.abort();
+    activationToken.current = '';
+    registrationToken.current = '';
+    resetToken.current = '';
+    pendingResult.current = null;
+    setPassword('');
+    setCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setEmail('');
+    setShowPassword(false);
+    setShowNewPassword(false);
+    setError(null);
+    setNotice(null);
+    setFieldError({});
+    setEmailTaken(false);
+    setRegistrationBlocked(false);
+  };
+
+  const rememberEntry = (entry: 'choose' | 'phone' | 'email') => {
+    const url = new URL(window.location.href);
+    if (entry === 'choose') url.searchParams.delete('entry');
+    else url.searchParams.set('entry', entry);
+    window.history.pushState({entry}, '', `${url.pathname}${url.search}`);
+  };
+
+  const openPhonePath = () => {
+    forgetSecrets();
+    setStep('identify');
+    rememberEntry('phone');
+  };
+
+  const openEmailPath = () => {
+    forgetSecrets();
+    setStep('legacy');
+    rememberEntry('email');
+  };
+
+  const changeMethod = () => {
+    forgetSecrets();
+    setStep('choose');
+    rememberEntry('choose');
+  };
+
+  useEffect(() => {
+    const onPop = () => {
+      const entry = new URLSearchParams(window.location.search).get('entry');
+      forgetSecrets();
+      setStep(entry === 'phone' ? 'identify' : entry === 'email' ? 'legacy' : 'choose');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  useEffect(() => {
+    if (step === 'choose') return;
+    document.getElementById('auth-step-title')?.focus();
+  }, [step]);
+
   const selectLocale = (nextLocale: 'fa' | 'en') => {
     if (nextLocale === locale) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -658,6 +722,17 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
             ) : null}
 
             <div key={step} className={surfaceStyles.motion}>
+            {step === 'choose' ? (
+              <div className={surfaceStyles.form}>
+                <button type="button" className={surfaceStyles.primary} onClick={openEmailPath}>
+                  {t('chooseEmail')}
+                </button>
+                <button type="button" className={surfaceStyles.secondary} onClick={openPhonePath}>
+                  {t('choosePhone')}
+                </button>
+              </div>
+            ) : null}
+
             {step === 'identify' ? (
               <div className={surfaceStyles.form}>
                 <button type="button" className={surfaceStyles.primary} disabled={busy || !phoneOk} onClick={onIdentify}>
@@ -939,6 +1014,11 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                 </button>
               </div>
             ) : null}
+            {step !== 'choose' ? (
+              <button type="button" className={surfaceStyles.methodSwitch} onClick={changeMethod}>
+                {t('changeMethod')}
+              </button>
+            ) : null}
             </div>
           </section>
         </div>
@@ -947,19 +1027,41 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
   );
 }
 
+// Original interpretation of the Shahid Beheshti University main gate.
+// Reference photograph: Xpander1, Wikimedia Commons, CC BY 4.0
+// https://commons.wikimedia.org/wiki/File:Sahid_Beheshti_University.jpg
+// https://creativecommons.org/licenses/by/4.0/
+// Not a trace of the photograph and not a measured drawing of the facade.
 function CampusField({className}: {className?: string}) {
   return (
-    <svg className={className} viewBox="0 0 640 420" fill="none" aria-hidden="true">
-      <path d="M20 300h600" stroke="rgba(244,251,251,0.28)" strokeWidth="1.4" />
-      <path d="M48 360V168c0-78 62-132 140-132" stroke="rgba(244,251,251,0.72)" strokeWidth="2" />
-      <path d="M188 36c78 0 140 54 140 132v192" stroke="rgba(244,251,251,0.72)" strokeWidth="2" />
-      <path d="M328 360V150c0-64 50-112 116-112" stroke="rgba(94,224,214,0.95)" strokeWidth="2" />
-      <path d="M444 38c66 0 120 48 120 112v210" stroke="rgba(94,224,214,0.95)" strokeWidth="2" />
-      <path d="M96 360V214c0-52 40-90 92-90s92 38 92 90v146" stroke="rgba(244,251,251,0.4)" strokeWidth="1.6" />
-      <path d="M250 360V230c0-42 34-74 78-74" stroke="rgba(228,181,106,0.95)" strokeWidth="2.2" />
-      <path d="M24 248h210M400 248h210" stroke="rgba(244,251,251,0.22)" strokeWidth="1.2" />
-      <rect x="58" y="188" width="86" height="54" rx="3" stroke="rgba(244,251,251,0.35)" strokeWidth="1.4" />
-      <rect x="430" y="150" width="110" height="70" rx="3" stroke="rgba(46,196,198,0.55)" strokeWidth="1.4" />
+    <svg className={className} viewBox="0 0 880 460" fill="none" aria-hidden="true">
+      <title>Interpretive drawing of a university gate</title>
+      <path d="M40 392h800" stroke="rgba(244,251,251,0.28)" strokeWidth="1.2" />
+      <path d="M150 392v-18h580v18" stroke="rgba(244,251,251,0.45)" strokeWidth="1.4" />
+      <path d="M190 374v-14h500v14" stroke="rgba(244,251,251,0.35)" strokeWidth="1.2" />
+      <path d="M70 392V250h90v142" stroke="rgba(244,251,251,0.4)" strokeWidth="1.6" />
+      <path d="M720 392V250h90v142" stroke="rgba(244,251,251,0.4)" strokeWidth="1.6" />
+      <path d="M168 392V168h150v224" stroke="rgba(244,251,251,0.8)" strokeWidth="2.2" />
+      <path d="M562 392V168h150v224" stroke="rgba(244,251,251,0.8)" strokeWidth="2.2" />
+      <path d="M150 168h580" stroke="rgba(244,251,251,0.9)" strokeWidth="8" />
+      <path d="M150 148h580" stroke="rgba(94,224,214,0.85)" strokeWidth="3" />
+      <path d="M318 392V196h244v196" stroke="rgba(244,251,251,0.72)" strokeWidth="2" />
+      <path d="M338 392V214h204v178" stroke="rgba(3,28,40,0.55)" strokeWidth="10" />
+      <path d="M186 220h116M578 220h116" stroke="rgba(228,181,106,0.9)" strokeWidth="1.6" />
+      <path d="M186 250h116M578 250h116" stroke="rgba(244,251,251,0.35)" strokeWidth="1.2" />
+      <path d="M214 300h60v92h-60zM606 300h60v92h-60z" stroke="rgba(244,251,251,0.4)" strokeWidth="1.3" />
+      {Array.from({length: 18}, (_, index) => (
+        <rect
+          key={index}
+          x={176 + index * 30}
+          y={112}
+          width="12"
+          height="22"
+          rx="1"
+          fill={index % 3 === 1 ? 'rgba(228,181,106,0.85)' : 'rgba(244,251,251,0.55)'}
+        />
+      ))}
+      <path d="M430 128l10 16h-20z" fill="rgba(94,224,214,0.9)" />
     </svg>
   );
 }

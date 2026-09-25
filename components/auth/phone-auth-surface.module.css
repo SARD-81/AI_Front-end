@@ -38,7 +38,7 @@
   background:
     radial-gradient(90% 70% at 100% 0%, rgba(46, 196, 198, 0.34), transparent 58%),
     linear-gradient(165deg, #0b5874 0%, #06384c 42%, #031c28 100%);
-  padding: max(0.85rem, env(safe-area-inset-top)) 1rem 2.35rem;
+  padding: max(0.7rem, env(safe-area-inset-top)) 1rem 1.15rem;
 }
 
 .fieldArt {
@@ -495,6 +495,23 @@
   background: #e7eef0;
   color: #3e5966;
   cursor: not-allowed;
+}
+
+.methodSwitch {
+  min-height: 2.75rem;
+  margin-top: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: #075373;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.methodSwitch:hover {
+  color: #042838;
 }
 
 .language:focus-visible,
