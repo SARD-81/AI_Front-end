@@ -34,6 +34,15 @@ const nextConfig: NextConfig = {
         ]
       },
       {
+        source: '/api/app/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store'
+          }
+        ]
+      },
+      {
         source: '/:all*(svg|jpg|jpeg|png|webp|ico)',
         headers: [
           {
