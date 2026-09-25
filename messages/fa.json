@@ -68,6 +68,31 @@
       "productName": "سها",
       "productSubtitle": "دستیار دانشگاه شهید بهشتی"
     },
+    "services": {
+      "label": "خدمات",
+      "open": "باز کردن خدمات",
+      "close": "بستن خدمات",
+      "collapse": "جمع کردن خدمات",
+      "expand": "باز کردن خدمات",
+      "accessDeniedTitle": "دسترسی محدود",
+      "accessDenied": "حساب کاربری شما دسترسی به {section} را ندارد.",
+      "acknowledge": "متوجه شدم",
+      "items": {
+        "users": "مدیریت کاربران",
+        "documents": "مدیریت اسناد",
+        "databases": "مدیریت پایگاه‌های داده"
+      }
+    },
+    "conversations": {
+      "label": "گفتگوها",
+      "open": "باز کردن گفتگوها",
+      "close": "بستن گفتگوها"
+    },
+    "chatHeader": {
+      "productName": "سها",
+      "subtitle": "دستیار هوشمند دانشگاه شهید بهشتی",
+      "facultyAccess": "با دسترسی ویژه برای دانشکده مهندسی و علوم کامپیوتر (نسخه بتا)"
+    },
     "dialog": {
       "close": "بستن"
     },

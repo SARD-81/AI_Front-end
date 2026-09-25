@@ -279,15 +279,11 @@ describe('chat presentation', () => {
     (locale) => {
       render(
         <Providers locale={locale}>
-          <ChatEmptyState
-            {...composerProps}
-            value=""
-            onPromptSelect={vi.fn()}
-          />
+          <ChatEmptyState onPromptSelect={vi.fn()} />
         </Providers>
       );
       expect(screen.queryByText(/گفتگوی دوستانه|friendly chat/)).toBeNull();
-      expect(screen.getByRole('img')).toBeTruthy();
+      expect(screen.getByRole('heading')).toBeTruthy();
     }
   );
 });

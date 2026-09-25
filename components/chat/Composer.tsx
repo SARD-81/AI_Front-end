@@ -64,11 +64,12 @@ export function Composer({
     <motion.div
       layoutId="chat-composer"
       transition={{duration: 0.22, ease: 'easeOut'}}
-      className="mx-auto w-full max-w-[800px] rounded-[22px] border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-3 py-2.5 shadow-[0_12px_32px_-24px_rgba(4,72,101,0.45)] transition-colors focus-within:border-[hsl(var(--primary)/0.6)] focus-within:ring-2 focus-within:ring-[hsl(var(--primary)/0.1)] sm:rounded-[26px] sm:px-4 sm:py-3"
+      className="mx-auto w-full max-w-3xl rounded-2xl border border-[hsl(var(--field-border))] bg-[hsl(var(--surface-card))] px-2 py-1.5 shadow-[0_14px_36px_-22px_rgba(4,72,101,0.55)] transition-colors focus-within:border-[hsl(var(--primary)/0.6)] focus-within:ring-2 focus-within:ring-[hsl(var(--primary)/0.12)] sm:px-3"
     >
+      <div className="flex items-end gap-1">
       <TextareaAutosize
         minRows={1}
-        maxRows={8}
+        maxRows={6}
         maxLength={MAX_MESSAGE_LENGTH}
         value={value}
         dir={value.trim() ? 'auto' : locale === 'fa' ? 'rtl' : 'ltr'}
@@ -77,7 +78,7 @@ export function Composer({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('composerPlaceholder')}
         disabled={disabled}
-        className="max-h-[9.5rem] w-full resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-0.5 text-base leading-7 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70 sm:max-h-[13rem] sm:py-1 sm:leading-7"
+        className="max-h-36 min-h-11 flex-1 resize-none overflow-y-auto overscroll-contain border-0 bg-transparent px-1 py-2 text-base leading-6 text-[hsl(var(--field-foreground))] shadow-none outline-none ring-0 placeholder:text-[hsl(var(--field-placeholder))] focus:border-0 focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             if (event.nativeEvent.isComposing) return;
@@ -89,7 +90,7 @@ export function Composer({
         aria-describedby="composer-keyboard-hint composer-character-counter"
       />
 
-      <div className="mt-1 flex items-center gap-1.5 sm:mt-1.5 sm:gap-2">
+      <div className="mb-0.5 flex shrink-0 items-center">
         <DropdownMenu dir={locale === 'fa' ? 'rtl' : 'ltr'}>
           <DropdownMenuTrigger asChild>
             <button
@@ -100,7 +101,7 @@ export function Composer({
               className="flex min-h-11 min-w-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-elevated))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] disabled:cursor-not-allowed disabled:opacity-60 data-[state=open]:bg-[hsl(var(--surface-elevated))] data-[state=open]:text-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
             >
               <ChevronDown className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
-              <span className="truncate">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
+              <span className="hidden truncate sm:inline">{t(`thinkingLevel.options.${thinkLevel}.title`)}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -177,6 +178,7 @@ export function Composer({
             <ArrowUp className="h-4 w-4" />
           </button>
         )}
+      </div>
       </div>
 
       <p id="composer-keyboard-hint" className="sr-only">

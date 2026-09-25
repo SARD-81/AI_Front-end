@@ -20,7 +20,7 @@ type HistoryControls = {
 function HistoryHeader({ context }: { context?: HistoryControls }) {
   const t = useTranslations('app.history');
   return (
-    <div className="flex min-h-20 items-end justify-center px-4 pb-3 pt-16">
+    <div className="flex min-h-12 items-end justify-center px-4 pb-2 pt-3">
       {context?.hasOlder ? (
         <div className="text-center">
           {context.olderError ? (
@@ -70,7 +70,7 @@ type UserAnchor = {
 
 const VIRTUOSO_COMPONENTS = {
   Header: HistoryHeader,
-  Footer: () => <div className="h-16 w-full shrink-0 sm:h-4" aria-hidden />
+  Footer: () => <div className="h-3 w-full shrink-0" aria-hidden />
 };
 
 function AssistantPendingBubble({

@@ -66,6 +66,31 @@
       "productName": "Soha",
       "productSubtitle": "Shahid Beheshti University assistant"
     },
+    "services": {
+      "label": "Services",
+      "open": "Open services",
+      "close": "Close services",
+      "collapse": "Collapse services",
+      "expand": "Expand services",
+      "accessDeniedTitle": "Limited access",
+      "accessDenied": "Your account does not have access to {section}.",
+      "acknowledge": "Understood",
+      "items": {
+        "users": "User management",
+        "documents": "Document management",
+        "databases": "Database management"
+      }
+    },
+    "conversations": {
+      "label": "Conversations",
+      "open": "Open conversations",
+      "close": "Close conversations"
+    },
+    "chatHeader": {
+      "productName": "Soha",
+      "subtitle": "Intelligent assistant of Shahid Beheshti University",
+      "facultyAccess": "With special access for the Faculty of Computer Science and Engineering (beta)"
+    },
     "dialog": {
       "close": "Close"
     },
