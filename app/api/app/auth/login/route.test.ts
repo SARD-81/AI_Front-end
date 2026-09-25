@@ -19,7 +19,7 @@ import {POST} from '@/app/api/app/auth/login/route';
 function loginRequest(email = 'professor@sbu.ac.ir') {
   return new Request('http://localhost/api/app/auth/login', {
     method: 'POST',
-    headers: {'content-type': 'application/json'},
+    headers: {'content-type': 'application/json', origin: 'http://localhost'},
     body: JSON.stringify({email, password: 'Temporary123!'})
   });
 }
@@ -159,5 +159,18 @@ describe('login BFF route', () => {
     expect(body).toEqual({message: 'Account is locked.', code: 'ACCOUNT_LOCKED'});
     expect(clearAuthCookiesMock).toHaveBeenCalledTimes(1);
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it('does not call the backend when the login origin is not this app', async () => {
+    const response = await POST(
+      new Request('http://localhost/api/app/auth/login', {
+        method: 'POST',
+        headers: {'content-type': 'application/json', origin: 'https://evil.example'},
+        body: JSON.stringify({email: 'professor@sbu.ac.ir', password: 'Temporary123!'})
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({code: 'cross_site_request'});
+    expect(backendFetchMock).not.toHaveBeenCalled();
   });
 });

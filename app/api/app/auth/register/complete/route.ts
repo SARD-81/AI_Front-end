@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { backendFetch } from '@/lib/server/backend-fetch';
 import { routeErrorResponse } from '@/lib/server/route-error';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
+import { crossSiteRejection } from '@/lib/server/request-origin';
 
 type RegisterRole = 'professor' | 'staff';
 
@@ -59,6 +60,9 @@ function addOptionalString(
 }
 
 export async function POST(request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const body = (await request.json()) as RegisterCompleteBody;
     const email = body.email?.trim() ?? '';

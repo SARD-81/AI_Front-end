@@ -6,6 +6,7 @@ import {
   normalizeAuthProfile,
   type BackendProfile
 } from '@/lib/server/auth-profile-normalizer';
+import { crossSiteRejection } from '@/lib/server/request-origin';
 
 type ProfileBody = {
   first_name?: string;
@@ -34,6 +35,9 @@ function editableProfilePayload(body: ProfileBody) {
 }
 
 async function requestProfile(method: 'PATCH' | 'PUT', request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   const body = (await request.json()) as ProfileBody;
   const payload = editableProfilePayload(body);
   const profile = await callWithAutoRefresh((access) =>

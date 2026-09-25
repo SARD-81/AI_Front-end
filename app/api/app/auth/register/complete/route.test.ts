@@ -16,7 +16,7 @@ describe('register complete flow contract', () => {
     const response = await POST(
       new Request('http://localhost/api/app/auth/register/complete', {
         method: 'POST',
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', origin: 'http://localhost'},
         body: JSON.stringify({email: 'student@mail.sbu.ac.ir'})
       })
     );

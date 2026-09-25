@@ -5,6 +5,7 @@ import { routeErrorResponse } from '@/lib/server/route-error';
 import { normalizeBackendAuthContract, type BackendAuthContract } from '@/lib/server/auth-contract';
 import { isValidUniversityEmail } from '@/lib/server/university-config';
 import { UNIVERSITY_EMAIL_HINT } from '@/lib/config/university-email';
+import { crossSiteRejection } from '@/lib/server/request-origin';
 
 type SetInitialPasswordBody = {
   email?: string;
@@ -17,6 +18,9 @@ type SetInitialPasswordBody = {
 };
 
 export async function POST(request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const body = (await request.json()) as SetInitialPasswordBody;
     const email = body.email?.trim() ?? '';

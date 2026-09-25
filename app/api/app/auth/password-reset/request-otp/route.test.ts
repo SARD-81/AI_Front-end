@@ -9,7 +9,7 @@ import {POST} from '@/app/api/app/auth/password-reset/request-otp/route';
 function request(email: string) {
   return new Request('http://localhost/api/app/auth/password-reset/request-otp', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type': 'application/json', origin: 'http://localhost'},
     body: JSON.stringify({email})
   });
 }

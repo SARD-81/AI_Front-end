@@ -33,7 +33,7 @@ import {
 function post(path: string, body: unknown, headers?: HeadersInit) {
   return new Request(`http://localhost${path}`, {
     method: 'POST',
-    headers: {'content-type': 'application/json', ...headers},
+    headers: {'content-type': 'application/json', origin: 'http://localhost', ...headers},
     body: JSON.stringify(body)
   });
 }

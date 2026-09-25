@@ -17,7 +17,7 @@ import {POST as setInitialPassword} from '@/app/api/app/auth/set-initial-passwor
 function jsonRequest(path: string, body: Record<string, unknown>) {
   return new Request(`http://localhost${path}`, {
     method: 'POST',
-    headers: {'content-type': 'application/json'},
+    headers: {'content-type': 'application/json', origin: 'http://localhost'},
     body: JSON.stringify(body)
   });
 }

@@ -3,6 +3,7 @@ import {backendFetch} from '@/lib/server/backend-fetch';
 import {ApiError} from '@/lib/server/backend-types';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
+import {crossSiteRejection} from '@/lib/server/request-origin';
 
 export async function GET(_request: Request, context: {params: Promise<{id: string}>}) {
   try {
@@ -48,6 +49,9 @@ async function handleTitleUpdate(
   context: {params: Promise<{id: string}>},
   method: 'PATCH' | 'PUT'
 ) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const {id} = await context.params;
     const body = await request.json();
@@ -82,7 +86,10 @@ export async function PUT(request: Request, context: {params: Promise<{id: strin
   return handleTitleUpdate(request, context, 'PUT');
 }
 
-export async function DELETE(_request: Request, context: {params: Promise<{id: string}>}) {
+export async function DELETE(request: Request, context: {params: Promise<{id: string}>}) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const {id} = await context.params;
 

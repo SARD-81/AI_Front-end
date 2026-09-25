@@ -2,13 +2,17 @@ import {NextResponse} from 'next/server';
 import {backendFetch} from '@/lib/server/backend-fetch';
 import {routeErrorResponse} from '@/lib/server/route-error';
 import {callWithAutoRefresh} from '@/lib/server/with-refresh';
+import {crossSiteRejection} from '@/lib/server/request-origin';
 
 type WsTicketResponse = {
   ticket: string;
   expires_in: number;
 };
 
-export async function POST() {
+export async function POST(request: Request) {
+  const rejected = crossSiteRejection(request);
+  if (rejected) return rejected;
+
   try {
     const data = await callWithAutoRefresh((access) =>
       backendFetch<WsTicketResponse>('/chat/ws-ticket/', {
