@@ -25,7 +25,29 @@ it('returns ten latest messages, then ten older, then the remainder despite new 
   );
   const first = await readHistoryWindow(load, older.olderCursor);
   expect(first.results).toEqual(rows.slice(0, 5));
-  expect(first.olderCursor).toBeNull();
+    expect(first.olderCursor).toBeNull();
+});
+
+it('issues one backend request per legacy page and stops an unbounded scan', async () => {
+  const load = vi.fn(async (query: string) => {
+    const page = Number(new URLSearchParams(query).get('cursor') ?? '0');
+    return {
+      results: [message(page)],
+      next: page < 2 ? `?cursor=${page + 1}` : null
+    };
+  });
+  await readHistoryWindow(load, null);
+  expect(load).toHaveBeenCalledTimes(3);
+
+  const longLoad = vi.fn(async (query: string) => {
+    const page = Number(new URLSearchParams(query).get('cursor') ?? '0');
+    return {results: [message(page)], next: `?cursor=${page + 1}`};
+  });
+  await expect(readHistoryWindow(longLoad, null)).rejects.toMatchObject({
+    status: 503,
+    code: 'HISTORY_SCAN_LIMIT'
+  });
+  expect(longLoad.mock.calls.length).toBeLessThanOrEqual(26);
 });
 
 it('uses exactly one backend call in native mode and restores chronological display order', async () => {
