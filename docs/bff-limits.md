@@ -21,3 +21,5 @@ Set these on the proxy in front of Next, not only inside Node:
 - do not point liveness at Django; see `docs/probes.md` once that note lands
 
 Confirm the real TLS-terminating proxy before treating these numbers as deployed.
+A passing local Cache-Control check does not prove a CDN or reverse proxy will
+keep that header; the deployed edge must be tested separately.

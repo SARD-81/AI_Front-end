@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
@@ -34,20 +34,23 @@ const nextConfig: NextConfig = {
         ]
       },
       {
+        // One URL segment only, so /api/app/conversations/test.png cannot match.
+        // The private /api/app rule is also last, in case a later matcher overlaps.
+        source:
+          '/:file([^/]+\\.svg|[^/]+\\.jpg|[^/]+\\.jpeg|[^/]+\\.png|[^/]+\\.webp|[^/]+\\.ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+          }
+        ]
+      },
+      {
         source: '/api/app/:path*',
         headers: [
           {
             key: 'Cache-Control',
             value: 'private, no-store'
-          }
-        ]
-      },
-      {
-        source: '/:all*(svg|jpg|jpeg|png|webp|ico)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, stale-while-revalidate=604800'
           }
         ]
       }

@@ -24,6 +24,9 @@ jobs:
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+      - run: npx vitest run cache-control.http.test.ts
+        env:
+          CACHE_HEADER_HTTP: '1'
   dependency-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
