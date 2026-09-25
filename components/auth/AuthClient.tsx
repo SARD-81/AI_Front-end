@@ -21,6 +21,8 @@ export function AuthClient({
   locale: string;
   phoneAuthEnabled?: boolean;
 }) {
+  // Previous public email auth is archived in docs/legacy-auth; the pilot
+  // deliberately has no email-login fallback when this flag is disabled.
   if (phoneAuthEnabled) return <PhoneAuthExperience locale={locale} />;
   return <AuthClosed locale={locale} />;
 }

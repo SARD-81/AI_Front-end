@@ -71,6 +71,26 @@ describe('migrated initial-password contract', () => {
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 
+  it('forwards a migrated account email from another domain without inventing a university restriction', async () => {
+    backendFetchMock.mockResolvedValue({
+      status: 'password_updated',
+      phone_login_required: true
+    });
+
+    const response = await setInitialPassword(
+      jsonRequest({ email: 'migrated@example.org' })
+    );
+
+    expect(response.status).toBe(200);
+    expect(backendFetchMock).toHaveBeenCalledWith(
+      '/set-initial-password/',
+      expect.objectContaining({
+        body: expect.stringContaining('migrated@example.org')
+      })
+    );
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
   it.each([
     { label: 'empty object', body: {} },
     {
