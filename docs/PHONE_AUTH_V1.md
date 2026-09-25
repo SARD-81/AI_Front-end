@@ -40,28 +40,31 @@ The branch base is `main` (`ee949ac`). `origin/design/chat-teal-mobile-v1` is no
 
 ## Screenshots
 
-These PNGs were taken in a browser with `Emulation.setDeviceMetricsOverride` at device scale 1, against a local mock of the contract on `127.0.0.1:8099`. They are not a live backend test and not a physical-device test. Measured CSS viewports had no horizontal overflow, inputs at 16px, and buttons at least 44px. Disabled phone fields stay white with `#073044` text.
+The PNGs in `docs/phone-auth-screenshots/` were taken with headless Chrome `page.screenshot` after `setViewport` at device scale 1 and after the target heading was on the page. The viewport height was then set to the document height so the header and form fit in one frame. Each file was opened after saving. The header, form, and copy appear once, and the last action (including «بازگشت») is inside the frame.
+
+They were captured against a local mock of the contract on `127.0.0.1:8099`, not a deployed backend and not a physical device. There was no horizontal overflow.
 
 | File | PNG pixels |
 | --- | --- |
 | `phone-login-320.png` | 320×900 |
-| `phone-login-375.png` | 375×812 |
-| `phone-login-412.png` | 412×812 |
-| `phone-login-1280.png` | 1280×860 |
+| `phone-login-375.png` | 375×900 |
+| `phone-login-412.png` | 412×900 |
+| `phone-login-1280.png` | 1280×900 |
 | `phone-activation-320.png` | 320×900 |
 | `phone-activation-375.png` | 375×900 |
-| `phone-activation-412.png` | 412×860 |
-| `phone-activation-1280.png` | 1280×860 |
-| `phone-register-320.png` | 320×1040 |
-| `phone-register-375.png` | 375×980 |
-| `phone-register-412.png` | 412×860 |
+| `phone-activation-412.png` | 412×900 |
+| `phone-activation-1280.png` | 1280×900 |
+| `phone-register-320.png` | 320×900 |
+| `phone-register-375.png` | 375×900 |
+| `phone-register-412.png` | 412×900 |
+| `phone-register-1280.png` | 1280×900 |
 | `phone-reset-320.png` | 320×900 |
 | `phone-reset-375.png` | 375×900 |
-| `phone-reset-412.png` | 412×860 |
-| `phone-reset-1280.png` | 1280×860 |
+| `phone-reset-412.png` | 412×900 |
+| `phone-reset-1280.png` | 1280×900 |
 | `phone-error-320.png` | 320×900 |
 | `phone-error-375.png` | 375×900 |
-| `phone-error-412.png` | 412×860 |
-| `phone-error-1280.png` | 1280×860 |
+| `phone-error-412.png` | 412×900 |
+| `phone-error-1280.png` | 1280×900 |
 
-Registration at 1280 CSS px was measured in the page (`innerWidth` 1280, `scrollWidth` 1280, one heading). The screenshot buffer repeated a narrow strip, so that PNG was not kept.
+Desktop registration is included as `phone-register-1280.png`.

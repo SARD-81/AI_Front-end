@@ -15,9 +15,11 @@ const requestPhonePasswordReset = vi.hoisted(() => vi.fn());
 const verifyPhonePasswordReset = vi.hoisted(() => vi.fn());
 const completePhonePasswordReset = vi.hoisted(() => vi.fn());
 const registerWithPhone = vi.hoisted(() => vi.fn());
+const replace = vi.hoisted(() => vi.fn());
+const refresh = vi.hoisted(() => vi.fn());
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({replace: vi.fn(), refresh: vi.fn(), push: vi.fn()}),
+  useRouter: () => ({replace, refresh, push: vi.fn()}),
   usePathname: () => '/fa/auth',
   useSearchParams: () => new URLSearchParams()
 }));
@@ -65,6 +67,8 @@ describe('phone auth OTP countdown', () => {
     identifyPhone.mockReset();
     requestRegistrationOtp.mockReset();
     loginWithPhone.mockReset();
+    replace.mockReset();
+    refresh.mockReset();
     localStorage.clear();
   });
 
@@ -189,5 +193,33 @@ describe('phone auth OTP countdown', () => {
     expect(screen.getByRole('button', {name: 'درخواست دوباره تا 60 ثانیه'})).toBeTruthy();
     expect(document.body.textContent).not.toContain('reset-secret');
     expect(localStorage.length).toBe(0);
+  });
+
+  it('continues from phone setup without clearing phoneSetupRequired', async () => {
+    const result = {
+      phoneSetupRequired: true,
+      isProfileCompleted: true,
+      user: {phoneSetupRequired: true, isProfileCompleted: true}
+    };
+    identifyPhone.mockResolvedValue('password');
+    loginWithPhone.mockResolvedValue({kind: 'session', result});
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: {value: '09120000000'}
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'secret'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ورود'}));
+    });
+    expect(await screen.findByText(/شمارهٔ تأییدشده ندارد/)).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه به سها'}));
+    });
+    expect(result.phoneSetupRequired).toBe(true);
+    expect(result.user.phoneSetupRequired).toBe(true);
+    expect(replace).toHaveBeenCalledWith('/fa/chat');
   });
 });

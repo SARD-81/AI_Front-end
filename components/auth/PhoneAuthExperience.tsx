@@ -198,6 +198,10 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
       setStep('phone-setup');
       return;
     }
+    continueToDestination(result);
+  };
+
+  const continueToDestination = (result: LoginResultDTO) => {
     const incomplete =
       result.isProfileCompleted === false || result.user.isProfileCompleted === false;
     router.replace(incomplete ? `/${locale}/profile` : safeNextUrl(searchParams.get('next'), locale));
@@ -678,9 +682,7 @@ export function PhoneAuthExperience({locale}: {locale: string}) {
                   onClick={() => {
                     const result = pendingResult.current;
                     if (!result) return;
-                    result.phoneSetupRequired = false;
-                    result.user.phoneSetupRequired = false;
-                    enterApp(result);
+                    continueToDestination(result);
                   }}
                 >
                   {t('continueToApp')}
