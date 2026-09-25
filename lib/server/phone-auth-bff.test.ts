@@ -191,6 +191,30 @@ describe('phone auth BFF contract', () => {
     }
   });
 
+  it('phone login password_change_required creates no session cookie', async () => {
+    backendFetchResultMock.mockRejectedValue(
+      new ApiError(
+        'برای این حساب باید ابتدا رمز عبور تنظیم شود. از مسیر set-initial-password استفاده کنید.',
+        403,
+        'password_change_required',
+        {
+          code: 'password_change_required',
+          detail: 'برای این حساب باید ابتدا رمز عبور تنظیم شود. از مسیر set-initial-password استفاده کنید.'
+        }
+      )
+    );
+    const response = await handlePhoneLogin(
+      post('/api/app/auth/phone/login', {
+        phone_number: '09123456789',
+        password: 'Temp-Pass-123'
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({code: 'password_change_required'});
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
   it('activation verify 200 creates a session and 503 does not', async () => {
     backendFetchResultMock.mockResolvedValueOnce({status: 200, data: sessionPayload});
     const ok = await handleActivationVerify(
@@ -214,6 +238,26 @@ describe('phone auth BFF contract', () => {
     expect(failed.status).toBe(503);
     expect((await failed.json()).code).toBe('sms_unavailable');
     expect(setAuthCookiesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('activation verify password_change_required creates no session cookie', async () => {
+    backendFetchResultMock.mockRejectedValue(
+      new ApiError(
+        'برای این حساب باید ابتدا رمز عبور تنظیم شود. از مسیر set-initial-password استفاده کنید.',
+        403,
+        'password_change_required'
+      )
+    );
+    const response = await handleActivationVerify(
+      post('/api/app/auth/phone/activation/verify-otp', {
+        activation_token: 'act-token',
+        code: '12345'
+      })
+    );
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe('password_change_required');
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+    expect(clearAuthCookiesMock).not.toHaveBeenCalled();
   });
 
   it('activation resend returns 202 and the server retry_after', async () => {

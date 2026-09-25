@@ -26,4 +26,42 @@ Cookie lifetime is the JWT `exp` claim minus 30 seconds. If the token has no rea
 - There is no self-service endpoint to attach a phone to an old email account. The UI points that person to email login and support or the planned migration.
 - An open WebSocket is closed in this frontend after logout, email reset complete, phone reset complete, or password change. The server does not close it.
 
-Screenshots in `docs/phone-auth-screenshots/` were taken against a local mock of the contract, not a deployed backend. Viewport checks at 320, 375, 412, and 1280 CSS pixels found no horizontal overflow, 16px inputs, and buttons at least 44px tall. That is not a physical-device test.
+## Countdown and recovery
+
+Each OTP lane (activation, registration, recovery) stores its own request id and start time. A later `202` or `429` with the same `retry_after` starts that lane again. The other lanes are left alone. The button stays disabled until that lane's clock reaches zero. `retry_after` comes from the response; the UI does not invent 60 seconds.
+
+`phone_already_registered` returns the same number to the password form. An expired registration token can be dropped in memory and the OTP step started again without reloading the page. `invalid_reset_token` and `password_reset_unavailable` return to the recovery code step, where another code can be requested within the server limit. Activation verify `503` `sms_unavailable` clears the activation token and returns to the password form. Temporary tokens stay in component memory only.
+
+Phone login or activation verify `403` `password_change_required` does not set a session cookie. The screen says `set-initial-password` needs the university email and the temporary password, and points people who have those to the existing email form. It does not invent a phone path. People who do not have them are sent to support or migration.
+
+## What this branch does not include
+
+The branch base is `main` (`ee949ac`). `origin/design/chat-teal-mobile-v1` is not in this PR, so the chat teal workspace is not part of these screens. The phrase «اولین بار است» is not on `main` or on this branch. It is on `design/auth-entry-teal-v1`: `messages/fa.json` `auth.card.signupDescription` and `auth.card.firstTimeTitle`, rendered by `components/auth/AuthClient.tsx`. History was not rewritten and that branch was not merged.
+
+## Screenshots
+
+These PNGs were taken in a browser with `Emulation.setDeviceMetricsOverride` at device scale 1, against a local mock of the contract on `127.0.0.1:8099`. They are not a live backend test and not a physical-device test. Measured CSS viewports had no horizontal overflow, inputs at 16px, and buttons at least 44px. Disabled phone fields stay white with `#073044` text.
+
+| File | PNG pixels |
+| --- | --- |
+| `phone-login-320.png` | 320×900 |
+| `phone-login-375.png` | 375×812 |
+| `phone-login-412.png` | 412×812 |
+| `phone-login-1280.png` | 1280×860 |
+| `phone-activation-320.png` | 320×900 |
+| `phone-activation-375.png` | 375×900 |
+| `phone-activation-412.png` | 412×860 |
+| `phone-activation-1280.png` | 1280×860 |
+| `phone-register-320.png` | 320×1040 |
+| `phone-register-375.png` | 375×980 |
+| `phone-register-412.png` | 412×860 |
+| `phone-reset-320.png` | 320×900 |
+| `phone-reset-375.png` | 375×900 |
+| `phone-reset-412.png` | 412×860 |
+| `phone-reset-1280.png` | 1280×860 |
+| `phone-error-320.png` | 320×900 |
+| `phone-error-375.png` | 375×900 |
+| `phone-error-412.png` | 412×860 |
+| `phone-error-1280.png` | 1280×860 |
+
+Registration at 1280 CSS px was measured in the page (`innerWidth` 1280, `scrollWidth` 1280, one heading). The screenshot buffer repeated a narrow strip, so that PNG was not kept.
