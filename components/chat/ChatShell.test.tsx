@@ -245,11 +245,12 @@ describe('chat composer submission lifecycle', () => {
     }
   );
 
-  it('clears immediately while the response is pending and preserves the selected thinking level', async () => {
-    window.localStorage.setItem('soha:chat:thinking-level', 'high');
+  it('starts with simple thinking even when an earlier selection was saved', async () => {
+    window.localStorage.setItem('soha:chat:thinking-level', 'medium');
     const response = deferred<ChatMessage>();
     vi.mocked(sendMessageWithWebSocket).mockReturnValue(response.promise);
     setup('existing');
+    expect(screen.getByText('تفکر ساده')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: 'سؤال جدید' }
     });
@@ -258,7 +259,7 @@ describe('chat composer submission lifecycle', () => {
     await waitFor(() =>
       expect(sendMessageWithWebSocket).toHaveBeenCalledWith(
         'existing',
-        expect.objectContaining({ content: 'سؤال جدید', thinkLevel: 'high' }),
+        expect.objectContaining({ content: 'سؤال جدید', thinkLevel: 'low' }),
         expect.any(Object)
       )
     );

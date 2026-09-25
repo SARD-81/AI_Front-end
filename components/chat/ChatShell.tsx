@@ -38,12 +38,6 @@ const BACKEND_WS_USER_FACING_CODES = new Set([
   'internal_error'
 ]);
 
-const THINKING_LEVEL_STORAGE_KEY = 'soha:chat:thinking-level';
-
-function isThinkingLevel(value: string | null): value is ThinkingLevel {
-  return value === 'low' || value === 'medium' || value === 'high';
-}
-
 export function ChatShell({
   locale,
   chatId
@@ -90,22 +84,8 @@ export function ChatShell({
     setActiveChatId(chatId);
   }, [chatId]);
 
-  useEffect(() => {
-    const storedThinkingLevel = window.localStorage.getItem(
-      THINKING_LEVEL_STORAGE_KEY
-    );
-    if (isThinkingLevel(storedThinkingLevel)) {
-      setThinkLevel(storedThinkingLevel);
-    }
-  }, []);
-
   const handleThinkLevelChange = (nextLevel: ThinkingLevel) => {
     setThinkLevel(nextLevel);
-    try {
-      window.localStorage.setItem(THINKING_LEVEL_STORAGE_KEY, nextLevel);
-    } catch {
-      // The in-memory selection still persists for the current ChatShell.
-    }
   };
 
   const messages = useMemo(() => {

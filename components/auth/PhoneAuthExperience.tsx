@@ -1,7 +1,6 @@
 'use client';
 
 import { UniversityLogo } from '@/components/branding/UniversityLogo';
-import { AuthKnowledgeArt } from '@/components/auth/AuthKnowledgeArt';
 import surfaceStyles from '@/components/auth/phone-auth-surface.module.css';
 import { Input } from '@/components/ui/input';
 import {
@@ -739,23 +738,22 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
               ))}
             </div>
           </div>
-          <div className={surfaceStyles.identityCopy}>
-            <span className={surfaceStyles.markPlate}>
-              <UniversityLogo
-                alt={t('logoAlt')}
-                onLight
-                className="h-12 w-12 lg:h-16 lg:w-16"
-              />
-            </span>
-            <div className={surfaceStyles.identityWords}>
-              <p className={`${surfaceStyles.wordmark} font-display-fa`}>
-                {t('brandName')}
-              </p>
-              <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
+          <div className={surfaceStyles.identityCard}>
+            <div className={surfaceStyles.identityCopy}>
+              <span className={surfaceStyles.markPlate}>
+                <UniversityLogo
+                  alt={t('logoAlt')}
+                  inverse
+                  className="h-full w-full"
+                />
+              </span>
+              <div className={surfaceStyles.identityWords}>
+                <p className={`${surfaceStyles.wordmark} font-display-fa`}>
+                  {t('brandName')}
+                </p>
+                <p className={surfaceStyles.identityLine}>{t('identityLine')}</p>
+              </div>
             </div>
-          </div>
-          <div className={surfaceStyles.knowledgeArt}>
-            <AuthKnowledgeArt />
           </div>
         </section>
 

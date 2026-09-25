@@ -313,7 +313,7 @@ describe('phone auth OTP countdown', () => {
     expect(replace).toHaveBeenCalledWith('/fa/chat');
   });
 
-  it('keeps the university mark colored when the document theme is dark', () => {
+  it('keeps the university mark white on the dark identity panel', () => {
     document.documentElement.classList.add('dark');
     renderAuth();
     const logos = screen.getAllByRole('img', {
@@ -323,8 +323,8 @@ describe('phone auth OTP countdown', () => {
     for (const logo of logos) {
       expect(logo.className).not.toContain('dark:invert');
       expect(logo.className).not.toContain('dark:brightness-0');
-      expect(logo.className).toContain('invert-0');
-      expect(logo.className).toContain('brightness-100');
+      expect(logo.className).toContain('brightness-0');
+      expect(logo.className).toContain('invert');
     }
     document.documentElement.classList.remove('dark');
   });
