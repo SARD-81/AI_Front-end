@@ -15,10 +15,12 @@ export function resolveAuthCookieSecure(
 ): boolean {
   const override = env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
 
+  if (env.NODE_ENV === 'production') return true;
+
   if (override === 'true') return true;
   if (override === 'false') return false;
 
-  return env.NODE_ENV === 'production';
+  return false;
 }
 
 function getCookieOptions() {

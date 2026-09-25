@@ -28,7 +28,7 @@ describe('auth cookie policy', () => {
     vi.unstubAllEnvs();
   });
 
-  it('uses non-Secure HttpOnly cookies for a production HTTP demo override', async () => {
+  it('ignores AUTH_COOKIE_SECURE=false in production', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('AUTH_COOKIE_SECURE', 'false');
 
@@ -42,22 +42,23 @@ describe('auth cookie policy', () => {
       expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
-        secure: false,
+        secure: true,
         path: '/',
         maxAge: 60 * 60
       })
     );
-    expect(cookieSetMock).toHaveBeenNthCalledWith(
-      2,
-      'sbu_refresh',
-      'refresh-token',
-      expect.objectContaining({
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        path: '/',
-        maxAge: 60 * 60 * 12
-      })
+  });
+
+  it('keeps non-Secure cookies available for local HTTP development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('AUTH_COOKIE_SECURE', 'false');
+
+    await setAuthCookies({access: 'access-token'});
+
+    expect(cookieSetMock).toHaveBeenCalledWith(
+      'sbu_access',
+      'access-token',
+      expect.objectContaining({secure: false, httpOnly: true, sameSite: 'lax'})
     );
   });
 
