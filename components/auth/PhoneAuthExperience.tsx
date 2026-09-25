@@ -847,6 +847,14 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
               </ol>
             ) : null}
             <p className={surfaceStyles.lead}>{guidance}</p>
+            {(step === 'register-otp' || step === 'register-profile') && (
+              <p className={surfaceStyles.notice}>
+                <span className={surfaceStyles.mark} aria-hidden="true">
+                  i
+                </span>
+                <span>{t('numberOwnershipNotice')}</span>
+              </p>
+            )}
 
             {error ? (
               <p
