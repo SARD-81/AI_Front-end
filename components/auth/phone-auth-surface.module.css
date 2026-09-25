@@ -1,21 +1,28 @@
 .surface {
   color-scheme: light;
-  --background: 210 28% 97%;
-  --foreground: 222 35% 12%;
-  --muted-foreground: 218 16% 40%;
-  --border: 214 20% 90%;
-  --ring: 222 80% 52%;
-  --primary: 222 72% 50%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 22% 94%;
-  --secondary-foreground: 222 35% 12%;
-  --accent: 210 25% 95%;
-  --accent-foreground: 222 35% 12%;
+  background: #f3f8f8;
+  color: #073044;
+  --background: 180 33% 96%;
+  --foreground: 198 82% 15%;
+  --muted-foreground: 196 30% 34%;
+  --border: 190 36% 84%;
+  --ring: 193 89% 28%;
+  --primary: 197 88% 24%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 188 42% 94%;
+  --secondary-foreground: 198 82% 15%;
+  --accent: 188 45% 93%;
+  --accent-foreground: 198 82% 15%;
   --card: 0 0% 100%;
-  --card-foreground: 222 35% 12%;
+  --card-foreground: 198 82% 15%;
   --field: 0 0% 100%;
   --field-foreground: 198 82% 15%;
-  --field-border: 191 32% 79%;
-  --field-placeholder: 196 22% 42%;
-  --field-focus: 193 89% 35%;
+  --field-border: 191 32% 72%;
+  --field-placeholder: 196 18% 38%;
+  --field-focus: 193 89% 28%;
+}
+
+.markPlate {
+  background: #ffffff;
+  color-scheme: light;
 }

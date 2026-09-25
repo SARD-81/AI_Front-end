@@ -15,6 +15,7 @@ const requestPhonePasswordReset = vi.hoisted(() => vi.fn());
 const verifyPhonePasswordReset = vi.hoisted(() => vi.fn());
 const completePhonePasswordReset = vi.hoisted(() => vi.fn());
 const registerWithPhone = vi.hoisted(() => vi.fn());
+const verifyRegistrationOtp = vi.hoisted(() => vi.fn());
 const replace = vi.hoisted(() => vi.fn());
 const refresh = vi.hoisted(() => vi.fn());
 
@@ -40,7 +41,7 @@ vi.mock('@/lib/services/phone-auth-service', () => ({
   registerWithPhone,
   resendActivationOtp: vi.fn(),
   verifyActivationOtp: vi.fn(),
-  verifyRegistrationOtp: vi.fn()
+  verifyRegistrationOtp
 }));
 
 function renderAuth() {
@@ -69,6 +70,8 @@ describe('phone auth OTP countdown', () => {
     identifyPhone.mockReset();
     requestRegistrationOtp.mockReset();
     loginWithPhone.mockReset();
+    registerWithPhone.mockReset();
+    verifyRegistrationOtp.mockReset();
     replace.mockReset();
     refresh.mockReset();
     localStorage.clear();
@@ -93,7 +96,7 @@ describe('phone auth OTP countdown', () => {
     await act(async () => {
       vi.advanceTimersByTime(60_000);
     });
-    const ready = screen.getByRole('button', {name: 'درخواست کد'});
+    const ready = screen.getByRole('button', {name: 'درخواست دوبارهٔ کد'});
     expect((ready as HTMLButtonElement).disabled).toBe(false);
 
     await act(async () => {
@@ -237,5 +240,257 @@ describe('phone auth OTP countdown', () => {
       expect(logo.className).toContain('brightness-100');
     }
     document.documentElement.classList.remove('dark');
+  });
+
+  it('keeps a fresh number on registration until the code is accepted, and only 201 enters the app', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 45});
+    verifyRegistrationOtp.mockResolvedValue({registrationToken: 'reg-secret', expiresIn: 600});
+    registerWithPhone.mockResolvedValue({
+      isProfileCompleted: true,
+      phoneSetupRequired: false,
+      user: {isProfileCompleted: true, phoneSetupRequired: false}
+    });
+    renderAuth();
+    await openRegistration();
+
+    expect(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'})).toBeTruthy();
+    expect(screen.getByText(/حساب دوم می‌سازد/)).toBeTruthy();
+    expect(screen.queryByLabelText('کد پیامک')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    expect(await screen.findByLabelText('کد پیامک')).toBeTruthy();
+    expect(screen.getByText(/رسیدن پیامک قطعی نیست/)).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    expect(await screen.findByRole('heading', {name: 'ساخت حساب سها'})).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+    expect(document.body.textContent).not.toContain('reg-secret');
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+
+    fireEvent.change(screen.getByLabelText('نام'), {target: {value: 'علی'}});
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'رضایی'}});
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'N3w-Pass-456'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'N3w-Pass-456'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(registerWithPhone).toHaveBeenCalledWith(
+      expect.objectContaining({
+        registrationToken: 'reg-secret',
+        firstName: 'علی',
+        lastName: 'رضایی',
+        password: 'N3w-Pass-456',
+        role: 'student',
+        staffCategory: null,
+        email: ''
+      }),
+      expect.any(AbortSignal)
+    );
+    expect(replace).toHaveBeenCalledWith('/fa/chat');
+  });
+
+  it('keeps an existing number on password login', async () => {
+    identifyPhone.mockResolvedValue('password');
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {target: {value: '۰۹۱۲۰۰۰۰۰۰۰'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ادامه'}));
+    });
+    expect(await screen.findByRole('heading', {name: 'رمز همین شماره'})).toBeTruthy();
+    expect(screen.getByText('09120000000')).toBeTruthy();
+    expect(screen.queryByRole('heading', {name: 'ساخت حساب تازه'})).toBeNull();
+    expect(identifyPhone).toHaveBeenCalledWith('۰۹۱۲۰۰۰۰۰۰۰', expect.any(AbortSignal));
+  });
+
+  it('shows the legacy email path before the first registration code', async () => {
+    renderAuth();
+    expect(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'})).toBeTruthy();
+    expect(screen.getByText(/حساب ایمیلی قبلی را به این شماره وصل نمی‌کند/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'قبلاً با ایمیل حساب داشتم'}));
+    expect(await screen.findByText(/حساب جدید ساخته نمی‌شود/)).toBeTruthy();
+    expect(screen.queryByRole('button', {name: 'حساب ندارید؟ ثبت‌نام'})).toBeNull();
+  });
+
+  it('shows an invalid code beside the field and returns a taken number to login', async () => {
+    verifyRegistrationOtp
+      .mockRejectedValueOnce(new ServiceError('کد تایید نامعتبر است.', 400, 'invalid_otp'))
+      .mockRejectedValueOnce(new ServiceError('این شماره قبلاً ثبت شده است.', 409, 'phone_already_registered'));
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 30});
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '00000'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    const codeField = screen.getByLabelText('کد پیامک');
+    expect(codeField.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText('کد تایید نامعتبر است.')).toBeTruthy();
+    expect(screen.queryByText(/تلاش/)).toBeNull();
+
+    fireEvent.change(codeField, {target: {value: '11111'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    expect(await screen.findByRole('heading', {name: 'رمز همین شماره'})).toBeTruthy();
+  });
+
+  it('keeps the profile and token after invalid_password and offers the old email account', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 20});
+    verifyRegistrationOtp.mockResolvedValue({registrationToken: 'kept-token'});
+    registerWithPhone
+      .mockRejectedValueOnce(
+        new ServiceError('رمز رد شد', 400, 'invalid_password', null, undefined, [
+          'حداقل طول رعایت نشده.',
+          'رمز رایج است.'
+        ])
+      )
+      .mockRejectedValueOnce(new ServiceError('این ایمیل قبلاً ثبت شده است.', 409, 'email_already_registered'));
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('نام'), {target: {value: 'علی'}});
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'رضایی'}});
+    fireEvent.change(screen.getByLabelText('ایمیل (اختیاری و تأییدنشده)'), {target: {value: 'old@sbu.ac.ir'}});
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'short'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'short'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(screen.getByText('حداقل طول رعایت نشده.')).toBeTruthy();
+    expect(screen.getByText('رمز رایج است.')).toBeTruthy();
+    expect((screen.getByLabelText('نام') as HTMLInputElement).value).toBe('علی');
+    expect((screen.getByLabelText('رمز عبور') as HTMLInputElement).value).toBe('short');
+    expect(document.body.textContent).not.toContain('kept-token');
+    expect(replace).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'Better-Pass-456'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'Better-Pass-456'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(screen.getByText(/ثبت‌نام تازه آن حساب را به این شماره وصل نمی‌کند/)).toBeTruthy();
+    expect(screen.getByRole('button', {name: 'ورود به حساب ایمیلی'})).toBeTruthy();
+    expect((screen.getByLabelText('ایمیل (اختیاری و تأییدنشده)') as HTMLInputElement).value).toBe('old@sbu.ac.ir');
+  });
+
+  it('sends staff category only for staff and restarts a blocked registration without claiming expiry', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 12});
+    verifyRegistrationOtp.mockResolvedValue({registrationToken: 'staff-token'});
+    registerWithPhone.mockRejectedValue(new ServiceError('درخواست ثبت‌نام نامعتبر است.', 400, 'invalid_registration'));
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    expect(screen.queryByLabelText('دستهٔ کارکنان')).toBeNull();
+    fireEvent.change(screen.getByLabelText('نقش'), {target: {value: 'professor'}});
+    expect(screen.queryByLabelText('دستهٔ کارکنان')).toBeNull();
+    fireEvent.change(screen.getByLabelText('نام'), {target: {value: 'مینا'}});
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'کریمی'}});
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'Staff-Pass-456'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'Staff-Pass-456'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(registerWithPhone).toHaveBeenCalledWith(
+      expect.objectContaining({role: 'professor', staffCategory: null, email: ''}),
+      expect.any(AbortSignal)
+    );
+    fireEvent.change(screen.getByLabelText('نقش'), {target: {value: 'staff'}});
+    expect(screen.getByLabelText('دستهٔ کارکنان')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('دستهٔ کارکنان'), {target: {value: 'vice_presidency'}});
+    fireEvent.change(screen.getByLabelText('نام'), {target: {value: 'مینا'}});
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'کریمی'}});
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'Staff-Pass-456'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'Staff-Pass-456'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(registerWithPhone).toHaveBeenCalledWith(
+      expect.objectContaining({role: 'staff', staffCategory: 'vice_presidency', email: ''}),
+      expect.any(AbortSignal)
+    );
+    expect(screen.getByText('درخواست ثبت‌نام نامعتبر است.')).toBeTruthy();
+    expect(screen.queryByText(/منقضی/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', {name: 'دریافت کد تازه'}));
+    expect(await screen.findByRole('heading', {name: 'ساخت حساب تازه'})).toBeTruthy();
+    expect(screen.queryByLabelText('نام')).toBeNull();
+  });
+
+  it('restarts submit waiting from each 429 and keeps the form after sms_unavailable', async () => {
+    requestRegistrationOtp.mockResolvedValue({status: 'accepted', retry_after: 5});
+    verifyRegistrationOtp.mockResolvedValue({registrationToken: 'again-token'});
+    registerWithPhone
+      .mockRejectedValueOnce(new ServiceError('کمی بعد دوباره تلاش کنید.', 429, 'rate_limited', 15))
+      .mockRejectedValueOnce(new ServiceError('ارسال پیامک در حال حاضر ممکن نیست.', 503, 'sms_unavailable'));
+    renderAuth();
+    await openRegistration();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'درخواست کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('کد پیامک'), {target: {value: '12345'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'تأیید کد'}));
+    });
+    fireEvent.change(await screen.findByLabelText('نام'), {target: {value: 'علی'}});
+    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {target: {value: 'رضایی'}});
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {target: {value: 'N3w-Pass-456'}});
+    fireEvent.change(screen.getByLabelText('تکرار رمز'), {target: {value: 'N3w-Pass-456'}});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    const waiting = screen.getByRole('button', {name: 'درخواست دوباره تا 15 ثانیه'});
+    expect((waiting as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText('نام') as HTMLInputElement).value).toBe('علی');
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', {name: 'ساخت حساب و ورود'}));
+    });
+    expect(screen.getByText('ارسال پیامک در حال حاضر ممکن نیست.')).toBeTruthy();
+    expect((screen.getByLabelText('نام') as HTMLInputElement).value).toBe('علی');
+    expect((screen.getByRole('button', {name: 'ساخت حساب و ورود'}) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('ignores a second registration request while the first is in flight', async () => {
+    let release: (value: {status: string; retry_after: number}) => void = () => undefined;
+    requestRegistrationOtp.mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      })
+    );
+    renderAuth();
+    await openRegistration();
+    const send = screen.getByRole('button', {name: 'درخواست کد'});
+    await act(async () => {
+      fireEvent.click(send);
+      fireEvent.click(send);
+    });
+    expect(requestRegistrationOtp).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      release({status: 'accepted', retry_after: 9});
+    });
   });
 });
