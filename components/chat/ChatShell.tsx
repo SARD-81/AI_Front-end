@@ -506,6 +506,18 @@ export function ChatShell({
       dir={isRtl ? 'rtl' : 'ltr'}
       className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.55),transparent_46%)]"
     >
+      {!conversationsOpen ? (
+        <button
+          type="button"
+          className="absolute left-3 top-3 z-20 hidden h-11 w-11 items-center justify-center rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-card)/0.96)] text-foreground shadow-md transition-colors hover:bg-[hsl(var(--surface-elevated))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--field-focus))] xl:inline-flex"
+          aria-label={t('conversations.open')}
+          aria-controls="conversations-panel"
+          onClick={openConversations}
+        >
+          <MessagesSquare className="h-5 w-5" />
+        </button>
+      ) : null}
+
       <div className="flex shrink-0 items-center justify-between px-2 pt-2 xl:hidden" dir="ltr">
         <button
           type="button"

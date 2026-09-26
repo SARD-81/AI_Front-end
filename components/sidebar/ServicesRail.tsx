@@ -109,17 +109,19 @@ export function ServicesRail({
           else node.removeAttribute('inert');
         }}
         className={cn(
-          'soha-sidebar flex min-h-0 flex-col text-white transition-transform duration-200 motion-reduce:transition-none',
-          'fixed inset-y-0 right-0 z-40 w-[min(88vw,18.5rem)] border-s border-[#0d607c] pt-[env(safe-area-inset-top)] shadow-2xl',
-          'md:static md:z-0 md:h-full md:w-[4.5rem] md:translate-x-0 md:pt-0 md:shadow-none',
+          'soha-sidebar flex min-h-0 flex-col overflow-x-hidden text-white transition-transform duration-200 motion-reduce:transition-none',
+          'fixed inset-y-0 right-0 z-40 w-[min(92vw,22rem)] rounded-s-2xl border-s border-[#0d607c] pt-[env(safe-area-inset-top)] shadow-2xl',
+          'md:static md:z-0 md:h-full md:w-[4.5rem] md:translate-x-0 md:rounded-none md:pt-0 md:shadow-none',
           !collapsed && 'xl:w-[15.75rem]',
           mobileOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full md:pointer-events-auto'
         )}
       >
         <div
           className={cn(
-            'flex items-center gap-2 border-b border-white/15 px-3 py-3',
-              collapsed && 'md:flex-col md:px-2 xl:flex-row'
+            'flex items-center justify-between gap-2 border-b border-white/15 px-4 py-3',
+            collapsed
+              ? 'md:flex-col md:justify-center md:px-2'
+              : 'xl:flex-row'
           )}
         >
           <Link
@@ -127,14 +129,15 @@ export function ServicesRail({
             aria-label={t('sidebar.home')}
             className={cn(
               'flex min-h-12 min-w-0 items-center rounded-2xl text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
-              'w-12 justify-center md:w-12 xl:w-auto xl:flex-1 xl:justify-start xl:gap-2 xl:px-1',
-              collapsed && 'xl:w-12 xl:justify-center xl:px-0'
+              'flex-1 justify-start gap-2 px-1 md:w-12 md:flex-none md:justify-center md:px-0',
+              !collapsed && 'xl:w-auto xl:flex-1 xl:justify-start xl:gap-2 xl:px-1',
+              collapsed && 'xl:w-12 xl:flex-none xl:justify-center xl:px-0'
             )}
           >
             <UniversityLogo
               alt={t('sidebar.logoAlt')}
               inverse
-              className="h-10 w-10"
+              className="h-10 w-10 shrink-0"
             />
             <span className={cn('min-w-0 text-start max-md:block md:hidden', !collapsed && 'xl:block')}>
                 <span className="block font-display-fa text-xl leading-7">
@@ -169,7 +172,7 @@ export function ServicesRail({
         </div>
 
         <nav
-          className="soha-sidebar-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-3"
+          className="soha-sidebar-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-x-hidden overflow-y-auto px-3 py-3 md:px-2"
           aria-label={t('services.label')}
         >
           {SERVICE_ITEMS.map((item) => {
@@ -196,7 +199,7 @@ export function ServicesRail({
                     : undefined
                 }
                 className={cn(
-                  'group relative flex min-h-11 items-center rounded-xl border text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
+                  'group relative flex min-h-12 w-full items-center rounded-xl border text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8ce4eb]',
                   'justify-center md:justify-center max-md:justify-start max-md:gap-3 max-md:px-3',
                   !collapsed && 'xl:justify-start xl:gap-3 xl:px-3',
                   isCurrentChat
@@ -211,18 +214,6 @@ export function ServicesRail({
                 <span className={cn('truncate max-md:inline md:hidden', !collapsed && 'xl:inline')}>
                   {label}
                 </span>
-                {item.comingSoon ? (
-                  <span
-                    role="tooltip"
-                    aria-hidden="true"
-                    className={cn(
-                      'pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#06131b] px-2 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100',
-                      isRtl ? 'right-[calc(100%+0.5rem)]' : 'left-[calc(100%+0.5rem)]'
-                    )}
-                  >
-                    {t('services.comingSoon')}
-                  </span>
-                ) : null}
               </button>
             );
           })}
