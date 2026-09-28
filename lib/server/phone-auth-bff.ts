@@ -340,9 +340,9 @@ export async function handlePhoneRegister(request: Request) {
     const lastName = textField(body.last_name).trim();
     const password = textField(body.password);
     const role = textField(body.role);
-    const hasPhone = Boolean(textField(body.phone_number));
     if (
-      Boolean(registrationToken) === hasPhone ||
+      !registrationToken ||
+      Boolean(textField(body.phone_number)) ||
       !firstName ||
       !lastName ||
       !password
@@ -371,13 +371,7 @@ export async function handlePhoneRegister(request: Request) {
       password,
       role: role as PublicRole
     };
-    if (registrationToken) {
-      payload.registration_token = registrationToken;
-    } else {
-      const phone = phoneFrom(body);
-      if (phone instanceof NextResponse) return phone;
-      payload.phone_number = phone;
-    }
+    payload.registration_token = registrationToken;
 
     if (role === 'staff') {
       const category = textField(body.staff_category);
