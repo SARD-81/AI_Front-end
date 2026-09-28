@@ -185,14 +185,25 @@ export async function handlePhoneLogin(request: Request) {
           { status: 502 }
         );
       }
+      const retryAfter =
+        typeof result.data.retry_after === 'number'
+          ? result.data.retry_after
+          : undefined;
       return NextResponse.json(
         {
           status: 'phone_verification_required',
           code: 'phone_verification_required',
           activation_token: token,
-          expires_in: result.data.expires_in
+          expires_in: result.data.expires_in,
+          ...(retryAfter !== undefined ? { retry_after: retryAfter } : {})
         },
-        { status: 202 }
+        {
+          status: 202,
+          headers:
+            retryAfter !== undefined
+              ? { 'Retry-After': String(retryAfter) }
+              : undefined
+        }
       );
     }
 
