@@ -90,6 +90,7 @@ describe('phone auth OTP countdown', () => {
     requestRegistrationOtp.mockReset();
     loginWithPhone.mockReset();
     requestPhonePasswordReset.mockReset();
+    verifyPhonePasswordReset.mockReset();
     completePhonePasswordReset.mockReset();
     completeMigratedPassword.mockReset();
     registerWithPhone.mockReset();
@@ -282,6 +283,65 @@ describe('phone auth OTP countdown', () => {
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain('reset-secret');
     expect(localStorage.length).toBe(0);
+  });
+
+  it('keeps resend on the recovery-code step and gives reset-password a real back action', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'password',
+      verificationRequired: true
+    });
+    requestPhonePasswordReset.mockResolvedValue({
+      status: 'accepted',
+      retry_after: 0
+    });
+    verifyPhonePasswordReset.mockResolvedValue({
+      resetToken: 'reset-secret'
+    });
+
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'فراموشی رمز این شماره' })
+      );
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'درخواست دوبارهٔ کد' })
+    ).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('کد تأیید'), {
+      target: { value: '12345' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'تأیید کد' }));
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'رمز تازه' })
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'درخواست دوبارهٔ کد' })
+    ).toBeNull();
+
+    const back = screen.getByRole('button', { name: 'بازگشت' });
+    expect(back.textContent).toContain('→');
+    fireEvent.click(back);
+
+    expect(
+      screen.getByRole('heading', { name: 'بازیابی رمز این شماره' })
+    ).toBeTruthy();
+    expect(screen.getByLabelText('کد تأیید')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'درخواست دوبارهٔ کد' })
+    ).toBeTruthy();
   });
 
   it('continues from phone setup without clearing phoneSetupRequired', async () => {

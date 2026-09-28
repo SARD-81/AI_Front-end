@@ -785,6 +785,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
             step === 'register-profile' ||
             step === 'activation' ||
             step === 'reset-otp' ||
+            step === 'reset-password' ||
             step === 'support' ||
             step === 'imported-password' ? (
               <button
@@ -812,6 +813,12 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     go(verificationRequired ? 'register-otp' : 'identify');
                   } else if (step === 'register-otp') {
                     go('identify');
+                  } else if (step === 'reset-password') {
+                    resetToken.current = '';
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setCode('');
+                    go('reset-otp');
                   } else if (step === 'activation' || step === 'reset-otp') {
                     setCode('');
                     go('password');
@@ -822,7 +829,10 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                   }
                 }}
               >
-                {t('back')}
+                <span className={surfaceStyles.backIcon} aria-hidden="true">
+                  {locale === 'fa' ? '→' : '←'}
+                </span>
+                <span>{t('back')}</span>
               </button>
             ) : null}
             <h1
@@ -1338,17 +1348,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     disabled={busy || !newPassword}
                   >
                     {busy ? t('loading') : t('savePassword')}
-                  </button>
-                  <button
-                    type="button"
-                    className={surfaceStyles.secondary}
-                    onClick={() => {
-                      resetToken.current = '';
-                      setNotice(t('freshCodeHint'));
-                      setStep('reset-otp');
-                    }}
-                  >
-                    {t('resend')}
                   </button>
                 </form>
               ) : null}
