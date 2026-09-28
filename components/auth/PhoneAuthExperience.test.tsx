@@ -82,6 +82,27 @@ async function openRegistration() {
   ).toBeTruthy();
 }
 
+async function openRegistrationProfile() {
+  requestRegistrationOtp.mockResolvedValue({
+    status: 'accepted',
+    retry_after: 30
+  });
+  verifyRegistrationOtp.mockResolvedValue({
+    registrationToken: 'reg-test-token'
+  });
+  await openRegistration();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'درخواست کد' }));
+  });
+  fireEvent.change(await screen.findByLabelText('کد تأیید'), {
+    target: { value: '12345' }
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'تأیید کد' }));
+  });
+  expect(await screen.findByLabelText('نام')).toBeTruthy();
+}
+
 describe('phone auth OTP countdown', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
@@ -900,17 +921,11 @@ describe('phone auth OTP countdown', () => {
   });
 
   it('shows live password tips and controls the registration confirmation independently', async () => {
-    identifyPhone.mockResolvedValue({ next: 'register', verificationRequired: false });
     registerWithPhone.mockRejectedValue(
       new ServiceError('رمز قابل قبول نیست.', 400, 'invalid_password', null, undefined, ['از رمز قوی‌تری استفاده کنید.'])
     );
     renderAuth();
-    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
-      target: { value: '09120000000' }
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
-    });
+    await openRegistrationProfile();
     const passwordInput = screen.getByLabelText('رمز عبور') as HTMLInputElement;
     const confirmationInput = screen.getByLabelText('تکرار رمز') as HTMLInputElement;
     expect(screen.getByText('راهنمای ساخت رمز قوی')).toBeTruthy();
@@ -981,11 +996,15 @@ describe('phone auth OTP countdown', () => {
     ).toBeNull();
   });
 
-  it('offers support instead of an SMS reset while verification is off', async () => {
+  it('uses SMS password recovery even if identify still reports the old pilot flag', async () => {
     identifyPhone.mockResolvedValue({
       next: 'password',
       verificationRequired: false
     });
+    requestPhonePasswordReset.mockResolvedValue({
+      status: 'accepted',
+      retry_after: 60
+    });
     renderAuth();
     fireEvent.change(screen.getByPlaceholderText('09123456789'), {
       target: { value: '09120000000' }
@@ -995,34 +1014,30 @@ describe('phone auth OTP countdown', () => {
         screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
       );
     });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'فراموشی رمز این شماره' })
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'فراموشی رمز این شماره' })
+      );
+    });
+    expect(requestPhonePasswordReset).toHaveBeenCalledWith(
+      '09120000000',
+      expect.any(AbortSignal)
     );
     expect(
-      screen.getByRole('heading', { name: 'بازیابی از پشتیبانی' })
+      screen.getByRole('heading', { name: 'بازیابی رمز این شماره' })
     ).toBeTruthy();
-    expect(requestPhonePasswordReset).not.toHaveBeenCalled();
-    expect(screen.getByText(/از راه پشتیبانی همان حساب/)).toBeTruthy();
-    expect(screen.queryByText(/صاحب محصول/)).toBeNull();
-    expect(screen.queryByText(/09\d{9}/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
-    expect(
-      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
-    ).toBeTruthy();
+    expect(screen.getByLabelText('کد تأیید')).toBeTruthy();
   });
 
-  it('restarts a pilot registration from the number step and never requests a code', async () => {
+  it('requires an OTP for registration even if identify still reports the old pilot flag', async () => {
     identifyPhone.mockResolvedValue({
       next: 'register',
       verificationRequired: false
     });
-    registerWithPhone.mockRejectedValue(
-      new ServiceError(
-        'درخواست ثبت‌نام نامعتبر است.',
-        400,
-        'invalid_registration'
-      )
-    );
+    requestRegistrationOtp.mockResolvedValue({
+      status: 'accepted',
+      retry_after: 60
+    });
     renderAuth();
     fireEvent.change(screen.getByPlaceholderText('09123456789'), {
       target: { value: '09120000000' }
@@ -1032,49 +1047,21 @@ describe('phone auth OTP countdown', () => {
         screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
       );
     });
-    expect(
-      await screen.findByRole('heading', { name: 'ساخت حساب کاربری جدید' })
-    ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'درخواست کد' })).toBeNull();
-    expect(screen.queryByLabelText('کد تأیید')).toBeNull();
-    fireEvent.change(screen.getByLabelText('نام'), {
-      target: { value: 'علی' }
-    });
-    fireEvent.change(screen.getByLabelText('نام خانوادگی'), {
-      target: { value: 'رضایی' }
-    });
-    fireEvent.change(screen.getByLabelText('رمز عبور'), {
-      target: { value: 'N3w-Pass-456' }
-    });
-    fireEvent.change(screen.getByLabelText('تکرار رمز'), {
-      target: { value: 'N3w-Pass-456' }
-    });
+    expect(screen.getByRole('button', { name: 'درخواست کد' })).toBeTruthy();
+    expect(screen.queryByLabelText('نام')).toBeNull();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'ساخت حساب و ورود' }));
+      fireEvent.click(screen.getByRole('button', { name: 'درخواست کد' }));
     });
-    expect(
-      screen.getByRole('heading', { name: 'شروع با شماره موبایل' })
-    ).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'از همین مرحله دوباره شروع کنید'
+    expect(requestRegistrationOtp).toHaveBeenCalledWith(
+      '09120000000',
+      expect.any(AbortSignal)
     );
-    expect(screen.queryByText(/کد را دوباره بگیرید/)).toBeNull();
-    expect(requestRegistrationOtp).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'درخواست کد' })).toBeNull();
+    expect(await screen.findByLabelText('کد تأیید')).toBeTruthy();
   });
 
-  it('clears the previous registration profile before identifying another number', async () => {
-    identifyPhone.mockResolvedValue({
-      next: 'register',
-      verificationRequired: false
-    });
+  it('clears registration profile data before starting OTP for another number', async () => {
     renderAuth();
-    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
-      target: { value: '09120000000' }
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
-    });
+    await openRegistrationProfile();
     fireEvent.change(screen.getByLabelText('نام'), {
       target: { value: 'نام قبلی' }
     });
@@ -1084,19 +1071,25 @@ describe('phone auth OTP countdown', () => {
     fireEvent.change(screen.getByLabelText('رمز عبور'), {
       target: { value: 'Previous-Password-456' }
     });
+
     fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
+    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
+    fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
+
+    identifyPhone.mockResolvedValue({
+      next: 'register',
+      verificationRequired: true
+    });
     fireEvent.change(screen.getByPlaceholderText('09123456789'), {
       target: { value: '09121111111' }
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'ادامه با شماره موبایل' }));
     });
-    expect((screen.getByLabelText('نام') as HTMLInputElement).value).toBe('');
-    expect(
-      (screen.getByLabelText('ایمیل (اختیاری)') as HTMLInputElement).value
-    ).toBe('');
-    expect((screen.getByLabelText('رمز عبور') as HTMLInputElement).value).toBe('');
-    expect(requestRegistrationOtp).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('نام')).toBeNull();
+    expect(screen.queryByLabelText('ایمیل (اختیاری)')).toBeNull();
+    expect(screen.queryByLabelText('رمز عبور')).toBeNull();
+    expect(screen.getByRole('button', { name: 'درخواست کد' })).toBeTruthy();
   });
 
   it('returns a migrated password to phone login or support without a session', async () => {
