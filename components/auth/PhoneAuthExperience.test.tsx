@@ -254,7 +254,7 @@ describe('phone auth OTP countdown', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: 'فعال‌سازی همین حساب' })
+      await screen.findByRole('heading', { name: 'تأیید شماره موبایل' })
     ).toBeTruthy();
 
     const resendWaiting = screen.getByRole('button', {
