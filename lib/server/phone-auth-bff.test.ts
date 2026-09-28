@@ -220,7 +220,8 @@ describe('phone auth BFF contract', () => {
       data: {
         status: 'phone_verification_required',
         activation_token: 'act-token',
-        expires_in: 600
+        expires_in: 600,
+        retry_after: 45
       }
     });
     const response = await handlePhoneLogin(
@@ -233,8 +234,10 @@ describe('phone auth BFF contract', () => {
     expect(await response.json()).toMatchObject({
       code: 'phone_verification_required',
       activation_token: 'act-token',
-      expires_in: 600
+      expires_in: 600,
+      retry_after: 45
     });
+    expect(response.headers.get('Retry-After')).toBe('45');
     expect(setAuthCookiesMock).not.toHaveBeenCalled();
   });
 
