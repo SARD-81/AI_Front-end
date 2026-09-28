@@ -183,6 +183,8 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const [lanes, setLanes] = useState(emptyOtpLanes);
   const [submitHold, setSubmitHold] = useState<OtpHold | null>(null);
   const [verifyHold, setVerifyHold] = useState<OtpHold | null>(null);
+  const [activationVerifyHold, setActivationVerifyHold] =
+    useState<OtpHold | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const activationToken = useRef('');
   const registrationToken = useRef('');
@@ -190,6 +192,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const abortRef = useRef<AbortController | null>(null);
   const flight = useRef(false);
   const verifyHoldRef = useRef<OtpHold | null>(null);
+  const activationVerifyHoldRef = useRef<OtpHold | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -199,7 +202,8 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         (lane) => otpSecondsLeft(lanes[lane], Date.now()) > 0
       ) ||
       otpSecondsLeft(submitHold, Date.now()) > 0 ||
-      otpSecondsLeft(verifyHold, Date.now()) > 0;
+      otpSecondsLeft(verifyHold, Date.now()) > 0 ||
+      otpSecondsLeft(activationVerifyHold, Date.now()) > 0;
     if (!pending) return;
     const timer = window.setInterval(() => {
       const next = Date.now();
@@ -209,11 +213,12 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           (lane) => otpSecondsLeft(lanes[lane], next) > 0
         ) ||
         otpSecondsLeft(submitHold, next) > 0 ||
-        otpSecondsLeft(verifyHold, next) > 0;
+        otpSecondsLeft(verifyHold, next) > 0 ||
+        otpSecondsLeft(activationVerifyHold, next) > 0;
       if (!still) window.clearInterval(timer);
     }, 250);
     return () => window.clearInterval(timer);
-  }, [lanes, submitHold, verifyHold]);
+  }, [lanes, submitHold, verifyHold, activationVerifyHold]);
 
   const displayPhone = phoneDisplayValue(phoneRaw);
   const phoneOk = isAcceptedPhoneInput(phoneRaw);
@@ -222,6 +227,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const recoveryLeft = otpSecondsLeft(lanes.recovery, now);
   const submitLeft = otpSecondsLeft(submitHold, now);
   const verifyLeft = otpSecondsLeft(verifyHold, now);
+  const activationVerifyLeft = otpSecondsLeft(activationVerifyHold, now);
   const copy = stepCopy(step);
   const phase = verificationRequired ? registrationPhase(step) : null;
   const passwordRules = evaluatePasswordRules(newPassword);
@@ -244,6 +250,16 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setVerifyHold((current) => {
       const next = nextHold(current, seconds, at);
       verifyHoldRef.current = next;
+      return next;
+    });
+  };
+
+  const armActivationVerify = (seconds?: number | null) => {
+    const at = Date.now();
+    setNow(at);
+    setActivationVerifyHold((current) => {
+      const next = nextHold(current, seconds, at);
+      activationVerifyHoldRef.current = next;
       return next;
     });
   };
@@ -344,6 +360,12 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         if (outcome.kind === 'activation') {
           activationToken.current = outcome.activationToken;
           setCode('');
+          setLanes((current) => ({ ...current, activation: null }));
+          setActivationVerifyHold(null);
+          activationVerifyHoldRef.current = null;
+          if (outcome.retryAfter) {
+            noteAccepted('activation', outcome.retryAfter);
+          }
           setStep('activation');
           return;
         }
@@ -371,40 +393,64 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
       return false;
     });
 
-  const onActivationVerify = () =>
-    run(null, async (signal) => {
-      try {
-        const result = await verifyActivationOtp(
-          activationToken.current,
-          code,
-          signal
-        );
-        activationToken.current = '';
-        enterApp(result);
-      } catch (caught) {
-        if (
-          caught instanceof ServiceError &&
-          caught.code === 'password_change_required'
-        ) {
+  const onActivationVerify = () => {
+    if (
+      otpSecondsLeft(activationVerifyHoldRef.current, Date.now()) > 0
+    ) {
+      return;
+    }
+    return run(
+      null,
+      async (signal) => {
+        try {
+          const result = await verifyActivationOtp(
+            activationToken.current,
+            code,
+            signal
+          );
           activationToken.current = '';
-          setNotice(null);
-          setStep('imported-password');
-          return;
+          enterApp(result);
+        } catch (caught) {
+          if (
+            caught instanceof ServiceError &&
+            caught.code === 'password_change_required'
+          ) {
+            activationToken.current = '';
+            setNotice(null);
+            setStep('imported-password');
+            return;
+          }
+          if (
+            caught instanceof ServiceError &&
+            caught.status === 503 &&
+            caught.code === 'sms_unavailable'
+          ) {
+            activationToken.current = '';
+            setCode('');
+            setLanes((current) => ({ ...current, activation: null }));
+            setActivationVerifyHold(null);
+            activationVerifyHoldRef.current = null;
+            setNotice(t('activationRestart'));
+            setStep('password');
+            return;
+          }
+          throw caught;
         }
-        if (
-          caught instanceof ServiceError &&
-          caught.status === 503 &&
-          caught.code === 'sms_unavailable'
-        ) {
-          activationToken.current = '';
-          setCode('');
-          setNotice(t('activationRestart'));
-          setStep('password');
-          return;
+      },
+      (caught) => {
+        if (caught instanceof ServiceError && caught.status === 429) {
+          armActivationVerify(caught.retryAfter);
+          setError(errorText(caught, t('genericError')));
+          return true;
         }
-        throw caught;
+        if (caught instanceof ServiceError && caught.code === 'invalid_otp') {
+          setFieldError({ code: caught.message });
+          return true;
+        }
+        return false;
       }
-    });
+    );
+  };
 
   const onResendActivation = () =>
     run('activation', async (signal) => {
@@ -412,6 +458,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         activationToken.current,
         signal
       );
+      setCode('');
       noteAccepted('activation', accepted.retry_after);
     });
 
@@ -819,7 +866,14 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     setConfirmPassword('');
                     setCode('');
                     go('reset-otp');
-                  } else if (step === 'activation' || step === 'reset-otp') {
+                  } else if (step === 'activation') {
+                    activationToken.current = '';
+                    setCode('');
+                    setLanes((current) => ({ ...current, activation: null }));
+                    setActivationVerifyHold(null);
+                    activationVerifyHoldRef.current = null;
+                    go('password');
+                  } else if (step === 'reset-otp') {
                     setCode('');
                     go('password');
                   } else {
@@ -1085,17 +1139,38 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                 <div className={surfaceStyles.form}>
                   <CodeField
                     value={code}
-                    onChange={setCode}
+                    onChange={(value) => {
+                      setCode(value);
+                      setFieldError((current) => ({
+                        ...current,
+                        code: undefined
+                      }));
+                    }}
                     label={t('codeLabel')}
-                    className={inputClass(false, surfaceStyles.code)}
+                    className={inputClass(
+                      Boolean(fieldError.code),
+                      surfaceStyles.code
+                    )}
+                    invalid={Boolean(fieldError.code)}
+                    error={fieldError.code}
                   />
                   <button
                     type="button"
                     className={surfaceStyles.primary}
-                    disabled={busy || code.trim().length === 0}
+                    disabled={
+                      busy ||
+                      activationVerifyLeft > 0 ||
+                      code.trim().length === 0
+                    }
                     onClick={onActivationVerify}
                   >
-                    {busy ? t('loading') : t('verify')}
+                    {busy
+                      ? t('loading')
+                      : activationVerifyLeft > 0
+                        ? t('verifyWait', {
+                            seconds: activationVerifyLeft
+                          })
+                        : t('verify')}
                   </button>
                   <button
                     type="button"
