@@ -22,6 +22,8 @@ const verifyPhonePasswordReset = vi.hoisted(() => vi.fn());
 const completePhonePasswordReset = vi.hoisted(() => vi.fn());
 const completeMigratedPassword = vi.hoisted(() => vi.fn());
 const registerWithPhone = vi.hoisted(() => vi.fn());
+const resendActivationOtp = vi.hoisted(() => vi.fn());
+const verifyActivationOtp = vi.hoisted(() => vi.fn());
 const verifyRegistrationOtp = vi.hoisted(() => vi.fn());
 const replace = vi.hoisted(() => vi.fn());
 const refresh = vi.hoisted(() => vi.fn());
@@ -48,8 +50,8 @@ vi.mock('@/lib/services/phone-auth-service', () => ({
   completePhonePasswordReset,
   completeMigratedPassword,
   registerWithPhone,
-  resendActivationOtp: vi.fn(),
-  verifyActivationOtp: vi.fn(),
+  resendActivationOtp,
+  verifyActivationOtp,
   verifyRegistrationOtp
 }));
 
@@ -94,6 +96,8 @@ describe('phone auth OTP countdown', () => {
     completePhonePasswordReset.mockReset();
     completeMigratedPassword.mockReset();
     registerWithPhone.mockReset();
+    resendActivationOtp.mockReset();
+    verifyActivationOtp.mockReset();
     verifyRegistrationOtp.mockReset();
     replace.mockReset();
     refresh.mockReset();
@@ -203,6 +207,114 @@ describe('phone auth OTP countdown', () => {
     expect(setItem).not.toHaveBeenCalled();
     expect(document.cookie).not.toContain('sbu_access');
     setItem.mockRestore();
+  });
+
+  it('honors activation cooldowns and keeps invalid activation codes on the code field', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'password',
+      verificationRequired: true
+    });
+    loginWithPhone.mockResolvedValue({
+      kind: 'activation',
+      activationToken: 'activation-secret',
+      expiresIn: 600,
+      retryAfter: 45
+    });
+    verifyActivationOtp
+      .mockRejectedValueOnce(
+        new ServiceError('کد تایید نامعتبر است.', 400, 'invalid_otp')
+      )
+      .mockRejectedValueOnce(
+        new ServiceError(
+          'تعداد تلاش‌ها بیش از حد مجاز است.',
+          429,
+          'rate_limited',
+          30
+        )
+      );
+    resendActivationOtp.mockResolvedValue({
+      status: 'accepted',
+      retry_after: 60
+    });
+
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'secret' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: 'فعال‌سازی همین حساب' })
+    ).toBeTruthy();
+
+    const resendWaiting = screen.getByRole('button', {
+      name: 'درخواست دوباره تا 45 ثانیه'
+    }) as HTMLButtonElement;
+    expect(resendWaiting.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('کد تأیید'), {
+      target: { value: '00000' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'تأیید کد' }));
+    });
+    expect(screen.getByLabelText('کد تأیید').getAttribute('aria-invalid')).toBe(
+      'true'
+    );
+    expect(screen.getByText('کد تایید نامعتبر است.')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('کد تأیید'), {
+      target: { value: '11111' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'تأیید کد' }));
+    });
+    const verifyWaiting = screen.getByRole('button', {
+      name: 'تأیید دوباره تا 30 ثانیه'
+    }) as HTMLButtonElement;
+    expect(verifyWaiting.disabled).toBe(true);
+
+    await act(async () => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(
+      (screen.getByRole('button', { name: 'تأیید کد' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(false);
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+    });
+    const resend = screen.getByRole('button', {
+      name: 'درخواست دوبارهٔ کد'
+    }) as HTMLButtonElement;
+    expect(resend.disabled).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(resend);
+    });
+    expect(resendActivationOtp).toHaveBeenCalledWith(
+      'activation-secret',
+      expect.any(AbortSignal)
+    );
+    expect(
+      screen.getByRole('button', {
+        name: 'درخواست دوباره تا 60 ثانیه'
+      })
+    ).toBeTruthy();
+    expect((screen.getByLabelText('کد تأیید') as HTMLInputElement).value).toBe(
+      ''
+    );
   });
 
   it('returns a taken registration number to password login for that same number', async () => {
