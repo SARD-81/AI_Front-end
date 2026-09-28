@@ -67,7 +67,12 @@ export async function loginWithPhone(
   signal?: AbortSignal
 ): Promise<
   | { kind: 'session'; result: LoginResultDTO }
-  | { kind: 'activation'; activationToken: string; expiresIn?: number }
+  | {
+      kind: 'activation';
+      activationToken: string;
+      expiresIn?: number;
+      retryAfter?: number;
+    }
 > {
   const data = asRecord(
     await post<unknown>(
@@ -90,7 +95,9 @@ export async function loginWithPhone(
       kind: 'activation',
       activationToken,
       expiresIn:
-        typeof data.expires_in === 'number' ? data.expires_in : undefined
+        typeof data.expires_in === 'number' ? data.expires_in : undefined,
+      retryAfter:
+        typeof data.retry_after === 'number' ? data.retry_after : undefined
     };
   }
   return { kind: 'session', result: loginSchema.parse(data) };
