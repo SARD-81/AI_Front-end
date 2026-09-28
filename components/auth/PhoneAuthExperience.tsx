@@ -223,7 +223,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
   const submitLeft = otpSecondsLeft(submitHold, now);
   const verifyLeft = otpSecondsLeft(verifyHold, now);
   const copy = stepCopy(step);
-  const phase = verificationRequired ? registrationPhase(step) : null;
+  const phase = registrationPhase(step);
   const passwordRules = evaluatePasswordRules(newPassword);
 
   const arm = (lane: OtpLane, seconds?: number | null) => {
@@ -318,12 +318,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         setRegistrationBlocked(false);
         setEmailTaken(false);
         if (identified.next === 'password') setStep('password');
-        else
-          setStep(
-            identified.verificationRequired
-              ? 'register-otp'
-              : 'register-profile'
-          );
+        else setStep('register-otp');
       },
       (caught) => {
         if (
@@ -497,8 +492,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
     setFieldError({});
     setRegistrationBlocked(false);
     setEmailTaken(false);
-    setStep(verificationRequired ? 'register-otp' : 'identify');
-    if (verificationRequired === false) setVerificationRequired(null);
+    setStep('register-otp');
   };
 
   const onRegister = () =>
@@ -512,10 +506,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         try {
           const result = await registerWithPhone(
             {
-              registrationToken: verificationRequired
-                ? registrationToken.current
-                : undefined,
-              phoneNumber: verificationRequired ? undefined : phoneRaw,
+              registrationToken: registrationToken.current,
               firstName,
               lastName,
               password: newPassword,
@@ -561,11 +552,6 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           return true;
         }
         if (caught.code === 'invalid_registration') {
-          if (verificationRequired === false) {
-            restartRegistration();
-            setError(t('registrationRestartHint'));
-            return true;
-          }
           setRegistrationBlocked(true);
           setError(caught.message);
           return true;
@@ -798,18 +784,15 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                     setCode('');
                     go('identify');
                   } else if (step === 'register-profile') {
-                    registrationToken.current = verificationRequired
-                      ? registrationToken.current
-                      : '';
                     setPassword('');
                     setNewPassword('');
                     setConfirmPassword('');
                     setCode('');
-                    go(verificationRequired ? 'register-code' : 'identify');
+                    go('register-code');
                   } else if (step === 'register-code') {
                     setCode('');
                     registrationToken.current = '';
-                    go(verificationRequired ? 'register-otp' : 'identify');
+                    go('register-otp');
                   } else if (step === 'register-otp') {
                     go('identify');
                   } else if (step === 'activation' || step === 'reset-otp') {
@@ -991,17 +974,8 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                   <button
                     type="button"
                     className={surfaceStyles.secondary}
-                    onClick={() => {
-                      if (verificationRequired) onResetRequest();
-                      else {
-                        setError(null);
-                        setStep('support');
-                      }
-                    }}
-                    disabled={
-                      busy ||
-                      (verificationRequired === true && recoveryLeft > 0)
-                    }
+                    onClick={onResetRequest}
+                    disabled={busy || recoveryLeft > 0}
                   >
                     {recoveryLeft > 0
                       ? t('resendWait', { seconds: recoveryLeft })
@@ -1286,7 +1260,7 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
                         ? t('resendWait', { seconds: submitLeft })
                         : t('createAccount')}
                   </button>
-                  {registrationBlocked && verificationRequired ? (
+                  {registrationBlocked ? (
                     <div className={surfaceStyles.decision}>
                       <p>{t('registrationInvalidHint')}</p>
                       <button
