@@ -419,6 +419,23 @@ describe('phone auth BFF contract', () => {
     expect(setAuthCookiesMock).toHaveBeenCalledTimes(1);
   });
 
+
+  it('rejects registration without an OTP registration token', async () => {
+    const response = await handlePhoneRegister(
+      post('/api/app/auth/phone/register', {
+        phone_number: '09123456789',
+        first_name: 'علی',
+        last_name: 'رضایی',
+        password: 'N3w-Pass-456',
+        role: 'student'
+      })
+    );
+    expect(response.status).toBe(400);
+    expect((await response.json()).code).toBe('invalid_registration');
+    expect(backendFetchResultMock).not.toHaveBeenCalled();
+    expect(setAuthCookiesMock).not.toHaveBeenCalled();
+  });
+
   it('register omits staff_category for students and rejects it when required data is bad', async () => {
     backendFetchResultMock.mockResolvedValue({
       status: 201,
