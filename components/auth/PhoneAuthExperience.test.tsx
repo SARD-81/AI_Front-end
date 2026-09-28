@@ -317,6 +317,69 @@ describe('phone auth OTP countdown', () => {
     );
   });
 
+  it('uses a 60-second activation resend fallback when the backend omits retry_after', async () => {
+    identifyPhone.mockResolvedValue({
+      next: 'password',
+      verificationRequired: true
+    });
+    loginWithPhone.mockResolvedValue({
+      kind: 'activation',
+      activationToken: 'activation-secret',
+      expiresIn: 600
+    });
+    resendActivationOtp.mockResolvedValue({
+      status: 'accepted'
+    });
+
+    renderAuth();
+    fireEvent.change(screen.getByPlaceholderText('09123456789'), {
+      target: { value: '09120000000' }
+    });
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'ادامه با شماره موبایل' })
+      );
+    });
+    fireEvent.change(screen.getByLabelText('رمز عبور'), {
+      target: { value: 'secret' }
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: 'تأیید شماره موبایل' })
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'برای تأیید هویت و افزایش امنیت حساب، لازم است این شماره موبایل یک‌بار تأیید شود. کد ارسال‌شده را وارد کنید؛ پس از تأیید، در ورودهای بعدی نیازی به تکرار این مرحله نیست.'
+      )
+    ).toBeTruthy();
+
+    expect(
+      screen.getByRole('button', {
+        name: 'درخواست دوباره تا 60 ثانیه'
+      })
+    ).toBeTruthy();
+
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+    });
+
+    const resend = screen.getByRole('button', {
+      name: 'درخواست دوبارهٔ کد'
+    });
+    await act(async () => {
+      fireEvent.click(resend);
+    });
+
+    expect(
+      screen.getByRole('button', {
+        name: 'درخواست دوباره تا 60 ثانیه'
+      })
+    ).toBeTruthy();
+  });
+
   it('returns a taken registration number to password login for that same number', async () => {
     requestRegistrationOtp.mockRejectedValue(
       new ServiceError(

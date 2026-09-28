@@ -57,6 +57,7 @@ type FieldErrors = {
 };
 
 const ROLES: PhoneRole[] = ['student', 'professor', 'staff'];
+const ACTIVATION_RESEND_FALLBACK_SECONDS = 60;
 const CATEGORIES: StaffCategory[] = [
   'faculty_administration',
   'vice_presidency',
@@ -363,9 +364,10 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
           setLanes((current) => ({ ...current, activation: null }));
           setActivationVerifyHold(null);
           activationVerifyHoldRef.current = null;
-          if (outcome.retryAfter) {
-            noteAccepted('activation', outcome.retryAfter);
-          }
+          noteAccepted(
+            'activation',
+            outcome.retryAfter ?? ACTIVATION_RESEND_FALLBACK_SECONDS
+          );
           setStep('activation');
           return;
         }
@@ -459,7 +461,10 @@ export function PhoneAuthExperience({ locale }: { locale: string }) {
         signal
       );
       setCode('');
-      noteAccepted('activation', accepted.retry_after);
+      noteAccepted(
+        'activation',
+        accepted.retry_after ?? ACTIVATION_RESEND_FALLBACK_SECONDS
+      );
     });
 
   const onRegisterOtp = () =>
