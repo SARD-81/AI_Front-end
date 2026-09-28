@@ -329,6 +329,8 @@
 
 .control {
   position: relative;
+  display: block;
+  width: 100%;
   min-width: 0;
 }
 
@@ -388,18 +390,20 @@
 
 .reveal {
   position: absolute;
-  inset-block: 0.35rem;
-  inset-inline-end: 0.35rem;
+  inset-block: 0.3rem;
+  inset-inline-end: 0.3rem;
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 0;
   align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 0.7rem;
   background: #e7f3f4;
-  padding-inline: 0.6rem;
+  padding-inline: 0.7rem;
   color: #075373;
   font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1;
   cursor: pointer;
 }
 
