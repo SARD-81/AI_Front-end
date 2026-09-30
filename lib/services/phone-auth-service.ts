@@ -167,8 +167,7 @@ export async function verifyRegistrationOtp(
 
 export async function registerWithPhone(
   input: {
-    registrationToken?: string;
-    phoneNumber?: string;
+    registrationToken: string;
     firstName: string;
     lastName: string;
     password: string;
@@ -184,9 +183,7 @@ export async function registerWithPhone(
     password: input.password,
     role: input.role
   };
-  if (input.registrationToken)
-    body.registration_token = input.registrationToken;
-  else if (input.phoneNumber) body.phone_number = input.phoneNumber;
+  body.registration_token = input.registrationToken;
   if (input.role === 'staff' && input.staffCategory) {
     body.staff_category = input.staffCategory;
   }

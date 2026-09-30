@@ -310,7 +310,7 @@
       "signIn": "Sign in",
       "forgot": "Forgot this number's password",
       "supportTitle": "Recover through support",
-      "supportBody": "In this pilot, password recovery goes through support for the same account. No text message or email recovery is sent.",
+      "supportBody": "If a migrated account does not yet have a usable mobile number, recover that same account through support.",
       "back": "Back",
       "smsRequested": "The SMS request was accepted. Delivery to the handset is not guaranteed.",
       "sendCode": "Request code",
